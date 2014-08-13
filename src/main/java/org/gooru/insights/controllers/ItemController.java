@@ -1,0 +1,50 @@
+package org.gooru.insights.controllers;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.collections.map.HashedMap;
+import org.gooru.insights.services.ItemService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+@RequestMapping(value ="/items")
+@Controller
+public class ItemController {
+	
+	@Autowired
+	ItemService itemService;
+	
+	@RequestMapping(value="/classpage/collections",method = {RequestMethod.GET,RequestMethod.POST})
+	public ModelAndView getClasspageCollectionDetail(HttpServletRequest request,@RequestParam(value="data", required = true) String data,@RequestParam(value="sessionToken",required = false) String sessionToken,HttpServletResponse response){
+		System.out.println("entered in to controller");
+		ModelAndView model = new ModelAndView();
+		model.setViewName("content");
+		model.addObject("content","got working");
+		return model;
+	}
+	
+	@RequestMapping(value="/classpage",method = {RequestMethod.GET,RequestMethod.POST})
+	public ModelAndView getClasspageDetail(HttpServletRequest request,@RequestParam(value="data", required = false) String data,HttpServletResponse response){
+		System.out.println("entered in to controller");
+		ModelAndView model = new ModelAndView();
+		model.setViewName("content");
+		model.addObject("content","got working");
+		return model;
+	}
+
+	@RequestMapping(value="/search",method ={RequestMethod.GET,RequestMethod.POST})
+	public ModelAndView TestSearch(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response){
+		ModelAndView model = new ModelAndView();
+		Map<Integer,String> errorMap = new HashedMap();
+		model.setViewName("content");
+		model.addObject("content",itemService.TestSearch(data,errorMap));
+		return model;
+	}
+}
