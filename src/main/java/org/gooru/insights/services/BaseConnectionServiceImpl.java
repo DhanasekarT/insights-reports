@@ -78,7 +78,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
 		
-		insightsKeyspace = context.getClient();
+		insightsKeyspace = (Keyspace)context.getClient();
 		
 		AstyanaxContext<Keyspace> context2 = new AstyanaxContext.Builder()
         .forCluster(clusterName)
@@ -94,10 +94,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		
 	}
 	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){
+		System.out.println("seeds"+seeds.trim()+":"+port);
 		ConnectionPoolConfigurationImpl connectionPoolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
 		.setPort(port.intValue())
 		.setMaxConnsPerHost(30)
-		.setSeeds(seeds+":"+port);
+		.setSeeds(seeds.trim()+":"+port.intValue());
 		
 		if (!seeds.startsWith("127.0")) {
 			connectionPoolConfig.setLocalDatacenter("datacenter1");
@@ -108,13 +109,18 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
-		ColumnList<String> columnList = rowResult.getResult();
-		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
-		String clusterName = columnList.getColumnByName(esConfigs.CLUSTER.esConfig()).getStringValue();
-		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
-		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
-		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+//		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+//		ColumnList<String> columnList = rowResult.getResult();
+//		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
+//		String clusterName = columnList.getColumnByName(esConfigs.CLUSTER.esConfig()).getStringValue();
+//		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
+//		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
+//		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+	String indexName ="event_logger_insights";
+	String clusterName="";
+	String hostName="162.243.130.94";
+	String portNo="9300";
+	String nodeType ="transportClient";
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
 			client  = initNodeClient(clusterName);
