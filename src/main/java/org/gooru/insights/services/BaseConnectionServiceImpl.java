@@ -62,30 +62,19 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public void initCassandraConnection(){
 	
-		try{
 		String seeds = System.getenv(cassandraConfigs.SEEDS.cassandraConfig());
 		Integer port = Integer.parseInt(System.getenv(cassandraConfigs.PORT.cassandraConfig()));
 		String clusterName = System.getenv(cassandraConfigs.CLUSTER.cassandraConfig());
 		String insights = System.getenv(cassandraConfigs.INSIGHTS_KEYSPACE.cassandraConfig());
 		String search = System.getenv(cassandraConfigs.SEARCH_KEYSPACE.cassandraConfig());
-		ConnectionPoolConfigurationImpl connectionPoolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
-		.setPort(port.intValue())
-		.setMaxConnsPerHost(30)
-		.setSeeds(seeds);
-		
-		if (!seeds.startsWith("127.0")) {
-			connectionPoolConfig.setLocalDatacenter("datacenter1");
-		}
-		
-		connectionPoolConfig.setLatencyScoreStrategy(new SmaLatencyScoreStrategyImpl()); // Enabled SMA.  Omit this to use round robin with a token range
-		
+
 		AstyanaxContext<Keyspace> context = new AstyanaxContext.Builder()
         .forCluster(clusterName)
         .forKeyspace(insights)
         .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
         .setDiscoveryType(NodeDiscoveryType.NONE)
         .setConnectionPoolType(ConnectionPoolType.TOKEN_AWARE))
-        .withConnectionPoolConfiguration(connectionPoolConfig)
+        .withConnectionPoolConfiguration(connectionConfig(seeds,port))
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
 		
@@ -97,15 +86,25 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
         .setDiscoveryType(NodeDiscoveryType.NONE)
         .setConnectionPoolType(ConnectionPoolType.TOKEN_AWARE))
-        .withConnectionPoolConfiguration(connectionPoolConfig)
+        .withConnectionPoolConfiguration(connectionConfig(seeds,port))
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
 		
 		searchKeyspace = context.getClient();
 		
-		}catch(Exception e){
-			
+	}
+	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){
+		ConnectionPoolConfigurationImpl connectionPoolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
+		.setPort(port.intValue())
+		.setMaxConnsPerHost(30)
+		.setSeeds(seeds+":"+port);
+		
+		if (!seeds.startsWith("127.0")) {
+			connectionPoolConfig.setLocalDatacenter("datacenter1");
 		}
+		
+		connectionPoolConfig.setLatencyScoreStrategy(new SmaLatencyScoreStrategyImpl()); // Enabled SMA.  Omit this to use round robin with a token range
+		return connectionPoolConfig;
 	}
 	
 	public void initESConnection(){
