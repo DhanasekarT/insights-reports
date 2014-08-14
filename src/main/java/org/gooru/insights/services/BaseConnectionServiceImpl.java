@@ -52,7 +52,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	@PostConstruct
 	public void initConnect(){
 		
-		initCassandraConnection();
+		//initCassandraConnection();
 		initESConnection();
 	}
 	public Client getClient(){

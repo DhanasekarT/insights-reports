@@ -2,6 +2,8 @@ package org.gooru.insights.models;
 
 import java.io.Serializable;
 
+import org.json.JSONArray;
+
 public class RequestParamsDTO implements Serializable {
 
 	private static final long serialVersionUID = -2840599796987757919L;
@@ -12,9 +14,13 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String dataSource;
 	
-	RequestParamsPaginationDTO paginate;
+	RequestParamsPaginationDTO pagination;
 	
 	RequestParamsFiltersDTO filters;
+	
+	private JSONArray aggregations;
+	
+	private String intervals;
 	
 	private String groupBy;
 
@@ -42,12 +48,12 @@ public class RequestParamsDTO implements Serializable {
 		this.groupBy = groupBy;
 	}
 
-	public RequestParamsPaginationDTO getPaginate() {
-		return paginate;
+	public RequestParamsPaginationDTO getPagination() {
+		return pagination;
 	}
 
-	public void setPaginate(RequestParamsPaginationDTO paginate) {
-		this.paginate = paginate;
+	public void setPagination(RequestParamsPaginationDTO paginate) {
+		this.pagination = paginate;
 	}
 
 	public void setFileName(String fileName) {
@@ -64,6 +70,22 @@ public class RequestParamsDTO implements Serializable {
 
 	public void setDataSource(String dataSource) {
 		this.dataSource = dataSource;
+	}
+
+	public JSONArray getAggregations() {
+		return aggregations;
+	}
+
+	public void setAggregations(JSONArray aggregations) {
+		this.aggregations = aggregations;
+	}
+
+	public String getIntervals() {
+		return intervals;
+	}
+
+	public void setIntervals(String intervals) {
+		this.intervals = intervals;
 	}
 	
 	

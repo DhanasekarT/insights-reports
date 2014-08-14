@@ -1,33 +1,17 @@
 package org.gooru.insights.models;
 
+import java.util.List;
+
 public class RequestParamsPaginationDTO {
 
-	private String sortBy;
-	
-	private String sortOrder;
-	
 	private Integer offset;
 	
 	private Integer limit;
 	
 	private Integer totalRecords;
 
-	public String getSortBy() {
-		return sortBy;
-	}
-
-	public void setSortBy(String sortBy) {
-		this.sortBy = sortBy;
-	}
-
-	public String getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(String sortOrder) {
-		this.sortOrder = sortOrder;
-	}
-
+	private List<RequestParamsSortDTO> order;
+	
 	public Integer getOffset() {
 		return offset;
 	}
@@ -50,5 +34,13 @@ public class RequestParamsPaginationDTO {
 
 	public void setTotalRecords(Integer totalRecords) {
 		this.totalRecords = totalRecords;
+	}
+
+	public List<RequestParamsSortDTO> getOrder() {
+		return order;
+	}
+
+	public void setOrder(List<RequestParamsSortDTO> order) {
+		this.order = order;
 	}
 }

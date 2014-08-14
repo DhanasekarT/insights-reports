@@ -62,7 +62,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return false;
 		}
 	}
-
+	
 	public boolean checkNull(Integer parameter) {
 
 		if (parameter != null && parameter.SIZE > 0 && (!parameter.toString().isEmpty())) {

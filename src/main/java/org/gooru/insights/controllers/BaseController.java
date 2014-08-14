@@ -9,6 +9,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
@@ -16,86 +18,12 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class BaseController {
 
-	List<Map<String,String>> errorData = new ArrayList<Map<String,String>>();
+	Map<String,String> dataData = new HashMap<String,String>();
 	
-	protected ModelAndView getModel(List<Map<String,Object>> data,List<Map<String,String>> errorData){
-		return  this.resultSet(data,errorData);
+	protected ModelAndView getModel(JSONArray data,Map<String,String> messageData){
+		return  this.resultSet(data,messageData);
 	}
-	protected ModelAndView getModelString(List<Map<String,String>> data,List<Map<String,String>> errorData){
-		return  this.resultSetString(data,errorData);
-	}
-	protected ModelAndView getModel(Map<String,Object> data,List<Map<String,String>> errorData){
-		return  this.resultSet(data,errorData);
-	}
-	protected ModelAndView getModelObject(List<Map<Object,Object>> data,List<Map<String,String>> errorData){
-		return  this.resultListObject(data,errorData);
-	}
-	public ModelAndView resultSetString(List<Map<String,String>> data,List<Map<String,String>> errorData){
-		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
 
-			model.addObject("message", errorData);
-		
-		}
-		clearErrors();
-		return model;
-	}
-	
-	public ModelAndView resultListObject(List<Map<Object,Object>> data,List<Map<String,String>> errorData){
-		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
-
-			model.addObject("message", errorData);
-		
-		}
-		clearErrors();
-		return model;
-	}
-	protected ModelAndView getModel(JSONObject data,List<Map<String,String>> errorData){
-		return  this.resultSet(data,errorData);
-	}
-	
-	public ModelAndView resultSet(List<Map<String,Object>> data,List<Map<String,String>> errorData){
-		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
-
-			model.addObject("message", errorData);
-		
-		}
-		clearErrors();
-		return model;
-	}
-	
-	public ModelAndView resultSet(String data,List<Map<String,String>> errorData){
-		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
-		model.addObject("message", errorData);
-		
-		}
-		clearErrors();
-		return model;
-	}
-	
-	public ModelAndView resultSet(Map<String,Object> data,List<Map<String,String>> errorData){
-		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
-
-			model.addObject("message", errorData);
-		
-		}
-		clearErrors();
-		return model;
-	}
 	
 	
 	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
@@ -115,43 +43,56 @@ public class BaseController {
 		}
 	}
 	
-	public ModelAndView resultSet(JSONObject data,List<Map<String,String>> errorData){
+	public ModelAndView resultSet(List<String> data,Map<String,String> messageData){
 		ModelAndView model = new ModelAndView("content");
-			model.addObject("content", data);
-		addFilterDate(model, errorData);
-		if(errorData != null){
-		model.addObject("message", errorData);
+		model.addObject("content", data);
+		addFilterDate(model, messageData);
+		if(messageData != null){
+		model.addObject("message", messageData);
 		
 		}
-		clearErrors();
+		clearMessage();
 		return model;
 	}
 	
-	public void addFilterDate(ModelAndView model,List<Map<String,String>> errorData){
-		if(errorData != null){
+	public ModelAndView resultSet(JSONArray data,Map<String,String> messageData){
+		ModelAndView model = new ModelAndView("content");
+		try {
+			JSONObject resultMap = new JSONObject();
+				resultMap.put("content",data );
+			addFilterDate(resultMap, messageData);
+			if(messageData != null){
+			resultMap.put("message",messageData );
+			}
+			model.addObject("content", resultMap);
+			clearMessage();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+			return model;
+		}
+	public void addFilterDate(ModelAndView model,Map<String,String> messageData){
+		if(messageData != null){
 	
 			List<Map<String,String>> dateRange = new ArrayList<Map<String,String>>();
 			Map<String,String> filterDate = new HashMap<String,String>();
 			String unixStartDate = null;
 			String unixEndDate = null;
 			String totalRows = null;
-			for(Map<String,String> values : errorData){
-				unixStartDate  = values.get("unixStartDate");
-				unixEndDate = values.get("unixEndDate");
-				totalRows = values.get("totalRows");
+				unixStartDate  = messageData.get("unixStartDate");
+				unixEndDate = messageData.get("unixEndDate");
+				totalRows = messageData.get("totalRows");
 				if(unixStartDate != null){
 					filterDate.put("unixStartDate", unixStartDate);
-					values.remove("unixStartDate");
+					messageData.remove("unixStartDate");
 				}
 				if(unixEndDate != null){
 					filterDate.put("unixEndDate", unixEndDate);
-					values.remove("unixEndDate");
+					messageData.remove("unixEndDate");
 				}
 				if(totalRows != null){
-					values.remove("totalRows");
+					messageData.remove("totalRows");
 				}
-				
-			}
 			dateRange.add(filterDate);
 			
 			model.addObject("dateRange",dateRange);
@@ -166,14 +107,42 @@ public class BaseController {
 	}
 	}
 	
-	public List<Map<String,String>> handleErrors(){
-	return this.errorData;
+	public void addFilterDate(JSONObject data,Map<String,String> messageData) throws JSONException{
+		if(messageData != null){
+			Map<String,String> filterDate = new HashMap<String,String>();
+			String unixStartDate = null;
+			String unixEndDate = null;
+			Long totalRows;
+				unixStartDate  = messageData.get("unixStartDate");
+				unixEndDate = messageData.get("unixEndDate");
+				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows")) : 0L );				
+				if(unixStartDate != null){
+					filterDate.put("unixStartDate", unixStartDate);
+					messageData.remove("unixStartDate");
+				}
+				if(unixEndDate != null){
+					filterDate.put("unixEndDate", unixEndDate);
+					messageData.remove("unixEndDate");
+				}
+				if(totalRows != null){
+					messageData.remove("totalRows");
+				}
+			data.put("dateRange", filterDate);
+			Map<String,Long> paginateData = new HashMap<String, Long>();
+			if(totalRows != null){
+			paginateData.put("totalRows",totalRows);
+					
+			}
+			data.put("paginate", paginateData);
+	}
 	}
 	
-	public void clearErrors(){
-		this.errorData = new ArrayList<Map<String,String>>();
+	public Map<String,String> getMessage(){
+	return this.dataData;
 	}
 	
+	public void clearMessage(){
+		this.dataData = new HashMap<String,String>();
+	}
 	
-
 }

@@ -2,7 +2,8 @@ package org.gooru.insights.models;
 
 public class RequestParamsFiltersDTO {
 
-	
+
+	private RequestParamsFilterDetailDTO requestParamsFilterDetailDTO;
 	private String userUId;
 	
 	private String levelsCodeId;
@@ -43,6 +44,15 @@ public class RequestParamsFiltersDTO {
 	
 	private String quizGooruOId;
 	
+	public RequestParamsFilterDetailDTO getRequestParamsFilterDetailDTO() {
+		return requestParamsFilterDetailDTO;
+	}
+
+	public void setRequestParamsFilterDetailDTO(
+			RequestParamsFilterDetailDTO requestParamsFilterDetailDTO) {
+		this.requestParamsFilterDetailDTO = requestParamsFilterDetailDTO;
+	}
+
 	private String quizContentId;
 	
 	private String quizThumbnail;
