@@ -80,7 +80,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		
 		insightsKeyspace = context.getClient();
 		
-		context = new AstyanaxContext.Builder()
+		AstyanaxContext<Keyspace> context2 = new AstyanaxContext.Builder()
         .forCluster(clusterName)
         .forKeyspace(search)
         .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
@@ -90,7 +90,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
 		
-		searchKeyspace = context.getClient();
+		searchKeyspace = context2.getClient();
 		
 	}
 	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){

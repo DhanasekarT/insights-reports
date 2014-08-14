@@ -11,14 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
 public class ItemServiceImpl implements ItemService {
 
 	@Autowired
 	BaseAPIService baseAPIService;
-	
-	@Autowired
-	ItemService itemService;
 	
 	@Autowired
 	BaseESService esService;
@@ -26,7 +22,7 @@ public class ItemServiceImpl implements ItemService {
 	Map<String,String> indexMap = new HashMap<String,String>();
 
 	ItemServiceImpl(){
-	indexMap.put("rawdata", "event_detail");
+	indexMap.put("rawdata", "event_logger_insights");
 	}
 	
 	public String TestSearch(String data,Map<Integer,String> errorMap){
