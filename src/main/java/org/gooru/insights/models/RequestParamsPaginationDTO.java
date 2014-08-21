@@ -1,8 +1,12 @@
 package org.gooru.insights.models;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class RequestParamsPaginationDTO {
+public class RequestParamsPaginationDTO implements Serializable{
+
+
+	private static final long serialVersionUID = -2840599796987757919L;
 
 	private Integer offset;
 	

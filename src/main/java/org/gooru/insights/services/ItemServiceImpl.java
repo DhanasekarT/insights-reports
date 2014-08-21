@@ -34,24 +34,25 @@ public class ItemServiceImpl implements ItemService {
 	indexMap.put("rawdata", "event_logger_insights");
 	}
 	
-	public JSONArray getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
-		RequestParamsDTO requestParamsDTO;
+	public String getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
+		RequestParamsDTO requestParamsDTO = null;
 		Map<String,String> sort = new HashMap<String, String>();
 		FilterBuilder filterBuilder = null;
 		Integer offset =0;
 		Integer limit =10;
 		String dataKey="_source";
 		try{
+			System.out.println("input json"+data);
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		}catch(Exception e){
 			errorMap.put(500, "Not a Valid JSON ");
 			e.printStackTrace();
 			System.out.println("error");
-			return new JSONArray();
+//			return new JSONArray();
 		}
 		if(!baseAPIService.checkNull(requestParamsDTO.getDataSource())){
 			errorMap.put(400, "should provide the data source to be fetched");
-			return new JSONArray();
+//			return new JSONArray();
 		}
 		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
 			dataKey="fields";
@@ -75,8 +76,11 @@ public class ItemServiceImpl implements ItemService {
 				}
 			}
 			}
+			
 		}
-		return getRecords(esService.searchData(baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort),dataRecord,errorMap,dataKey);
+//		return getRecords(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort),dataRecord,errorMap,dataKey);
+		return esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort);
+		
 	}
 
 	public JSONArray getRecords(String data,Map<String,String> dataRecord,Map<Integer,String> errorRecord,String dataKey){
@@ -101,7 +105,7 @@ public class ItemServiceImpl implements ItemService {
 				 Iterator<String> keys =json.keys();
 				 while(keys.hasNext()){
 					 String key = keys.next();
-					 resultJson.put(key,(baseAPIService.checkNull(json.get(key).toString()) ? json.get(key).toString().substring(2,json.get(key).toString().length()-2) : ""));
+						 resultJson.put(key,new JSONArray(json.get(key).toString()).get(0));
 				 }
 				 resultJsonArray.put(resultJson);
 			}

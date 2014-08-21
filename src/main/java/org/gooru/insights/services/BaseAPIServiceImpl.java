@@ -39,6 +39,17 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		}
 	}
 	
+	public boolean checkNull(Object request){
+		if (request != null) {
+
+			return true;
+
+		} else {
+
+			return false;
+		}
+	}
+	
 	public boolean checkNull(Map<?,?> request) {
 
 		if (request != null && (!request.isEmpty())) {

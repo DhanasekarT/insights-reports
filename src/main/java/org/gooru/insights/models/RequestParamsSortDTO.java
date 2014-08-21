@@ -1,6 +1,11 @@
 package org.gooru.insights.models;
 
-public class RequestParamsSortDTO {
+import java.io.Serializable;
+
+public class RequestParamsSortDTO implements Serializable{
+
+
+	private static final long serialVersionUID = -2840599796987757919L;
 
 	private String sortBy;
 	

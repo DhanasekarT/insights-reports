@@ -1,10 +1,25 @@
 package org.gooru.insights.models;
 
-public class RequestParamsFilterDetailDTO {
+import java.io.Serializable;
+import java.util.List;
+
+public class RequestParamsFilterDetailDTO implements Serializable{
+
+
+	private static final long serialVersionUID = -2840599796987757919L;
 
 	private String logicalOperatorPrefix;
 	
-	private RequestParamsFilterFieldsDTO requestParamsFilterFieldsDTO;
+	private List<RequestParamsFilterFieldsDTO> fields;
+
+	public List<RequestParamsFilterFieldsDTO> getFields() {
+		return fields;
+	}
+
+	public void setFields(
+			List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTO) {
+		this.fields = requestParamsFilterFieldsDTO;
+	}
 
 	public String getLogicalOperatorPrefix() {
 		return logicalOperatorPrefix;
@@ -12,15 +27,5 @@ public class RequestParamsFilterDetailDTO {
 
 	public void setLogicalOperatorPrefix(String logicalOperatorPrefix) {
 		this.logicalOperatorPrefix = logicalOperatorPrefix;
-	}
-
-
-	public RequestParamsFilterFieldsDTO getRequestParamsFilterFieldsDTO() {
-		return requestParamsFilterFieldsDTO;
-	}
-
-	public void setRequestParamsFilterFieldsDTO(
-			RequestParamsFilterFieldsDTO requestParamsFilterFieldsDTO) {
-		this.requestParamsFilterFieldsDTO = requestParamsFilterFieldsDTO;
 	}
 }

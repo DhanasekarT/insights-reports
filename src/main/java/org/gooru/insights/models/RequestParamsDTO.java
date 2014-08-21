@@ -1,6 +1,8 @@
 package org.gooru.insights.models;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 
@@ -18,11 +20,13 @@ public class RequestParamsDTO implements Serializable {
 	
 	RequestParamsFiltersDTO filters;
 	
-	private JSONArray aggregations;
+	private List<Map<String,String>> aggregations;
 	
 	private String intervals;
 	
 	private String groupBy;
+
+	private List<RequestParamsFilterDetailDTO> filter;
 
 	public String getFields() {
 		return fields;
@@ -72,20 +76,28 @@ public class RequestParamsDTO implements Serializable {
 		this.dataSource = dataSource;
 	}
 
-	public JSONArray getAggregations() {
-		return aggregations;
-	}
-
-	public void setAggregations(JSONArray aggregations) {
-		this.aggregations = aggregations;
-	}
-
 	public String getIntervals() {
 		return intervals;
 	}
 
 	public void setIntervals(String intervals) {
 		this.intervals = intervals;
+	}
+
+	public List<RequestParamsFilterDetailDTO> getFilter() {
+		return filter;
+	}
+
+	public void setFilter(List<RequestParamsFilterDetailDTO> filter) {
+		this.filter = filter;
+	}
+
+	public List<Map<String, String>> getAggregations() {
+		return aggregations;
+	}
+
+	public void setAggregations(List<Map<String, String>> aggregations) {
+		this.aggregations = aggregations;
 	}
 	
 	

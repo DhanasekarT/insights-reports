@@ -8,5 +8,5 @@ import org.gooru.insights.models.RequestParamsDTO;
 
 public interface BaseESService {
 
-	String searchData(String[] indices,String[] types,String field,QueryBuilder query,FilterBuilder filters,Integer offset,Integer limit,Map<String,String> sort);
+	String searchData(RequestParamsDTO requestParamsDTO,String[] indices,String[] types,String field,QueryBuilder query,FilterBuilder filters,Integer offset,Integer limit,Map<String,String> sort);
 }
