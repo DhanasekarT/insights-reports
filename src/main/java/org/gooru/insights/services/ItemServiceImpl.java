@@ -57,10 +57,7 @@ public class ItemServiceImpl implements ItemService {
 		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
 			dataKey="fields";
 		}
-		if(requestParamsDTO.getFilters() != null){
-        filterBuilder = FilterBuilders.termsFilter("eventName", requestParamsDTO.getFilters().getEventName());
-		}
-		System.out.println("validate");
+		System.out.println("validate"+requestParamsDTO.getPagination());
 		if(requestParamsDTO.getPagination() != null){
 			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOffset())){
 			offset = requestParamsDTO.getPagination().getOffset();
@@ -68,10 +65,13 @@ public class ItemServiceImpl implements ItemService {
 			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getLimit())){
 			limit = requestParamsDTO.getPagination().getLimit();
 			}
+			System.out.println("pagination");
 			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder())){
 			List<RequestParamsSortDTO> requestParamsSortDTO = requestParamsDTO.getPagination().getOrder();
+			System.out.println("perform sort");
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
 				if(baseAPIService.checkNull(sortData.getSortBy())){
+					System.out.println("has sort");
 					sort.put(sortData.getSortBy(), baseAPIService.checkNull(sortData.getSortOrder()) ? checkSort(sortData.getSortOrder()) : "ASC");
 				}
 			}

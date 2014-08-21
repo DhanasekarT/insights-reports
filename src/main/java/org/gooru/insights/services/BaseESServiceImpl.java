@@ -91,7 +91,9 @@ public class BaseESServiceImpl implements BaseESService{
 		if(!baseAPIService.checkNull(requestParamsDTO.getGroupBy())){
 		addFilters(requestParamsDTO.getFilter(), searchRequestBuilder);
 		}
+		System.out.println("sort : key"+sort);
 		if(baseAPIService.checkNull(sort)){
+			System.out.println("sort:");
 			for(Map.Entry<String, String> map : sort.entrySet()){
 			searchRequestBuilder.addSort(map.getKey(), (map.getValue().equalsIgnoreCase("ASC") ? SortOrder.ASC : SortOrder.DESC));
 			}
@@ -150,6 +152,7 @@ public class BaseESServiceImpl implements BaseESService{
 										continue;
 									}
 									subTermBuilder.subAggregation(AggregationBuilders.sum(jsonObject.get(aggregateName).toString()).field(jsonObject.get(aggregateName).toString()));
+									addFilters(requestParamsDTO.getFilter(),subTermBuilder);
 								}
 								
 							}
@@ -163,7 +166,6 @@ public class BaseESServiceImpl implements BaseESService{
 				includedAggregate = true;
 			}
 			termBuilder.subAggregation(aggregateBuilder);
-			addFilters(requestParamsDTO.getFilter(),termBuilder);
 			searchRequestBuilder.addAggregation(termBuilder);
 			} catch (JSONException e) {
 				e.printStackTrace();
