@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ESConstants.esIndices;
 import org.gooru.insights.constants.ESConstants.esTypes;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class ItemServiceImpl implements ItemService {
+public class ItemServiceImpl implements ItemService,APIConstants {
 
 	@Autowired
 	BaseAPIService baseAPIService;
@@ -31,10 +32,10 @@ public class ItemServiceImpl implements ItemService {
 	Map<String,String> indexMap = new HashMap<String,String>();
 
 	ItemServiceImpl(){
-	indexMap.put("rawdata", "event_logger_insights");
+	indexMap.put("rawdata", "event_logger");
 	}
 	
-	public String getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
+	public JSONArray getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
 		RequestParamsDTO requestParamsDTO = null;
 		Map<String,String> sort = new HashMap<String, String>();
 		FilterBuilder filterBuilder = null;
@@ -42,44 +43,44 @@ public class ItemServiceImpl implements ItemService {
 		Integer limit =10;
 		String dataKey="_source";
 		try{
-			System.out.println("input json"+data);
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		}catch(Exception e){
-			errorMap.put(500, "Not a Valid JSON ");
 			e.printStackTrace();
-			System.out.println("error");
-//			return new JSONArray();
+			return new JSONArray();
 		}
-		if(!baseAPIService.checkNull(requestParamsDTO.getDataSource())){
+		Map<String,Boolean> validatedData = validateData(requestParamsDTO);
+		if(!validatedData.get(hasdata.HAS_DATASOURCE.check())){
 			errorMap.put(400, "should provide the data source to be fetched");
-//			return new JSONArray();
+			return new JSONArray();
 		}
-		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
+		if(validatedData.get(hasdata.HAS_FEILDS.check())){
 			dataKey="fields";
 		}
-		System.out.println("validate"+requestParamsDTO.getPagination());
-		if(requestParamsDTO.getPagination() != null){
-			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOffset())){
+			if(validatedData.get(hasdata.HAS_Offset.check())){
 			offset = requestParamsDTO.getPagination().getOffset();
 			}
-			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getLimit())){
+			if(validatedData.get(hasdata.HAS_LIMIT.check())){
 			limit = requestParamsDTO.getPagination().getLimit();
 			}
-			System.out.println("pagination");
-			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder())){
+			if(validatedData.get(hasdata.HAS_SORTBY.check())){
 			List<RequestParamsSortDTO> requestParamsSortDTO = requestParamsDTO.getPagination().getOrder();
-			System.out.println("perform sort");
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
-				if(baseAPIService.checkNull(sortData.getSortBy())){
-					System.out.println("has sort");
+				if(validatedData.get(hasdata.HAS_SORTBY.check())){
 					sort.put(sortData.getSortBy(), baseAPIService.checkNull(sortData.getSortOrder()) ? checkSort(sortData.getSortOrder()) : "ASC");
 				}
 			}
 			}
-			
-		}
-//		return getRecords(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort),dataRecord,errorMap,dataKey);
-		return esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort);
+			System.out.println("has aggregate ");
+			if(validatedData.get(hasdata.HAS_AGGREGATE.check())){
+				try {
+					System.out.println("do aggregate ");
+				JSONArray jsonArray = new JSONArray(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
+				return jsonArray;
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+		return getRecords(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData),dataRecord,errorMap,dataKey);
 		
 	}
 
@@ -105,7 +106,12 @@ public class ItemServiceImpl implements ItemService {
 				 Iterator<String> keys =json.keys();
 				 while(keys.hasNext()){
 					 String key = keys.next();
-						 resultJson.put(key,new JSONArray(json.get(key).toString()).get(0));
+					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
+					if(fieldJsonArray.length() == 1){	 
+					 resultJson.put(key,fieldJsonArray.get(0));
+					}else{
+						resultJson.put(key,fieldJsonArray);
+					}
 				 }
 				 resultJsonArray.put(resultJson);
 			}
@@ -127,6 +133,56 @@ public class ItemServiceImpl implements ItemService {
 		}
 	}
 	
+	public Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO){
+		Map<String,Boolean> processedData = new HashMap<String,Boolean>();
+		processedData.put("hasFields", false);
+		processedData.put("hasDataSource",false);
+		processedData.put("hasGroupBy",false);
+		processedData.put("hasIntervals",false);
+		processedData.put("hasFilter",false);
+		processedData.put("hasAggregate",false);
+		processedData.put("hasLimit",false);
+		processedData.put("hasOffset",false);
+		processedData.put("hasSortBy",false);
+		processedData.put("hasSortOrder",false);
+		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
+			processedData.put("hasFields", true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getDataSource())){
+			System.out.println("has dataSource"+requestParamsDTO.getDataSource());
+			processedData.put("hasDataSource",true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getGroupBy())){
+			processedData.put("hasGroupBy",true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getIntervals())){
+			processedData.put("hasIntervals",true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getFilter()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0)) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getFields()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))){
+			processedData.put("hasFilter",true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")){
+			processedData.put("hasAggregate",true);	
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getPagination())){
+			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getLimit())){
+				processedData.put("hasLimit",true);
+			}
+			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOffset())){
+				processedData.put("hasOffset",true);
+			}
+			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder())){
+				if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder().get(0)))
+					if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortBy())){
+						processedData.put("hasSortBy",true);
+					}
+					if(baseAPIService.checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortOrder())){
+					processedData.put("hasSortOrder",true);
+					}
+			}
+		}
+		return processedData;
+	}
 	public String getClasspageCollectionDetail(String data) {
 		return null;
 	}

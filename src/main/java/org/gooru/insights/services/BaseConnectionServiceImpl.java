@@ -116,7 +116,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 //		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
 //		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
 //		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
-	String indexName ="event_logger_insights";
+	String indexName ="event_logger";
 	String clusterName="";
 	String hostName="162.243.130.94";
 	String portNo="9300";
