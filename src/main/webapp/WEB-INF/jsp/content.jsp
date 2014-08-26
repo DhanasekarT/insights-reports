@@ -8,6 +8,6 @@
 %><%=callback%>(
 <%= request.getAttribute ("content").toString()  %>
 );<% } else {
-response.getWriter().write(request.getAttribute ("content").toString());
+response.getWriter().write(request.getAttribute("content").toString());
 %>
 <% } %>
