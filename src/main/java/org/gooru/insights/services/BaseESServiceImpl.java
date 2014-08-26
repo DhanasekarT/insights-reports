@@ -117,11 +117,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 			List<Map<String,Object>> dataMap = formDataList(processJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
-			List<Map<String,Object>> subresultList = getSource(result);
-//			List<Map<String,Object>> subresultList = subSearch(indices, fields, filtersMap);
-//			System.out.println(" sub-result List "+subresultList);
+//			List<Map<String,Object>> subresultList = getSource(result);
+			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,indices, fields, filtersMap);
+			System.out.println(" sub-result List "+subresultList);
 			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
 		}
+		
 		return result;
 
 	}
@@ -257,17 +258,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 									.toJson(requestParamsDTO.getAggregations());
 							JSONArray jsonArray = new JSONArray(
 									requestJsonArray);
-							for (int i = 0; i < jsonArray.length(); i++) {
-								JSONObject jsonObject;
-								jsonObject = new JSONObject(jsonArray.get(i)
-										.toString());
-								if (!jsonObject.has("formula")
-										&& !jsonObject.has("requestValues")) {
-									continue;
-								}
-								includeAggregation(requestParamsDTO, jsonObject, singleAggregate, termBuilder, subTermBuilder, metricsName);
+							FilterAggregationBuilder mainFilter = addFilters(requestParamsDTO
+									.getFilter());
+							
+								includeAggregation(requestParamsDTO, jsonArray, singleAggregate, termBuilder, subTermBuilder, metricsName,mainFilter);
 							termBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(false));
-							}
 						}
 						firstEntry = true;
 					}
@@ -293,8 +288,16 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 		return false;
 	}
 
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,JSONObject jsonObject,boolean singleAggregate,TermsBuilder termBuilder,TermsBuilder subTermBuilder,Map<String,String> metricsName){
+	public void includeAggregation(RequestParamsDTO requestParamsDTO,JSONArray jsonArray,boolean singleAggregate,TermsBuilder termBuilder,TermsBuilder subTermBuilder,Map<String,String> metricsName,FilterAggregationBuilder mainFilter){
 		try {
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject jsonObject;
+				jsonObject = new JSONObject(jsonArray.get(i)
+						.toString());
+				if (!jsonObject.has("formula")
+						&& !jsonObject.has("requestValues")) {
+					continue;
+				}
 				if (baseAPIService.checkNull(jsonObject
 						.get("formula"))) {
 						String requestValues = jsonObject
@@ -306,8 +309,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 									.has(aggregateName)) {
 								continue;
 							}
-							FilterAggregationBuilder mainFilter = addFilters(requestParamsDTO
-									.getFilter());
 							if (singleAggregate) {
 								performAggregation(mainFilter, termBuilder, jsonObject, jsonObject.get("formula")
 										.toString(), aggregateName);
@@ -321,6 +322,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 
 					}
 				}
+			}
+						if(singleAggregate){
+							termBuilder.subAggregation(mainFilter);
+						}else{
+							subTermBuilder.subAggregation(mainFilter);
+						}
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -337,7 +344,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 					.field(jsonObject
 							.get(aggregateName)
 							.toString()));
-			termBuilder.subAggregation(mainFilter);
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				mainFilter
 				.subAggregation(AggregationBuilders.avg(jsonObject
@@ -345,7 +351,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 								.toString()).field(jsonObject
 								.get(aggregateName)
 								.toString()));
-				termBuilder.subAggregation(mainFilter);
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				mainFilter
 				.subAggregation(AggregationBuilders.max(jsonObject
@@ -353,7 +358,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 								.toString()).field(jsonObject
 								.get(aggregateName)
 								.toString()));
-				termBuilder.subAggregation(mainFilter);
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
 				.subAggregation(AggregationBuilders.min(jsonObject
@@ -361,7 +365,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 								.toString()).field(jsonObject
 								.get(aggregateName)
 								.toString()));
-				termBuilder.subAggregation(mainFilter);
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
 				.subAggregation(AggregationBuilders.dateHistogram(jsonObject
@@ -369,7 +372,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 								.toString()).field(jsonObject
 								.get(aggregateName)
 								.toString()));
-				termBuilder.subAggregation(mainFilter);
+			}else if("COUNT".equalsIgnoreCase(aggregateType)){
+				mainFilter
+				.subAggregation(AggregationBuilders.count(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -827,6 +836,103 @@ public class BaseESServiceImpl implements BaseESService,APIConstants {
 		}
 	}
 
+	//search Filter
+		public void addFilters(
+				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO,
+				SearchRequestBuilder searchRequestBuilder,BoolFilterBuilder boolFilter) {
+			BoolFilterBuilder mainBool = FilterBuilders.boolFilter();
+			if (requestParamsFiltersDetailDTO != null) {
+				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
+					if (fieldData != null) {
+						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
+								.getFields();
+						for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+							if (fieldsDetails.getType()
+									.equalsIgnoreCase("selector")) {
+								if (fieldsDetails.getOperator().equalsIgnoreCase(
+										"rg")) {
+									boolFilter.must(FilterBuilders
+											.rangeFilter(
+													fieldsDetails.getFieldName())
+											.from(checkDataType(
+													fieldsDetails.getFrom(),
+													fieldsDetails.getValueType()))
+											.to(checkDataType(
+													fieldsDetails.getTo(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("nrg")) {
+									boolFilter.must(FilterBuilders
+											.rangeFilter(
+													fieldsDetails.getFieldName())
+											.from(checkDataType(
+													fieldsDetails.getFrom(),
+													fieldsDetails.getValueType()))
+											.to(checkDataType(
+													fieldsDetails.getTo(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("eq")) {
+									boolFilter.must(FilterBuilders.termFilter(
+											fieldsDetails.getFieldName(),
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("lk")) {
+									boolFilter.must(FilterBuilders.prefixFilter(
+											fieldsDetails.getFieldName(),
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())
+													.toString()));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("ex")) {
+									boolFilter.must(FilterBuilders
+											.existsFilter(checkDataType(
+													fieldsDetails.getValue(),
+													fieldsDetails.getValueType())
+													.toString()));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("le")) {
+									boolFilter.must(FilterBuilders.rangeFilter(
+											fieldsDetails.getFieldName()).lte(
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("ge")) {
+									boolFilter.must(FilterBuilders.rangeFilter(
+											fieldsDetails.getFieldName()).gte(
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("lt")) {
+									boolFilter.must(FilterBuilders.rangeFilter(
+											fieldsDetails.getFieldName()).lt(
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())));
+								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("gt")) {
+									boolFilter.must(FilterBuilders.rangeFilter(
+											fieldsDetails.getFieldName()).gt(
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())));
+								}
+							} 
+							}
+						if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+								"AND")) {
+							mainBool.must(FilterBuilders.andFilter(boolFilter));
+						} else if (fieldData.getLogicalOperatorPrefix()
+								.equalsIgnoreCase("OR")) {
+							mainBool.must(FilterBuilders.orFilter(boolFilter));
+						} else if (fieldData.getLogicalOperatorPrefix()
+								.equalsIgnoreCase("NOT")) {
+							mainBool.must(FilterBuilders.notFilter(boolFilter));
+						}
+					}
+				}
+			}
+			boolFilter = mainBool;
+		}
 	public Object checkDataType(String value, String valueType) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 		
@@ -987,7 +1093,7 @@ System.out.println("entered pagination");
 		return dataMap;
 	}
 	
-	public List<Map<String,Object>> subSearch(String[] indices,String fields,Map<String,Set<Object>> filtersData){
+	public List<Map<String,Object>> subSearch(RequestParamsDTO requestParamsDTOs,String[] indices,String fields,Map<String,Set<Object>> filtersData){
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 		
@@ -1001,7 +1107,7 @@ System.out.println("entered pagination");
 		for(Map.Entry<String,Set<Object>> entry : filtersData.entrySet()){
 			boolFilter.must(FilterBuilders.inFilter(entry.getKey(),entry.getValue()));
 		}
-		
+		addFilters(requestParamsDTOs.getFilter(),searchRequestBuilder,boolFilter);
 		searchRequestBuilder.setPostFilter(boolFilter);
 	System.out.println(" sub query \n"+searchRequestBuilder);
 	
