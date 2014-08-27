@@ -43,14 +43,13 @@ public class ItemController extends BaseController{
 	@RequestMapping(value="/search",method ={RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
-//		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
-//		System.out.println("jsonArray"+jsonArray);
-//		sendError(errorMap, response);
-//		return getModel(jsonArray, getMessage());
-		ModelAndView model = new ModelAndView();
-		model.setViewName("content");
-		model.addObject("content",itemService.getEventDetail(data,getMessage(),errorMap));
-	return model;
+		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
+		sendError(errorMap, response);
+		return getModel(jsonArray, getMessage());
+//		ModelAndView model = new ModelAndView();
+//		model.setViewName("content");
+//		model.addObject("content",itemService.getEventDetail(data,getMessage(),errorMap));
+//	return model;
 	}
 	
 	public void sendError(Map<Integer,String> errorMap,HttpServletResponse response) throws IOException{
