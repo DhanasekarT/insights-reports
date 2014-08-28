@@ -56,6 +56,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		if(validatedData.get(hasdata.HAS_FEILDS.check())){
 			dataKey="fields";
 		}
+		
 			if(validatedData.get(hasdata.HAS_Offset.check())){
 			offset = requestParamsDTO.getPagination().getOffset();
 			}
@@ -70,8 +71,15 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 				}
 			}
 			}
+			if(validatedData.get(hasdata.HAS_GRANULARITY.check())){
+				try {
+					return new JSONArray(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
 			System.out.println("has aggregate ");
-			if(validatedData.get(hasdata.HAS_AGGREGATE.check())){
+			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_AGGREGATE.check())){
 				try {
 					System.out.println("do aggregate ");
 				JSONArray jsonArray = new JSONArray(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
@@ -145,6 +153,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		processedData.put("hasOffset",false);
 		processedData.put("hasSortBy",false);
 		processedData.put("hasSortOrder",false);
+		processedData.put("hasGranularity",false);
 		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
 			processedData.put("hasFields", true);
 		}
@@ -157,6 +166,9 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		}
 		if(baseAPIService.checkNull(requestParamsDTO.getIntervals())){
 			processedData.put("hasIntervals",true);
+		}
+		if(baseAPIService.checkNull(requestParamsDTO.getGranularity())){
+			processedData.put("hasGranularity",true);
 		}
 		if(baseAPIService.checkNull(requestParamsDTO.getFilter()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0)) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getFields()) && baseAPIService.checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))){
 			processedData.put("hasFilter",true);

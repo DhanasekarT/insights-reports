@@ -134,10 +134,17 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		return data.split(",");
 	}
 	
-	public String[] convertSettoArray(Set<String> data){
-		return data.toArray(new String[data.size()]);
+	public Object[] convertSettoArray(Set<Object> data){
+		return data.toArray(new Object[data.size()]);
 	}
 	
+	public JSONArray convertListtoJsonArray(List<Map<String,Object>> result){
+		JSONArray jsonArray = new JSONArray();
+		for(Map<String,Object> entry : result){
+			jsonArray.put(entry);	
+		}
+		return jsonArray;
+	}
 	public JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey) {
 		JSONArray jsonArray = new JSONArray();
 		if (!child.isEmpty() && !parent.isEmpty()) {

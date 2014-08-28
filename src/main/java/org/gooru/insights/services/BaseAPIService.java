@@ -25,7 +25,7 @@ public interface BaseAPIService {
 	
 	boolean checkNull(Integer parameter);
 	
-	String[] convertSettoArray(Set<String> data);
+	Object[] convertSettoArray(Set<Object> set);
 	
 	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey);
 	
@@ -34,4 +34,6 @@ public interface BaseAPIService {
 	List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
 	
 	List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder);
+	
+	JSONArray convertListtoJsonArray(List<Map<String,Object>> result);
 }

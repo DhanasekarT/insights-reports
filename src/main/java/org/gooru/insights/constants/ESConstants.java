@@ -19,6 +19,8 @@ public interface ESConstants {
 		}
 	}
 	
+	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog"};
+	
 	public enum esIndices{
 		RAW_DATA("rawdata");
 		

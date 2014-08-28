@@ -16,6 +16,8 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String dataSource;
 	
+	private String granularity;
+	
 	RequestParamsPaginationDTO pagination;
 	
 	RequestParamsFiltersDTO filters;
@@ -98,6 +100,14 @@ public class RequestParamsDTO implements Serializable {
 
 	public void setAggregations(List<Map<String, String>> aggregations) {
 		this.aggregations = aggregations;
+	}
+
+	public String getGranularity() {
+		return granularity;
+	}
+
+	public void setGranularity(String granularity) {
+		this.granularity = granularity;
 	}
 	
 	
