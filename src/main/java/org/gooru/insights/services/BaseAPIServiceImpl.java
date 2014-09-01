@@ -337,9 +337,12 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			}
 		}
 		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
-		Map<String,String> Treedata = new TreeMap<String, String>(resultMap);
-		System.out.println("tree data "+resultMap);
-		jsonArray.put(Treedata);
+		Map<String,Object> Treedata = new TreeMap<String, Object>(resultMap);
+		for(Map.Entry<String, Object> entry : Treedata.entrySet()){
+			JSONObject resultJson = new JSONObject();
+			resultJson.put(entry.getKey(), entry.getValue());
+			jsonArray.put(resultJson);
+		}
 		return jsonArray;
 	}
 	
