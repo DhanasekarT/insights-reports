@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -362,16 +363,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				}
 				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
 					if(termBuilder == null){
-						System.out.println("term builder is null ");
 						termBuilder = termsBuilders.get(i);
 						if(!singleAggregate){
-							System.out.println("wow sin ");
 							includeAggregation(requestParamsDTO, jsonArray, !singleAggregate, null, null, metricsName,mainFilter);
 							termBuilder.subAggregation(mainFilter);
 						}
 					}else{
 						TermsBuilder tempBuilder = null;
 						tempBuilder = termsBuilders.get(i);
+						tempBuilder.size(100);
 						tempBuilder.subAggregation(termBuilder);
 						termBuilder = tempBuilder;
 					}
@@ -385,11 +385,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					if(singleAggregate){
 						
 						histogramBuilder.subAggregation(mainFilter);
-						searchRequestBuilder.addAggregation(histogramBuilder);
 					}else{
 						histogramBuilder.subAggregation(termBuilder);
-						searchRequestBuilder.addAggregation(histogramBuilder);
 					}
+					histogramBuilder.minDocCount(1000);
+					histogramBuilder.order(org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order.KEY_ASC);
+					searchRequestBuilder.addAggregation(histogramBuilder);
 				}
 				System.out.println("search request "+searchRequestBuilder);
 			} catch (JSONException e) {
@@ -504,7 +505,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 	
 	public DateHistogramBuilder dateHistogram(String granularity,String field){
-			String format ="yyyy-mm-dd hh:kk:ss";
+			String format ="yyyy-MM-dd hh:kk:ss";
 			if(baseAPIService.checkNull(granularity)){
 				org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram.Interval interval = DateHistogram.Interval.DAY;
 				if(granularity.equalsIgnoreCase("year")){
@@ -512,39 +513,39 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					format ="yyyy";
 				}else if(granularity.equalsIgnoreCase("day")){
 					interval = DateHistogram.Interval.DAY;
-					format ="yyyy-mm-dd";
+					format ="yyyy-MM-dd";
 				}else if(granularity.equalsIgnoreCase("month")){
 					interval = DateHistogram.Interval.MONTH;
-					format ="yyyy-mm";
+					format ="yyyy-MM";
 				}else if(granularity.equalsIgnoreCase("hour")){
 					interval = DateHistogram.Interval.HOUR;
-					format ="yyyy-mm-dd hh";
+					format ="yyyy-MM-dd hh";
 				}else if(granularity.equalsIgnoreCase("minute")){
 					interval = DateHistogram.Interval.MINUTE;
-					format ="yyyy-mm-dd hh:kk";
+					format ="yyyy-MM-dd hh:kk";
 				}else if(granularity.equalsIgnoreCase("second")){
 					interval = DateHistogram.Interval.SECOND;
 				}else if(granularity.equalsIgnoreCase("quarter")){
 					interval = DateHistogram.Interval.QUARTER;
-					format ="yyyy-mm-dd";
+					format ="yyyy-MM-dd";
 				}else if(granularity.equalsIgnoreCase("week")){
-					format ="yyyy-mm-dd";
+					format ="yyyy-MM-dd";
 					interval = DateHistogram.Interval.WEEK;
 				}else if(granularity.endsWith("d")){
 					int days = new Integer(granularity.replace("d",""));
-					format ="yyyy-mm-dd";
+					format ="yyyy-MM-dd";
 					interval = DateHistogram.Interval.days(days);
 				}else if(granularity.endsWith("w")){
 					int weeks = new Integer(granularity.replace("w",""));
-					format ="yyyy-mm-dd";
+					format ="yyyy-MM-dd";
 					interval = DateHistogram.Interval.weeks(weeks);
 				}else if(granularity.endsWith("h")){
 					int hours = new Integer(granularity.replace("h",""));
-					format ="yyyy-mm-dd hh";
+					format ="yyyy-MM-dd hh";
 					interval = DateHistogram.Interval.hours(hours);
 				}else if(granularity.endsWith("k")){
 					int minutes = new Integer(granularity.replace("k",""));
-					format ="yyyy-mm-dd hh:kk";
+					format ="yyyy-MM-dd hh:kk";
 					interval = DateHistogram.Interval.minutes(minutes);
 				}else if(granularity.endsWith("s")){
 					int seconds = new Integer(granularity.replace("s",""));
@@ -1186,7 +1187,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	//just pass the result of filterAggregator
 	public Map<Integer,Map<String,Object>> processFilterAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
 
-		Map<Integer,Map<String,Object>> dataMap = new HashMap<Integer,Map<String,Object>>();
+		Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
 		try {
 			int counter=0;
 			String[] fields = groupBy.split(",");
@@ -1206,14 +1207,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					JSONObject metricsJson = new JSONObject(newJson.get("filters").toString());
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(metricsJson.has(entry.getValue())){
-						Map<String,Object> resultMap = new HashMap<String,Object>();
+						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[counter], newJson.get("key"));
 							boolean processed = false;
 							if(baseAPIService.checkNull(dataMap)){
 								if(dataMap.containsKey(i)){
 									processed = true;
-									Map<String,Object> tempMap = new HashMap<String,Object>();
+									Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
 									tempMap = dataMap.get(i);
 									resultMap.putAll(tempMap);
 									dataMap.put(i, resultMap);
@@ -1233,7 +1234,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					for(int j=0;j<tempArray.length();j++){
 						subJsonArray.put(tempArray.get(j));
 					}
-					Map<String,Object> tempMap = new HashMap<String,Object>();
+					Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
 					if(baseAPIService.checkNull(dataMap)){
 						if(dataMap.containsKey(i)){
 							tempMap = dataMap.get(i);

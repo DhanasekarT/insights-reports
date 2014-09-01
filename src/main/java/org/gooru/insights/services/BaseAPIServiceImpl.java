@@ -1,6 +1,7 @@
 package org.gooru.insights.services;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,10 +10,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -22,6 +25,9 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import flexjson.JSONDeserializer;
 import flexjson.JSONException;
@@ -321,17 +327,19 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 	
 		JSONArray jsonArray = new JSONArray();
 		JSONObject json = new JSONObject();
+		Map<String,String> resultMap = new HashMap<String, String>();
+		Gson gson = new Gson();
 		for(Map<String,Object> map : dataMap){
 			if(map.containsKey(key)){
-				if(json.has(map.get(key).toString())){
-					json.accumulate(map.get(key).toString(), map);
-				}else{
-					json.put(map.get(key).toString(), map);
-					
-				}
+				String jsonKey = map.get(key).toString();
+				map.remove(key);
+					json.accumulate(jsonKey, map);
 			}
 		}
-		jsonArray.put(json);
+		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
+		Map<String,String> Treedata = new TreeMap<String, String>(resultMap);
+		System.out.println("tree data "+resultMap);
+		jsonArray.put(Treedata);
 		return jsonArray;
 	}
 	
@@ -342,4 +350,5 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		Date date = new Date(Long.valueOf(milliseconds.toString()));
 		return ISO_8601_DATE_TIME.format(date);
 	}
+	
 }
