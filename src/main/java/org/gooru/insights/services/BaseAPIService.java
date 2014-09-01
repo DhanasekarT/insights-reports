@@ -36,4 +36,6 @@ public interface BaseAPIService {
 	List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder);
 	
 	JSONArray convertListtoJsonArray(List<Map<String,Object>> result);
+	
+	JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException;
 }

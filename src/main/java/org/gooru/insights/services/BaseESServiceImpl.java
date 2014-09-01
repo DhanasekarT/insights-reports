@@ -149,7 +149,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 			List<Map<String,Object>> dataMap = processGFAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
-
+			try {
+				return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			//enable below three lines if you have to do multiget
 			//			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,ALL_INDICES, fields,new HashMap<String,Set<Object>>());
 //			System.out.println(" sub-result List "+subresultList);
@@ -481,6 +485,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				mainFilter
 				.subAggregation(AggregationBuilders.count(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
+				mainFilter
+				.subAggregation(AggregationBuilders.cardinality(jsonObject
 								.get(aggregateName)
 								.toString()).field(jsonObject
 								.get(aggregateName)
@@ -1276,7 +1287,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[1], subKey);
 							resultMap.put(fields[0], key);
-							resultMap.put("granularity", granularity);
+							resultMap.put("date", granularity);
 							resultList.add(resultMap);
 						}
 					}
@@ -1294,7 +1305,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						Map<String,Object> resultMap = new HashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[0], key);
-							resultMap.put("granularity", granularity);
+							resultMap.put("date", granularity);
 							resultList.add(resultMap);
 						}
 					}

@@ -313,4 +313,23 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		return requestData;
 	}
 	
+	public JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
+	
+		JSONArray jsonArray = new JSONArray();
+		JSONObject json = new JSONObject();
+		for(Map<String,Object> map : dataMap){
+			if(map.containsKey(key)){
+				if(json.has(map.get(key).toString())){
+					json.accumulate(map.get(key).toString(), map);
+				}else{
+					json.put(map.get(key).toString(), map);
+					
+				}
+			}
+		}
+		jsonArray.put(json);
+		return jsonArray;
+	}
+	
+	
 }
