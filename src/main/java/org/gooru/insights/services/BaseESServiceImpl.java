@@ -1286,7 +1286,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						Map<String,Object> resultMap = new HashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[1], subKey);
-							resultMap.put(fields[0], key);
+							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
 							resultMap.put("date", granularity);
 							resultList.add(resultMap);
 						}
@@ -1304,7 +1304,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						if(newJson.has(entry.getValue())){
 						Map<String,Object> resultMap = new HashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
-							resultMap.put(fields[0], key);
+							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
 							resultMap.put("date", granularity);
 							resultList.add(resultMap);
 						}

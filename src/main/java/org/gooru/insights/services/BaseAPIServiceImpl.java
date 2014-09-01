@@ -1,14 +1,18 @@
 package org.gooru.insights.services;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -331,5 +335,11 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		return jsonArray;
 	}
 	
-	
+	public String convertTimeMstoISO(Object milliseconds){
+		
+		DateFormat ISO_8601_DATE_TIME = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");
+		ISO_8601_DATE_TIME.setTimeZone(TimeZone.getTimeZone("UTC"));
+		Date date = new Date(Long.valueOf(milliseconds.toString()));
+		return ISO_8601_DATE_TIME.format(date);
+	}
 }

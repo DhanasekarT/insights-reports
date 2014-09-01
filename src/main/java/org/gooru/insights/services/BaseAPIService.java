@@ -38,4 +38,6 @@ public interface BaseAPIService {
 	JSONArray convertListtoJsonArray(List<Map<String,Object>> result);
 	
 	JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException;
+
+	String convertTimeMstoISO(Object milliseconds);
 }
