@@ -100,10 +100,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Integer limit, Map<String, String> sort,Map<String,Boolean> validatedData) {
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
-		System.out.println("entered search");
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean filterAggregate = false;
+		boolean aggregate = false;
 		boolean granularityFilter = false;
+		boolean granularity = false;
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
 			for (String field : fields.split(",")) {
 				searchRequestBuilder.addField(field);
@@ -119,11 +120,20 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			granularityFilter = true;
 		}
 		
+		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
+			granularityAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
+			granularity = true;
+		}
+		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_FILTER.check())) {
 			filterAggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			filterAggregate = true;
 		}
 		
+		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
+			aggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			aggregate = true;
+		}
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
 			aggregateFunction(requestParamsDTO, searchRequestBuilder);
 		}
@@ -138,30 +148,48 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(filterAggregate){
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
-			List<Map<String,Object>> dataMap = formDataList(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
+//			List<Map<String,Object>> dataMap = formDataList(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
 
 			//inorder to get source from the return call
 			//			List<Map<String,Object>> subresultList = getSource(result);
-			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,indices, fields, filtersMap);
-			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
+//			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,indices, fields, filtersMap);
+//			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
+		return formDataJSONArray(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList)).toString();
 		}
 		
 		if(granularityFilter){
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
-			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 			List<Map<String,Object>> dataMap = processGFAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
 			try {
 				return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
+			
+			return baseAPIService.convertListtoJsonArray(dataMap).toString();
+		}
+			if(granularity){
+				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
+				List<Map<String,Object>> dataMap = processGAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
+				try {
+					return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			if(aggregate){
+				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
+				List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+//				result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
+			return formDataJSONArray(processAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList)).toString();
+			
+			}
+			
 			//enable below three lines if you have to do multiget
 			//			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,ALL_INDICES, fields,new HashMap<String,Set<Object>>());
 //			System.out.println(" sub-result List "+subresultList);
 //			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
-			
-	return baseAPIService.convertListtoJsonArray(dataMap).toString();
-		}
 		
 		return result;
 
@@ -301,7 +329,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							FilterAggregationBuilder mainFilter = addFilters(requestParamsDTO
 									.getFilter());
 							
-								includeAggregation(requestParamsDTO, jsonArray, singleAggregate, termBuilder, subTermBuilder, metricsName,mainFilter);
+							includeFilterAggregation(requestParamsDTO, jsonArray, singleAggregate, termBuilder, subTermBuilder, metricsName,mainFilter);
 							termBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(false));
 						}
 						firstEntry = true;
@@ -327,7 +355,76 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		return false;
 	}
-	
+
+	public boolean aggregateFunction(RequestParamsDTO requestParamsDTO,
+			SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+		TermsBuilder termBuilder = null;
+		TermsBuilder aggregateBuilder = null;
+		boolean includedAggregate = false;
+		boolean firstEntry = false;
+		boolean singleAggregate = false;
+		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			try {
+				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
+				for (int j = groupBy.length - 1; j >= 0; j--) {
+
+					if (j == 0 && groupBy.length > 1) {
+						termBuilder = new TermsBuilder(groupBy[0])
+								.field(groupBy[0]);
+						continue;
+					} else {
+						termBuilder = new TermsBuilder(groupBy[0])
+								.field(groupBy[0]);
+					}
+					if(groupBy.length == 1){
+						singleAggregate = true;
+						
+					}
+					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
+							.field(groupBy[j]);
+					if (j == groupBy.length - 2) {
+						if (includedAggregate) {
+							subTermBuilder.subAggregation(aggregateBuilder);
+							includedAggregate = true;
+						}
+					}
+					if (!firstEntry) {
+						if (!requestParamsDTO.getAggregations().isEmpty()) {
+							Gson gson = new Gson();
+							String requestJsonArray = gson
+									.toJson(requestParamsDTO.getAggregations());
+							JSONArray jsonArray = new JSONArray(
+									requestJsonArray);
+							FilterAggregationBuilder mainFilter = addFilters(requestParamsDTO
+									.getFilter());
+							
+							includeFilterAggregation(requestParamsDTO, jsonArray, singleAggregate, termBuilder, subTermBuilder, metricsName,mainFilter);
+							termBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(false));
+						}
+						firstEntry = true;
+					}
+					if (singleAggregate) {
+						aggregateBuilder = termBuilder;
+
+					} else {
+						aggregateBuilder = subTermBuilder;
+						includedAggregate = true;
+					}
+				}
+				if (singleAggregate) {
+					termBuilder = aggregateBuilder;
+				} else {
+					termBuilder.subAggregation(aggregateBuilder);
+				}
+				searchRequestBuilder.addAggregation(termBuilder);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			return true;
+		}
+		return false;
+	}
+
 	public boolean granularityFAFunction(RequestParamsDTO requestParamsDTO,
 			SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		TermsBuilder termBuilder = null;
@@ -352,7 +449,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 									requestJsonArray);
 							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(), groupBy[j]);
 							if(groupBy.length == 1){	
-							includeAggregation(requestParamsDTO, jsonArray, singleAggregate, null, null, metricsName,mainFilter);
+								includeFilterAggregation(requestParamsDTO, jsonArray, singleAggregate, null, null, metricsName,mainFilter);
 							singleAggregate = true;
 							}
 						}
@@ -365,7 +462,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					if(termBuilder == null){
 						termBuilder = termsBuilders.get(i);
 						if(!singleAggregate){
-							includeAggregation(requestParamsDTO, jsonArray, !singleAggregate, null, null, metricsName,mainFilter);
+							includeFilterAggregation(requestParamsDTO, jsonArray, !singleAggregate, null, null, metricsName,mainFilter);
 							termBuilder.subAggregation(mainFilter);
 						}
 					}else{
@@ -401,7 +498,67 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return false;
 	}
 
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,JSONArray jsonArray,boolean singleAggregate,TermsBuilder termBuilder,TermsBuilder subTermBuilder,Map<String,String> metricsName,FilterAggregationBuilder mainFilter){
+	public boolean granularityAFunction(RequestParamsDTO requestParamsDTO,
+			SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+		TermsBuilder termBuilder = null;
+		boolean firstEntry = false;
+		boolean singleAggregate = false;
+		List<TermsBuilder> termsBuilders = new ArrayList<TermsBuilder>();
+		DateHistogramBuilder histogramBuilder = null;
+		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			try {
+				JSONArray jsonArray = new JSONArray();
+				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
+				for (int j = 0; j <groupBy.length; j++) {
+					if (!firstEntry) {
+						if (!requestParamsDTO.getAggregations().isEmpty()) {
+							Gson gson = new Gson();
+							String requestJsonArray = gson
+									.toJson(requestParamsDTO.getAggregations());
+							jsonArray = new JSONArray(
+									requestJsonArray);
+							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(), groupBy[j]);
+							if(groupBy.length == 1){	
+							includeAggregation(requestParamsDTO, jsonArray,!singleAggregate,histogramBuilder,null, metricsName);
+							singleAggregate = true;
+							}
+						}
+						firstEntry = true;
+					}else{
+						termsBuilders.add(AggregationBuilders.terms(groupBy[j]).field(groupBy[j]));
+					}
+				}
+				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
+					if(termBuilder == null){
+						termBuilder = termsBuilders.get(i);
+						if(!singleAggregate){
+							includeAggregation(requestParamsDTO, jsonArray,singleAggregate, null,termBuilder,metricsName);
+						}
+					}else{
+						TermsBuilder tempBuilder = null;
+						tempBuilder = termsBuilders.get(i);
+						tempBuilder.size(100);
+						tempBuilder.subAggregation(termBuilder);
+						termBuilder = tempBuilder;
+					}
+				}
+					if(!singleAggregate){
+						
+						histogramBuilder.subAggregation(termBuilder);
+					}
+					histogramBuilder.minDocCount(1000);
+					histogramBuilder.order(org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order.KEY_ASC);
+					searchRequestBuilder.addAggregation(histogramBuilder);
+				System.out.println("search request "+searchRequestBuilder);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			return true;
+		}
+		return false;
+	}
+
+	public void includeFilterAggregation(RequestParamsDTO requestParamsDTO,JSONArray jsonArray,boolean singleAggregate,TermsBuilder termBuilder,TermsBuilder subTermBuilder,Map<String,String> metricsName,FilterAggregationBuilder mainFilter){
 		try {
 			for (int i = 0; i < jsonArray.length(); i++) {
 				JSONObject jsonObject;
@@ -423,10 +580,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								continue;
 							}
 							if (singleAggregate) {
-								performAggregation(mainFilter,jsonObject, jsonObject.get("formula")
+								performFilterAggregation(mainFilter,jsonObject, jsonObject.get("formula")
 										.toString(), aggregateName);
 							} else {
-								performAggregation(mainFilter,jsonObject, jsonObject.get("formula")
+								performFilterAggregation(mainFilter,jsonObject, jsonObject.get("formula")
 										.toString(), aggregateName);
 							}
 							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : jsonObject
@@ -450,7 +607,47 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 	}
 	
-	public void performAggregation(FilterAggregationBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName){
+	public void includeAggregation(RequestParamsDTO requestParamsDTO,JSONArray jsonArray,boolean singleAggregate,DateHistogramBuilder dateHistogramBuilder,TermsBuilder termBuilder,Map<String,String> metricsName){
+		try {
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject jsonObject;
+				jsonObject = new JSONObject(jsonArray.get(i)
+						.toString());
+				if (!jsonObject.has("formula")
+						&& !jsonObject.has("requestValues")) {
+					continue;
+				}
+				if (baseAPIService.checkNull(jsonObject
+						.get("formula"))) {
+						String requestValues = jsonObject
+								.get("requestValues")
+								.toString();
+						for (String aggregateName : requestValues
+								.split(",")) {
+							if (!jsonObject
+									.has(aggregateName)) {
+								continue;
+							}
+							if(singleAggregate){
+								performAggregation(jsonObject, jsonObject.get("formula")
+										.toString(), aggregateName,dateHistogramBuilder);
+							}else{
+								performAggregation(jsonObject, jsonObject.get("formula")
+										.toString(), aggregateName,termBuilder);
+							}
+								metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : jsonObject
+									.get(aggregateName).toString(), jsonObject
+									.get(aggregateName).toString());
+
+					}
+				}
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void performFilterAggregation(FilterAggregationBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName){
 		try {
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
@@ -492,6 +689,114 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								.toString()));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				mainFilter
+				.subAggregation(AggregationBuilders.cardinality(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}
+	
+		} catch (JSONException e) {
+			e.printStackTrace();
+		} 
+		}
+	
+	public void performAggregation(JSONObject jsonObject,String aggregateType,String aggregateName,TermsBuilder termBuilder){
+		try {
+			if("SUM".equalsIgnoreCase(aggregateType)){
+				termBuilder
+			.subAggregation(AggregationBuilders
+					.sum(jsonObject
+							.get(aggregateName)
+							.toString())
+					.field(jsonObject
+							.get(aggregateName)
+							.toString()));
+			}else if("AVG".equalsIgnoreCase(aggregateType)){
+				termBuilder
+				.subAggregation(AggregationBuilders.avg(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("MAX".equalsIgnoreCase(aggregateType)){
+				termBuilder
+				.subAggregation(AggregationBuilders.max(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("MIN".equalsIgnoreCase(aggregateType)){
+				termBuilder
+				.subAggregation(AggregationBuilders.min(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+				
+			}else if("COUNT".equalsIgnoreCase(aggregateType)){
+				termBuilder
+				.subAggregation(AggregationBuilders.count(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
+				termBuilder
+				.subAggregation(AggregationBuilders.cardinality(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}
+	
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		}
+	
+	public void performAggregation(JSONObject jsonObject,String aggregateType,String aggregateName,DateHistogramBuilder dateHistogram){
+		try {
+			if("SUM".equalsIgnoreCase(aggregateType)){
+				dateHistogram
+			.subAggregation(AggregationBuilders
+					.sum(jsonObject
+							.get(aggregateName)
+							.toString())
+					.field(jsonObject
+							.get(aggregateName)
+							.toString()));
+			}else if("AVG".equalsIgnoreCase(aggregateType)){
+				dateHistogram
+				.subAggregation(AggregationBuilders.avg(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("MAX".equalsIgnoreCase(aggregateType)){
+				dateHistogram
+				.subAggregation(AggregationBuilders.max(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("MIN".equalsIgnoreCase(aggregateType)){
+				dateHistogram
+				.subAggregation(AggregationBuilders.min(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+				
+			}else if("COUNT".equalsIgnoreCase(aggregateType)){
+				dateHistogram
+				.subAggregation(AggregationBuilders.count(jsonObject
+								.get(aggregateName)
+								.toString()).field(jsonObject
+								.get(aggregateName)
+								.toString()));
+			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
+				dateHistogram
 				.subAggregation(AggregationBuilders.cardinality(jsonObject
 								.get(aggregateName)
 								.toString()).field(jsonObject
@@ -1106,6 +1411,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 			boolFilter = mainBool;
 		}
+		
 	public Object checkDataType(String value, String valueType) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 		
@@ -1185,6 +1491,81 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	
 	//just pass the result of filterAggregator
+	public Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
+
+		Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
+		try {
+			int counter=0;
+			String[] fields = groupBy.split(",");
+			JSONObject json = new JSONObject(resultData);
+			json = new JSONObject(json.get("aggregations").toString());
+			while(counter < fields.length){
+				JSONObject requestJSON = new JSONObject(json.get(fields[counter]).toString());
+			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+			JSONArray subJsonArray = new JSONArray();
+			Set<Object> keys = new HashSet<Object>();
+			boolean hasSubAggregate = false;
+			for(int i=0;i<jsonArray.length();i++){
+				JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+				Object key=newJson.get("key");
+				keys.add(key);
+				if(counter+1 == fields.length){
+					for(Map.Entry<String,String> entry : metrics.entrySet()){
+						if(newJson.has(entry.getValue())){
+						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+							resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+							resultMap.put(fields[counter], newJson.get("key"));
+							boolean processed = false;
+							if(baseAPIService.checkNull(dataMap)){
+								if(dataMap.containsKey(i)){
+									processed = true;
+									Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+									tempMap = dataMap.get(i);
+									resultMap.putAll(tempMap);
+									dataMap.put(i, resultMap);
+								}
+							}
+							if(!processed){
+								dataMap.put(i, resultMap);	
+							}
+						resultList.add(resultMap);
+						}
+						}
+						
+				}else{
+					JSONArray tempArray = new JSONArray();
+					newJson = new JSONObject(newJson.get(fields[counter+1]).toString());
+					tempArray = new JSONArray(newJson.get("buckets").toString());
+					for(int j=0;j<tempArray.length();j++){
+						subJsonArray.put(tempArray.get(j));
+					}
+					Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+					if(baseAPIService.checkNull(dataMap)){
+						if(dataMap.containsKey(i)){
+							tempMap = dataMap.get(i);
+						}
+					}
+					tempMap.put(fields[counter], key);
+						dataMap.put(i, tempMap);
+					hasSubAggregate = true;
+				}
+			}
+			if(hasSubAggregate){
+				json = new JSONObject();
+				requestJSON.put("buckets", subJsonArray);
+				json.put(fields[counter+1], requestJSON);
+			}
+			
+			filterMap.put(fields[counter], keys);
+			counter++;
+			}
+		} catch (JSONException e) {
+			System.out.println("some logical problem in aggregate json ");
+			e.printStackTrace();
+		}
+		return dataMap;
+	}
+	
 	public Map<Integer,Map<String,Object>> processFilterAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
 
 		Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
@@ -1260,6 +1641,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		return dataMap;
 	}
+
 	
 	public List<Map<String,Object>> processGFAJson(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap){
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
@@ -1301,6 +1683,63 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					Object key=newJson.get("key");
 					String granularity=newJson.getString("key_as_string");
 					newJson = new JSONObject(newJson.get("filters").toString());
+					for(Map.Entry<String,String> entry : metrics.entrySet()){
+						if(newJson.has(entry.getValue())){
+						Map<String,Object> resultMap = new HashMap<String,Object>();
+							resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
+							resultMap.put("date", granularity);
+							resultList.add(resultMap);
+						}
+					}
+				}
+			}else{
+				//complex logic need to decide
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return resultList;
+	}
+	
+	public List<Map<String,Object>> processGAJson(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap){
+		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+		try {
+			String[] fields = groupBy.split(",");
+			JSONObject json = new JSONObject(resultData);
+			json = new JSONObject(json.get("aggregations").toString());
+			JSONObject requestJSON = new JSONObject(json.get(fields[0]).toString());
+			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+			if(fields.length == 2){
+			Set<Object> subKeys = new HashSet<Object>();
+			for(int i=0;i<jsonArray.length();i++){
+				JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+				Object key=newJson.get("key");
+				String granularity=newJson.getString("key_as_string");
+				newJson = new JSONObject(newJson.get(fields[1]).toString());
+				JSONArray subJsonArray = new JSONArray(newJson.get("buckets").toString());
+				for(int j=0;j<subJsonArray.length();j++){
+					JSONObject metricsJson = new JSONObject(subJsonArray.get(j).toString());
+					Object subKey=metricsJson.get("key");
+					subKeys.add(subKey);
+					for(Map.Entry<String,String> entry : metrics.entrySet()){
+						if(metricsJson.has(entry.getValue())){
+						Map<String,Object> resultMap = new HashMap<String,Object>();
+							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
+							resultMap.put(fields[1], subKey);
+							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
+							resultMap.put("date", granularity);
+							resultList.add(resultMap);
+						}
+					}
+				}
+			}
+			filterMap.put(fields[1], subKeys);
+			}else if(fields.length == 1){
+				for(int i=0;i<jsonArray.length();i++){
+					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+					Object key=newJson.get("key");
+					String granularity=newJson.getString("key_as_string");
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(newJson.has(entry.getValue())){
 						Map<String,Object> resultMap = new HashMap<String,Object>();
@@ -1383,6 +1822,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return resultList;
 	}
 	
+	public JSONArray formDataJSONArray(Map<Integer,Map<String,Object>> requestMap){
+		JSONArray jsonArray = new JSONArray();
+		for(Map.Entry<Integer,Map<String,Object>> entry : requestMap.entrySet()){
+			jsonArray.put(entry.getValue());
+		}
+		return jsonArray;
+	}
+	
 	public List<Map<String,Object>> getSource(String result){
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		try {
@@ -1430,16 +1877,5 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	public Client getClient() {
 		return baseConnectionService.getClient();
-	}
-	
-	public static void main(String[] args){
-		Map<Integer,Map<String,Object>> dataMap = new HashMap<Integer,Map<String,Object>>();
-		Map<String,Object> errorData = new HashMap<String,Object>();
-		errorData.put("views", 10);
-		dataMap.put(1, errorData);
-		errorData = dataMap.get(1);
-		errorData.put("timeSpent", 200);
-		dataMap.put(1, errorData);
-		System.out.println("dataMap "+dataMap);
 	}
 }

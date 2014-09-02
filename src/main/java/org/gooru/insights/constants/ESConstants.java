@@ -19,6 +19,18 @@ public interface ESConstants {
 		}
 	}
 	
+	public enum esSources{
+		SOURCE("_source"),FIELDS("fields");
+		
+		private String property;
+		esSources(String name){
+		this.property = name;	
+		}
+		public String esSource(){
+			return property;
+		}
+	}
+	
 	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog"};
 	
 	public enum esIndices{

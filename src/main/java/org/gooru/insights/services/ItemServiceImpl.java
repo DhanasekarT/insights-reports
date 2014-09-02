@@ -10,6 +10,7 @@ import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ESConstants.esIndices;
+import org.gooru.insights.constants.ESConstants.esSources;
 import org.gooru.insights.constants.ESConstants.esTypes;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
@@ -33,6 +34,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 
 	ItemServiceImpl(){
 	indexMap.put("rawdata", "event_logger");
+	indexMap.put("content", "content_catalog");
 	}
 	
 	public JSONArray getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
@@ -41,7 +43,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		FilterBuilder filterBuilder = null;
 		Integer offset =0;
 		Integer limit =10;
-		String dataKey="_source";
+		String dataKey=esSources.SOURCE.esSource();
 		try{
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		}catch(Exception e){
@@ -54,7 +56,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			return new JSONArray();
 		}
 		if(validatedData.get(hasdata.HAS_FEILDS.check())){
-			dataKey="fields";
+			dataKey=esSources.FIELDS.esSource();
 		}
 		
 			if(validatedData.get(hasdata.HAS_Offset.check())){
@@ -71,24 +73,25 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 				}
 			}
 			}
+			String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
 			if(validatedData.get(hasdata.HAS_GRANULARITY.check())){
 				try {
-					return new JSONArray(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
+					return new JSONArray(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
-			System.out.println("has aggregate ");
+			
 			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_AGGREGATE.check())){
 				try {
-					System.out.println("do aggregate ");
-				JSONArray jsonArray = new JSONArray(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
+				JSONArray jsonArray = new JSONArray(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
 				return jsonArray;
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
-		return getRecords(esService.searchData(requestParamsDTO,baseAPIService.convertStringtoArray(indexMap.get(requestParamsDTO.getDataSource().toLowerCase())),baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData),dataRecord,errorMap,dataKey);
+			
+		return getRecords(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData),dataRecord,errorMap,dataKey);
 		
 	}
 
@@ -197,5 +200,16 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	}
 	public String getClasspageCollectionDetail(String data) {
 		return null;
+	}
+	
+	public String[] getIndices(String names){
+		String[] indices = new String[names.split(",").length];
+		String[] requestNames = names.split(",");
+		for(int i =0;i<indices.length;i++){
+			if(indexMap.containsKey(requestNames[i])){
+				indices[i] = indexMap.get(requestNames[i]);
+			}
+		}
+		return indices;
 	}
 }
