@@ -216,6 +216,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}
 					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
 							.field(groupBy[j]);
+					subTermBuilder.size(1000);
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
 							subTermBuilder.subAggregation(aggregateBuilder);
@@ -278,6 +279,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				if(groupBy.length == 1){
 					termBuilder = aggregateBuilder;
 				}
+				termBuilder.size(1000);
 				searchRequestBuilder.addAggregation(termBuilder);
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -313,6 +315,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}
 					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
 							.field(groupBy[j]);
+					subTermBuilder.size(1000);
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
 							subTermBuilder.subAggregation(aggregateBuilder);
@@ -347,6 +350,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				} else {
 					termBuilder.subAggregation(aggregateBuilder);
 				}
+				termBuilder.size(1000);
 				searchRequestBuilder.addAggregation(termBuilder);
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -382,6 +386,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}
 					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
 							.field(groupBy[j]);
+					subTermBuilder.size(1000);
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
 							subTermBuilder.subAggregation(aggregateBuilder);
@@ -416,6 +421,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				} else {
 					termBuilder.subAggregation(aggregateBuilder);
 				}
+				termBuilder.size(1000);
 				searchRequestBuilder.addAggregation(termBuilder);
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -461,6 +467,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
 					if(termBuilder == null){
 						termBuilder = termsBuilders.get(i);
+						termBuilder.size(1000);
 						if(!singleAggregate){
 							includeFilterAggregation(requestParamsDTO, jsonArray, !singleAggregate, null, null, metricsName,mainFilter);
 							termBuilder.subAggregation(mainFilter);
@@ -468,7 +475,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}else{
 						TermsBuilder tempBuilder = null;
 						tempBuilder = termsBuilders.get(i);
-						tempBuilder.size(100);
+						tempBuilder.size(1000);
 						tempBuilder.subAggregation(termBuilder);
 						termBuilder = tempBuilder;
 					}
@@ -531,13 +538,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
 					if(termBuilder == null){
 						termBuilder = termsBuilders.get(i);
+						termBuilder.size(1000);
 						if(!singleAggregate){
 							includeAggregation(requestParamsDTO, jsonArray,singleAggregate, null,termBuilder,metricsName);
 						}
 					}else{
 						TermsBuilder tempBuilder = null;
 						tempBuilder = termsBuilders.get(i);
-						tempBuilder.size(100);
+						tempBuilder.size(1000);
 						tempBuilder.subAggregation(termBuilder);
 						termBuilder = tempBuilder;
 					}
