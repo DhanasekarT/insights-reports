@@ -8,7 +8,7 @@ import org.apache.commons.collections.map.HashedMap;
 public interface ESConstants {
 
 	public enum esConfigs{
-		ROWKEY("es~connection"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("nodeClient"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
+		ROWKEY("es~connection"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("node_type"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
 		
 		private String property;
 		esConfigs(String name){

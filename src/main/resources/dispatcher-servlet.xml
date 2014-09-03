@@ -43,4 +43,17 @@
 					class="org.springframework.web.servlet.view.json.MappingJacksonJsonView" />
 		</property>
 	</bean>
+<!-- 		 <context:property-placeholder location="classpath:config.properties" /> -->
+	<bean id="cassandra"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="cassandra.hosts">${cassandra.hosts}</prop>
+				<prop key="cassandra.port">${cassandra.port}</prop>
+				<prop key="cassandra.clusterName">${cassandra.clusterName}</prop>
+				<prop key="cassandra.keyspace.insights">${cassandra.keyspace.insights}</prop>
+                                <prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
+			</props>
+		</property>
+	</bean>
 	</beans>

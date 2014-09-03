@@ -3,7 +3,7 @@ package org.gooru.insights.constants;
 public interface CassandraConstants {
 
 	public enum cassandraConfigs{
-		SEEDS("CASSANDRA_HOSTS"),PORT("CASSANDRA_PORT"),CLUSTER("CASSANDRA_CLUSTER_NAME"),INSIGHTS_KEYSPACE("CASSANDRA_INSIGHTS_KEYSPACE"),SEARCH_KEYSPACE("CASSANDRA_SEARCH_KEYSPACE");
+		SEEDS("cassandra.hosts"),PORT("cassandra.port"),CLUSTER("cassandra.clusterName"),INSIGHTS_KEYSPACE("cassandra.keyspace.insights"),SEARCH_KEYSPACE("cassandra.keyspace.search");
 		
 		private String property;
 		

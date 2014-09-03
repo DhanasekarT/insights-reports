@@ -2,8 +2,10 @@ package org.gooru.insights.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Properties;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -30,6 +32,7 @@ import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.Column;
 import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.model.ColumnList;
+import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
@@ -37,23 +40,38 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 @Service
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
 
-	private Client client;
+	 protected static final ConsistencyLevel LOCAL_CONSISTENCY_LEVEL = ConsistencyLevel.CL_ONE;
+	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	 
+	private static Client client;
 	
-	private Keyspace insightsKeyspace;
+	private static Keyspace insightsKeyspace;
 	
-	private Keyspace searchKeyspace;
-	
-	@Autowired
-	BaseCassandraService baseCassandraService;
+	private static Keyspace searchKeyspace;
 	
 	@Autowired
 	BaseAPIService baseAPIService;
 	
+	@Resource(name="cassandra")
+	Properties cassandra;
+	
+	public Properties getCassandraProperties() {
+		return cassandra;
+	}
 	@PostConstruct
 	public void initConnect(){
 		
-		//initCassandraConnection();
-		initESConnection();
+		if(insightsKeyspace == null || searchKeyspace == null){
+			System.out.println(" init insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
+			
+		initCassandraConnection();
+		}
+		
+		if(client == null ){
+			System.out.println("init es client "+ client);
+			
+			initESConnection();
+		}
 	}
 	public Client getClient(){
 	
@@ -62,11 +80,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public void initCassandraConnection(){
 	
-		String seeds = System.getenv(cassandraConfigs.SEEDS.cassandraConfig());
-		Integer port = Integer.parseInt(System.getenv(cassandraConfigs.PORT.cassandraConfig()));
-		String clusterName = System.getenv(cassandraConfigs.CLUSTER.cassandraConfig());
-		String insights = System.getenv(cassandraConfigs.INSIGHTS_KEYSPACE.cassandraConfig());
-		String search = System.getenv(cassandraConfigs.SEARCH_KEYSPACE.cassandraConfig());
+		 String seeds = this.getCassandraProperties().getProperty(cassandraConfigs.SEEDS.cassandraConfig());
+         Integer port = Integer.parseInt(this.getCassandraProperties().getProperty(cassandraConfigs.PORT.cassandraConfig()));
+         String clusterName = this.getCassandraProperties().getProperty(cassandraConfigs.CLUSTER.cassandraConfig());
+         String insights = this.getCassandraProperties().getProperty(cassandraConfigs.INSIGHTS_KEYSPACE.cassandraConfig());
+         String search = this.getCassandraProperties().getProperty(cassandraConfigs.SEARCH_KEYSPACE.cassandraConfig());
 
 		AstyanaxContext<Keyspace> context = new AstyanaxContext.Builder()
         .forCluster(clusterName)
@@ -77,7 +95,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withConnectionPoolConfiguration(connectionConfig(seeds,port))
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
-		
+		context.start();
 		insightsKeyspace = (Keyspace)context.getClient();
 		
 		AstyanaxContext<Keyspace> context2 = new AstyanaxContext.Builder()
@@ -89,16 +107,24 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withConnectionPoolConfiguration(connectionConfig(seeds,port))
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
-		
+		context2.start();
 		searchKeyspace = context2.getClient();
-		
+		System.out.println("insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
 	}
 	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){
-		System.out.println("seeds"+seeds.trim()+":"+port);
+		StringBuffer seedConfigured = new StringBuffer();
+		for(String seed : seeds.split(",")){
+			if(seedConfigured.length() > 0){
+				seedConfigured.append(",");
+			}
+			seedConfigured.append(seed+":"+port);
+		}
+		
+		System.out.println("seeds"+seedConfigured.toString());
 		ConnectionPoolConfigurationImpl connectionPoolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
 		.setPort(port.intValue())
 		.setMaxConnsPerHost(30)
-		.setSeeds(seeds.trim()+":"+port.intValue());
+		.setSeeds(seedConfigured.toString());
 		
 		if (!seeds.startsWith("127.0")) {
 			connectionPoolConfig.setLocalDatacenter("datacenter1");
@@ -109,18 +135,29 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-//		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
-//		ColumnList<String> columnList = rowResult.getResult();
-//		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
-//		String clusterName = columnList.getColumnByName(esConfigs.CLUSTER.esConfig()).getStringValue();
-//		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
-//		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
-//		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
-	String indexName ="event_logger";
-	String clusterName="";
-	String hostName="162.243.130.94";
-	String portNo="9300";
-	String nodeType ="transportClient";
+		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		ColumnList<String> columnList = rowResult.getResult();
+		System.out.println("column list");
+		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
+		System.out.println(" index "+columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue());
+		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
+		System.out.println(" cluster "+clusterName);
+
+		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
+		System.out.println(" hostname "+hostName);
+
+		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
+		System.out.println(" portNo "+portNo);
+
+		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+		System.out.println(" nodeType "+nodeType);
+
+//	String indexName ="event_logger";
+//	String clusterName="";
+//	String hostName="162.243.130.94";
+//	String portNo="9300";
+//	String nodeType ="transportClient";
+		System.out.println("nodeType "+nodeType);
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
 			client  = initNodeClient(clusterName);
@@ -160,7 +197,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			queryKeyspace = searchKeyspace;
 		}
 		try {
-			RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).getKey(rowKey);
+			System.out.println("keyspace "+queryKeyspace);
+			RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(LOCAL_CONSISTENCY_LEVEL).getKey(rowKey);
 		
 			if(baseAPIService.checkNull(columns)){
 				rowQuery.withColumnSlice(columns);

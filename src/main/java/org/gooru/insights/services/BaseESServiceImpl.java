@@ -288,7 +288,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		return false;
 	}
-
 	public boolean filterAggregateFunction(RequestParamsDTO requestParamsDTO,
 			SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		TermsBuilder termBuilder = null;
