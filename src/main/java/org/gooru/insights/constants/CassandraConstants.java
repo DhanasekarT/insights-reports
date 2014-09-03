@@ -29,8 +29,21 @@ public interface CassandraConstants {
 			return keyspace;
 		}
 	}
+	
+	public enum cassRowKeys{
+		RAW_KEY("");
+		
+		private String index;
+		cassRowKeys(String name){
+		this.index = name;
+		}
+		public String cassRowKey(){
+			return index;
+		}
+	}
+	
 	public enum columnFamilies{
-		CONNECTION_CONFIG_SETTING("connection_config_setting");
+		CONNECTION_CONFIG_SETTING("connection_config_setting"),EVENT_FIELDS("event_fields");
 		
 		private String columnFamilyName;
 		

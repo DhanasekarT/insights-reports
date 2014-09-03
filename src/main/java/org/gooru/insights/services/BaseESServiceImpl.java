@@ -105,6 +105,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		boolean aggregate = false;
 		boolean granularityFilter = false;
 		boolean granularity = false;
+		
+		fields = esFields(fields);
+		
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
 			for (String field : fields.split(",")) {
 				searchRequestBuilder.addField(field);
@@ -1884,5 +1887,21 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	public Client getClient() {
 		return baseConnectionService.getClient();
+	}
+	
+	public String esFields(String fields){
+		Map<String,String> mappingfields = baseConnectionService.getFields();
+		StringBuffer esFields = new StringBuffer();
+		for(String field : fields.split(",")){
+			if(mappingfields.containsKey(field)){
+				if(esFields.length() > 0){
+					esFields.append(",");
+				}
+				esFields.append(mappingfields.get(field));
+			}else{
+				esFields.append(field);
+			}
+		}
+		return esFields.toString();
 	}
 }

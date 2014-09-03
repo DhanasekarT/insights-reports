@@ -2,6 +2,7 @@ package org.gooru.insights.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.PostConstruct;
@@ -33,6 +34,8 @@ import com.netflix.astyanax.model.Column;
 import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.model.ColumnList;
 import com.netflix.astyanax.model.ConsistencyLevel;
+import com.netflix.astyanax.model.Row;
+import com.netflix.astyanax.model.Rows;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
@@ -40,17 +43,21 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 @Service
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
 
-	 protected static final ConsistencyLevel LOCAL_CONSISTENCY_LEVEL = ConsistencyLevel.CL_ONE;
-	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
-	 
 	private static Client client;
 	
 	private static Keyspace insightsKeyspace;
 	
 	private static Keyspace searchKeyspace;
 	
+	private static Map<String,String> fieldsCache;
+	
+	public static Map<String,String> fields;
+	
 	@Autowired
 	BaseAPIService baseAPIService;
+	
+	@Autowired
+	BaseCassandraService baseCassandraService;
 	
 	@Resource(name="cassandra")
 	Properties cassandra;
@@ -62,17 +69,20 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public void initConnect(){
 		
 		if(insightsKeyspace == null || searchKeyspace == null){
-			System.out.println(" init insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
-			
+		System.out.println(" init insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
 		initCassandraConnection();
+		if(fields.isEmpty()){
+		eventFields();
+		}
 		}
 		
 		if(client == null ){
-			System.out.println("init es client "+ client);
-			
-			initESConnection();
+		System.out.println("init es client "+ client);
+		initESConnection();
 		}
+		
 	}
+	
 	public Client getClient(){
 	
 		return this.client;
@@ -98,7 +108,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		context.start();
 		insightsKeyspace = (Keyspace)context.getClient();
 		
-		AstyanaxContext<Keyspace> context2 = new AstyanaxContext.Builder()
+		context = new AstyanaxContext.Builder()
         .forCluster(clusterName)
         .forKeyspace(search)
         .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
@@ -107,9 +117,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
         .withConnectionPoolConfiguration(connectionConfig(seeds,port))
         .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
         .buildKeyspace(ThriftFamilyFactory.getInstance());
-		context2.start();
-		searchKeyspace = context2.getClient();
+		context.start();
+		searchKeyspace = context.getClient();
 		System.out.println("insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
+		
 	}
 	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){
 		StringBuffer seedConfigured = new StringBuffer();
@@ -135,7 +146,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		System.out.println("column list");
 		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
@@ -188,38 +199,16 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		return searchKeyspace;
 	}
 
-	public OperationResult<ColumnList<String>> readColumns(String keyspace, String columnFamilyName, String rowKey,Collection<String> columns) {
 
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = insightsKeyspace;
-		} else {
-			queryKeyspace = searchKeyspace;
+	public void eventFields(){
+		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
+		Rows<String, String> rows = operationalResult.getResult();
+		for(Row<String, String> row : rows){
+			fieldsCache.put(row.getKey(),row.getColumns().getColumnByName("be_column").getStringValue() != null ? row.getColumns().getColumnByName("be_column").getStringValue() : row.getKey()) ; 
 		}
-		try {
-			System.out.println("keyspace "+queryKeyspace);
-			RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(LOCAL_CONSISTENCY_LEVEL).getKey(rowKey);
-		
-			if(baseAPIService.checkNull(columns)){
-				rowQuery.withColumnSlice(columns);
-			}
-			return rowQuery.execute();
-		} catch (ConnectionException e) {
-
-			e.printStackTrace();
-			System.out.println("Query execution exeption");
-		}
-		return null;
-
 	}
-	
-	public ColumnFamily<String, String> accessColumnFamily(String columnFamilyName) {
-
-		ColumnFamily<String, String> columnFamily;
-
-		columnFamily = new ColumnFamily<String, String>(columnFamilyName, StringSerializer.get(), StringSerializer.get());
-
-		return columnFamily;
+	public Map<String, String> getFields() {
+		return fieldsCache;
 	}
 }
 

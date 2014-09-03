@@ -1,5 +1,7 @@
 package org.gooru.insights.services;
 
+import java.util.Map;
+
 import org.elasticsearch.client.Client;
 
 import com.netflix.astyanax.Keyspace;
@@ -11,4 +13,6 @@ public interface BaseConnectionService {
 	Keyspace connectSearch();
 	
 	Client getClient();
+	
+	Map<String, String> getFields();
 }
