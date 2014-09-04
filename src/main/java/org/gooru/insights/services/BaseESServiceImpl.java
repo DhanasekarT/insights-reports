@@ -971,9 +971,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							}  else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("in")) {
 								boolFilter.must(FilterBuilders.inFilter(fieldName,
-										checkDataType(fieldsDetails.getValue(),
-												fieldsDetails.getValueType())
-												.toString()));
+										fieldsDetails.getValue().split(",")));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("ex")) {
 								boolFilter.must(FilterBuilders
@@ -1221,9 +1219,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							}   else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("in")) {
 								boolFilter.must(FilterBuilders.inFilter(fieldName,
-										checkDataType(fieldsDetails.getValue(),
-												fieldsDetails.getValueType())
-												.toString()));
+										fieldsDetails.getValue().split(",")));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("le")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
@@ -1337,9 +1333,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("in")) {
 									boolFilter.must(FilterBuilders.inFilter(fieldName,
-											checkDataType(fieldsDetails.getValue(),
-													fieldsDetails.getValueType())
-													.toString()));
+											fieldsDetails.getValue().split(",")));
 								}else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("gt")) {
 									boolFilter.must(FilterBuilders.rangeFilter(fieldName).gt(
