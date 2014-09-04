@@ -18,6 +18,7 @@ import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import com.netflix.astyanax.AstyanaxContext;
@@ -36,11 +37,12 @@ import com.netflix.astyanax.model.ColumnList;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.model.Row;
 import com.netflix.astyanax.model.Rows;
+import com.netflix.astyanax.query.AllRowsQuery;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
-@Service
+@Component
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
 
 	private static Client client;
@@ -51,8 +53,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,String> fieldsCache;
 	
-	public static Map<String,String> fields;
-	
+	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	 
 	@Autowired
 	BaseAPIService baseAPIService;
 	
@@ -71,7 +73,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		if(insightsKeyspace == null || searchKeyspace == null){
 		System.out.println(" init insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
 		initCassandraConnection();
-		if(fields.isEmpty()){
+		if(fieldsCache.isEmpty()){
 		eventFields();
 		}
 		}
@@ -146,7 +148,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		System.out.println("column list");
 		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
@@ -204,11 +206,73 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
 		for(Row<String, String> row : rows){
-			fieldsCache.put(row.getKey(),row.getColumns().getColumnByName("be_column").getStringValue() != null ? row.getColumns().getColumnByName("be_column").getStringValue() : row.getKey()) ; 
+			System.out.println("row "+row.getColumns().getStringValue("be_column",row.getKey()));
+			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 		}
 	}
 	public Map<String, String> getFields() {
 		return fieldsCache;
+	}
+	
+	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns) {
+		OperationResult<Rows<String, String>> queryResult = null;
+		AllRowsQuery<String, String> allRowQuery = null;
+		Keyspace queryKeyspace = null;
+		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
+			queryKeyspace = connectInsights();
+		} else {
+			queryKeyspace = connectSearch();
+		}
+		try {
+
+			allRowQuery  = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamily)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getAllRows();
+
+			if (!columns.isEmpty()) {
+				System.out.println("entered column fetcher ");
+				allRowQuery.withColumnSlice(columns);
+			}
+			
+			queryResult = allRowQuery.execute();
+			
+
+		} catch (ConnectionException e) {
+			e.printStackTrace();
+			System.out.println("Query execution exeption");
+		}
+		return queryResult;
+	}
+	
+	public OperationResult<ColumnList<String>> readColumns(String keyspace, String columnFamilyName, String rowKey,Collection<String> columns) {
+
+		Keyspace queryKeyspace = null;
+		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
+			queryKeyspace = connectInsights();
+		} else {
+			queryKeyspace = connectSearch();
+		}
+		try {
+			RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getKey(rowKey);
+		
+			if(baseAPIService.checkNull(columns)){
+				rowQuery.withColumnSlice(columns);
+			}
+			return rowQuery.execute();
+		} catch (ConnectionException e) {
+
+			e.printStackTrace();
+			System.out.println("Query execution exeption");
+		}
+		return null;
+
+	}
+
+	public ColumnFamily<String, String> accessColumnFamily(String columnFamilyName) {
+
+		ColumnFamily<String, String> columnFamily;
+
+		columnFamily = new ColumnFamily<String, String>(columnFamilyName, StringSerializer.get(), StringSerializer.get());
+
+		return columnFamily;
 	}
 }
 

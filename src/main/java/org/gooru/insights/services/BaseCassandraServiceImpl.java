@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import org.gooru.insights.constants.CassandraConstants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import com.netflix.astyanax.Keyspace;
@@ -20,7 +21,7 @@ import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.query.RowSliceQuery;
 import com.netflix.astyanax.serializers.StringSerializer;
 
-@Service
+@Component
 public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraConstants{
 
 	@Autowired
@@ -96,6 +97,7 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 			allRowQuery  = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamily)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getAllRows();
 
 			if (!columns.isEmpty()) {
+				System.out.println("entered column fetcher ");
 				allRowQuery.withColumnSlice(columns);
 			}
 			
