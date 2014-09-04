@@ -174,6 +174,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			if(granularity){
 				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 				List<Map<String,Object>> dataMap = processGAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
+				System.out.println(" process data "+ dataMap);
 				try {
 					return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
 				} catch (JSONException e) {
@@ -967,6 +968,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())
 												.toString()));
+							}  else if (fieldsDetails.getOperator()
+									.equalsIgnoreCase("in")) {
+								boolFilter.must(FilterBuilders.inFilter(fieldName,
+										checkDataType(fieldsDetails.getValue(),
+												fieldsDetails.getValueType())
+												.toString()));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("ex")) {
 								boolFilter.must(FilterBuilders
@@ -1211,6 +1218,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 												fieldsDetails.getValue(),
 												fieldsDetails.getValueType())
 												.toString()));
+							}   else if (fieldsDetails.getOperator()
+									.equalsIgnoreCase("in")) {
+								boolFilter.must(FilterBuilders.inFilter(fieldName,
+										checkDataType(fieldsDetails.getValue(),
+												fieldsDetails.getValueType())
+												.toString()));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("le")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
@@ -1322,6 +1335,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
+										.equalsIgnoreCase("in")) {
+									boolFilter.must(FilterBuilders.inFilter(fieldName,
+											checkDataType(fieldsDetails.getValue(),
+													fieldsDetails.getValueType())
+													.toString()));
+								}else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("gt")) {
 									boolFilter.must(FilterBuilders.rangeFilter(fieldName).gt(
 											checkDataType(fieldsDetails.getValue(),
@@ -1643,17 +1662,21 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try {
 			String[] fields = groupBy.split(",");
 			JSONObject json = new JSONObject(resultData);
+			System.out.println("result "+json.get("aggregations"));
 			json = new JSONObject(json.get("aggregations").toString());
+			System.out.println("aggregation "+json);
 			JSONObject requestJSON = new JSONObject(json.get(esFields(fields[0])).toString());
 			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 			if(fields.length == 2){
 			Set<Object> subKeys = new HashSet<Object>();
 			for(int i=0;i<jsonArray.length();i++){
 				JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+				System.out.println("sub json "+newJson);
 				Object key=newJson.get("key");
 				String granularity=newJson.getString("key_as_string");
 				newJson = new JSONObject(newJson.get(esFields(fields[1])).toString());
 				JSONArray subJsonArray = new JSONArray(newJson.get("buckets").toString());
+				System.out.println(" sub array "+ subJsonArray);
 				for(int j=0;j<subJsonArray.length();j++){
 					JSONObject metricsJson = new JSONObject(subJsonArray.get(j).toString());
 					Object subKey=metricsJson.get("key");
