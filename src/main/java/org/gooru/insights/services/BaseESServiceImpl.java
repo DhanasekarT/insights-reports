@@ -209,17 +209,21 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 				for (int j = groupBy.length - 1; j >= 0; j--) {
 
+				String firstField = esFields(groupBy[0]);
 					if (j == 0 && groupBy.length > 1) {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 						continue;
 					} else {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 					}
-					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
-							.field(groupBy[j]);
+					
+					String currentField = groupBy[j];
+					TermsBuilder subTermBuilder = new TermsBuilder(currentField)
+							.field(currentField);
 					subTermBuilder.size(1000);
+					
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
 							subTermBuilder.subAggregation(aggregateBuilder);
@@ -258,14 +262,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 														.has(aggregateName)) {
 													continue;
 												}
-												subTermBuilder
-														.subAggregation(AggregationBuilders
-																.sum(jsonObject
-																		.get(aggregateName)
-																		.toString())
-																.field(jsonObject
-																		.get(aggregateName)
-																		.toString()));
+											performAggregation(jsonObject,jsonObject.getString("formula"), aggregateName, subTermBuilder);
 											}
 
 										}
@@ -303,20 +300,22 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 				for (int j = groupBy.length - 1; j >= 0; j--) {
 
+					String firstField = esFields(groupBy[0]);
 					if (j == 0 && groupBy.length > 1) {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 						continue;
 					} else {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 					}
 					if(groupBy.length == 1){
 						singleAggregate = true;
 						
 					}
-					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
-							.field(groupBy[j]);
+					String currentField = esFields(groupBy[j]);
+					TermsBuilder subTermBuilder = new TermsBuilder(currentField)
+							.field(currentField);
 					subTermBuilder.size(1000);
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
@@ -373,21 +372,23 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			try {
 				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 				for (int j = groupBy.length - 1; j >= 0; j--) {
-
+					
+					String firstField = esFields(groupBy[0]);
 					if (j == 0 && groupBy.length > 1) {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 						continue;
 					} else {
-						termBuilder = new TermsBuilder(groupBy[0])
-								.field(groupBy[0]);
+						termBuilder = new TermsBuilder(firstField)
+								.field(firstField);
 					}
 					if(groupBy.length == 1){
 						singleAggregate = true;
-						
 					}
-					TermsBuilder subTermBuilder = new TermsBuilder(groupBy[j])
-							.field(groupBy[j]);
+					
+					String currentField = esFields(groupBy[j]);
+					TermsBuilder subTermBuilder = new TermsBuilder(currentField)
+							.field(currentField);
 					subTermBuilder.size(1000);
 					if (j == groupBy.length - 2) {
 						if (includedAggregate) {
@@ -446,6 +447,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				JSONArray jsonArray = new JSONArray();
 				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 				for (int j = 0; j <groupBy.length; j++) {
+					
+					//db field name
+					String field = esFields(groupBy[j]);
+
 					if (!firstEntry) {
 						mainFilter = addFilters(requestParamsDTO
 								.getFilter());
@@ -455,7 +460,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 									.toJson(requestParamsDTO.getAggregations());
 							jsonArray = new JSONArray(
 									requestJsonArray);
-							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(), groupBy[j]);
+							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(),field);
 							if(groupBy.length == 1){	
 								includeFilterAggregation(requestParamsDTO, jsonArray, singleAggregate, null, null, metricsName,mainFilter);
 							singleAggregate = true;
@@ -463,7 +468,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						}
 						firstEntry = true;
 					}else{
-						termsBuilders.add(AggregationBuilders.terms(groupBy[j]).field(groupBy[j]));
+						termsBuilders.add(AggregationBuilders.terms(field).field(field));
 					}
 				}
 				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
@@ -519,6 +524,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				JSONArray jsonArray = new JSONArray();
 				String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 				for (int j = 0; j <groupBy.length; j++) {
+					
+					String field = esFields(groupBy[j]);
 					if (!firstEntry) {
 						if (!requestParamsDTO.getAggregations().isEmpty()) {
 							Gson gson = new Gson();
@@ -526,7 +533,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 									.toJson(requestParamsDTO.getAggregations());
 							jsonArray = new JSONArray(
 									requestJsonArray);
-							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(), groupBy[j]);
+							histogramBuilder = dateHistogram(requestParamsDTO.getGranularity(),field);
 							if(groupBy.length == 1){	
 							includeAggregation(requestParamsDTO, jsonArray,!singleAggregate,histogramBuilder,null, metricsName);
 							singleAggregate = true;
@@ -534,7 +541,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						}
 						firstEntry = true;
 					}else{
-						termsBuilders.add(AggregationBuilders.terms(groupBy[j]).field(groupBy[j]));
+						termsBuilders.add(AggregationBuilders.terms(field).field(field));
 					}
 				}
 				for(int i=termsBuilders.size()-1; i >= 0 ;i--){
@@ -596,9 +603,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								performFilterAggregation(mainFilter,jsonObject, jsonObject.get("formula")
 										.toString(), aggregateName);
 							}
-							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : jsonObject
-									.get(aggregateName).toString(), jsonObject
-									.get(aggregateName).toString());
+							String fieldName = esFields(jsonObject.get(aggregateName).toString());
+							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
 
 					}
 				}
@@ -645,9 +651,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								performAggregation(jsonObject, jsonObject.get("formula")
 										.toString(), aggregateName,termBuilder);
 							}
-								metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : jsonObject
-									.get(aggregateName).toString(), jsonObject
-									.get(aggregateName).toString());
+							String fieldName = esFields(jsonObject.get(aggregateName).toString());
+								metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
 
 					}
 				}
@@ -659,51 +664,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public void performFilterAggregation(FilterAggregationBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName){
 		try {
+			String esAggregateName= esFields(jsonObject.get(aggregateName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
-					.sum(jsonObject
-							.get(aggregateName)
-							.toString())
-					.field(jsonObject
-							.get(aggregateName)
-							.toString()));
+					.sum(esAggregateName)
+					.field(esAggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.avg(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.avg(esAggregateName).field(esAggregateName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.max(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.max(esAggregateName).field(esAggregateName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.min(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.min(esAggregateName).field(esAggregateName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.count(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.count(esAggregateName).field(esAggregateName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.cardinality(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.cardinality(esAggregateName).field(esAggregateName));
 			}
 	
 		} catch (JSONException e) {
@@ -713,51 +695,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public void performAggregation(JSONObject jsonObject,String aggregateType,String aggregateName,TermsBuilder termBuilder){
 		try {
+			String esAggregateName= esFields(jsonObject.get(aggregateName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 				termBuilder
 			.subAggregation(AggregationBuilders
-					.sum(jsonObject
-							.get(aggregateName)
-							.toString())
-					.field(jsonObject
-							.get(aggregateName)
-							.toString()));
+					.sum(esAggregateName)
+					.field(esAggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				termBuilder
-				.subAggregation(AggregationBuilders.avg(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.avg(esAggregateName).field(esAggregateName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				termBuilder
-				.subAggregation(AggregationBuilders.max(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.max(esAggregateName).field(esAggregateName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				termBuilder
-				.subAggregation(AggregationBuilders.min(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.min(esAggregateName).field(esAggregateName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				termBuilder
-				.subAggregation(AggregationBuilders.count(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.count(esAggregateName).field(esAggregateName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				termBuilder
-				.subAggregation(AggregationBuilders.cardinality(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.cardinality(esAggregateName).field(esAggregateName));
 			}
 	
 		} catch (JSONException e) {
@@ -767,51 +726,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public void performAggregation(JSONObject jsonObject,String aggregateType,String aggregateName,DateHistogramBuilder dateHistogram){
 		try {
+			String esAggregateName= esFields(jsonObject.get(aggregateName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 				dateHistogram
 			.subAggregation(AggregationBuilders
-					.sum(jsonObject
-							.get(aggregateName)
-							.toString())
-					.field(jsonObject
-							.get(aggregateName)
-							.toString()));
+					.sum(esAggregateName)
+					.field(esAggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				dateHistogram
-				.subAggregation(AggregationBuilders.avg(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.avg(esAggregateName).field(esAggregateName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				dateHistogram
-				.subAggregation(AggregationBuilders.max(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.max(esAggregateName).field(esAggregateName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				dateHistogram
-				.subAggregation(AggregationBuilders.min(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.min(esAggregateName).field(esAggregateName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				dateHistogram
-				.subAggregation(AggregationBuilders.count(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.count(esAggregateName).field(esAggregateName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				dateHistogram
-				.subAggregation(AggregationBuilders.cardinality(jsonObject
-								.get(aggregateName)
-								.toString()).field(jsonObject
-								.get(aggregateName)
-								.toString()));
+				.subAggregation(AggregationBuilders.cardinality(esAggregateName).field(esAggregateName));
 			}
 	
 		} catch (JSONException e) {
@@ -820,6 +756,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 	
 	public DateHistogramBuilder dateHistogram(String granularity,String field){
+		
 			String format ="yyyy-MM-dd hh:kk:ss";
 			if(baseAPIService.checkNull(granularity)){
 				org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram.Interval interval = DateHistogram.Interval.DAY;
@@ -999,24 +936,20 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 							.getFields();
 					for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+						String fieldName = esFields(fieldsDetails.getFieldName());
 						if (fieldsDetails.getType()
 								.equalsIgnoreCase("selector")) {
 							if (fieldsDetails.getOperator().equalsIgnoreCase(
 									"rg")) {
 								boolFilter.must(FilterBuilders
-										.rangeFilter(
-												fieldsDetails.getFieldName())
-										.from(checkDataType(
-												fieldsDetails.getFrom(),
-												fieldsDetails.getValueType()))
+										.rangeFilter(fieldName).from(checkDataType(fieldsDetails.getFrom(),fieldsDetails.getValueType()))
 										.to(checkDataType(
 												fieldsDetails.getTo(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("nrg")) {
 								boolFilter.must(FilterBuilders
-										.rangeFilter(
-												fieldsDetails.getFieldName())
+										.rangeFilter(fieldName)
 										.from(checkDataType(
 												fieldsDetails.getFrom(),
 												fieldsDetails.getValueType()))
@@ -1025,14 +958,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("eq")) {
-								boolFilter.must(FilterBuilders.inFilter(
-										fieldsDetails.getFieldName(),
+								boolFilter.must(FilterBuilders.inFilter(fieldName,
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("lk")) {
-								boolFilter.must(FilterBuilders.prefixFilter(
-										fieldsDetails.getFieldName(),
+								boolFilter.must(FilterBuilders.prefixFilter(fieldName,
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())
 												.toString()));
@@ -1046,25 +977,25 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("le")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).lte(
+										fieldName).lte(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("ge")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).gte(
+										fieldName).gte(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("lt")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).lt(
+										fieldName).lt(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("gt")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).gt(
+										fieldName).gt(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							}
@@ -1237,13 +1168,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							.getFields();
 					BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 					for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+						String fieldName = esFields(fieldsDetails.getFieldName());
 						if (fieldsDetails.getType()
 								.equalsIgnoreCase("selector")) {
 							if (fieldsDetails.getOperator().equalsIgnoreCase(
 									"rg")) {
 								boolFilter.must(FilterBuilders
-										.rangeFilter(
-												fieldsDetails.getFieldName())
+										.rangeFilter(fieldName)
 										.from(checkDataType(
 												fieldsDetails.getFrom(),
 												fieldsDetails.getValueType()))
@@ -1253,8 +1184,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("nrg")) {
 								boolFilter.must(FilterBuilders
-										.rangeFilter(
-												fieldsDetails.getFieldName())
+										.rangeFilter(fieldName)
 										.from(checkDataType(
 												fieldsDetails.getFrom(),
 												fieldsDetails.getValueType()))
@@ -1264,13 +1194,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("eq")) {
 								boolFilter.must(FilterBuilders.termFilter(
-										fieldsDetails.getFieldName(),
+										fieldName,
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("lk")) {
 								boolFilter.must(FilterBuilders.prefixFilter(
-										fieldsDetails.getFieldName(),
+										fieldName,
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())
 												.toString()));
@@ -1284,25 +1214,25 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("le")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).lte(
+										fieldName).lte(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("ge")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).gte(
+										fieldName).gte(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("lt")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).lt(
+										fieldName).lt(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							} else if (fieldsDetails.getOperator()
 									.equalsIgnoreCase("gt")) {
 								boolFilter.must(FilterBuilders.rangeFilter(
-										fieldsDetails.getFieldName()).gt(
+										fieldName).gt(
 										checkDataType(fieldsDetails.getValue(),
 												fieldsDetails.getValueType())));
 							}
@@ -1335,13 +1265,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
 						for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+							String fieldName = esFields(fieldsDetails.getFieldName());
 							if (fieldsDetails.getType()
 									.equalsIgnoreCase("selector")) {
 								if (fieldsDetails.getOperator().equalsIgnoreCase(
 										"rg")) {
 									boolFilter.must(FilterBuilders
-											.rangeFilter(
-													fieldsDetails.getFieldName())
+											.rangeFilter(fieldName)
 											.from(checkDataType(
 													fieldsDetails.getFrom(),
 													fieldsDetails.getValueType()))
@@ -1351,8 +1281,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("nrg")) {
 									boolFilter.must(FilterBuilders
-											.rangeFilter(
-													fieldsDetails.getFieldName())
+											.rangeFilter(fieldName)
 											.from(checkDataType(
 													fieldsDetails.getFrom(),
 													fieldsDetails.getValueType()))
@@ -1361,14 +1290,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("eq")) {
-									boolFilter.must(FilterBuilders.termFilter(
-											fieldsDetails.getFieldName(),
+									boolFilter.must(FilterBuilders.termFilter(fieldName,
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("lk")) {
-									boolFilter.must(FilterBuilders.prefixFilter(
-											fieldsDetails.getFieldName(),
+									boolFilter.must(FilterBuilders.prefixFilter(fieldName,
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())
 													.toString()));
@@ -1381,26 +1308,22 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 													.toString()));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("le")) {
-									boolFilter.must(FilterBuilders.rangeFilter(
-											fieldsDetails.getFieldName()).lte(
+									boolFilter.must(FilterBuilders.rangeFilter(fieldName).lte(
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("ge")) {
-									boolFilter.must(FilterBuilders.rangeFilter(
-											fieldsDetails.getFieldName()).gte(
+									boolFilter.must(FilterBuilders.rangeFilter(fieldName).gte(
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("lt")) {
-									boolFilter.must(FilterBuilders.rangeFilter(
-											fieldsDetails.getFieldName()).lt(
+									boolFilter.must(FilterBuilders.rangeFilter(fieldName).lt(
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								} else if (fieldsDetails.getOperator()
 										.equalsIgnoreCase("gt")) {
-									boolFilter.must(FilterBuilders.rangeFilter(
-											fieldsDetails.getFieldName()).gt(
+									boolFilter.must(FilterBuilders.rangeFilter(fieldName).gt(
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType())));
 								}
@@ -1450,7 +1373,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (baseAPIService.checkNull(sort)) {
 			for (Map.Entry<String, String> map : sort.entrySet()) {
-				searchRequestBuilder.addSort(map.getKey(), (map.getValue()
+				searchRequestBuilder.addSort(esFields(map.getKey()), (map.getValue()
 						.equalsIgnoreCase("ASC") ? SortOrder.ASC
 						: SortOrder.DESC));
 			}

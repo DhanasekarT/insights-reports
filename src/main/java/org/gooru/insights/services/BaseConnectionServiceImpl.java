@@ -150,9 +150,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public void initESConnection(){
 		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
-		System.out.println("column list");
 		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
-		System.out.println(" index "+columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue());
 		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
 		System.out.println(" cluster "+clusterName);
 
