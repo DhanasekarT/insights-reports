@@ -2,6 +2,7 @@ package org.gooru.insights.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -67,19 +68,18 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public Properties getCassandraProperties() {
 		return cassandra;
 	}
+	
 	@PostConstruct
 	public void initConnect(){
 		
 		if(insightsKeyspace == null || searchKeyspace == null){
-		System.out.println(" init insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
 		initCassandraConnection();
-		if(fieldsCache.isEmpty()){
-		eventFields();
+		if( fieldsCache == null ){
+			eventFields();
 		}
 		}
 		
 		if(client == null ){
-		System.out.println("init es client "+ client);
 		initESConnection();
 		}
 		
@@ -148,7 +148,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-		OperationResult<ColumnList<String>> rowResult =readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		System.out.println("column list");
 		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
@@ -165,12 +165,6 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
 		System.out.println(" nodeType "+nodeType);
 
-//	String indexName ="event_logger";
-//	String clusterName="";
-//	String hostName="162.243.130.94";
-//	String portNo="9300";
-//	String nodeType ="transportClient";
-		System.out.println("nodeType "+nodeType);
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
 			client  = initNodeClient(clusterName);
@@ -205,74 +199,14 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public void eventFields(){
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
+		fieldsCache = new HashMap<String, String>();
 		for(Row<String, String> row : rows){
-			System.out.println("row "+row.getColumns().getStringValue("be_column",row.getKey()));
 			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 		}
+		System.out.println("fields"+fieldsCache);
 	}
 	public Map<String, String> getFields() {
 		return fieldsCache;
-	}
-	
-	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns) {
-		OperationResult<Rows<String, String>> queryResult = null;
-		AllRowsQuery<String, String> allRowQuery = null;
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connectInsights();
-		} else {
-			queryKeyspace = connectSearch();
-		}
-		try {
-
-			allRowQuery  = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamily)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getAllRows();
-
-			if (!columns.isEmpty()) {
-				System.out.println("entered column fetcher ");
-				allRowQuery.withColumnSlice(columns);
-			}
-			
-			queryResult = allRowQuery.execute();
-			
-
-		} catch (ConnectionException e) {
-			e.printStackTrace();
-			System.out.println("Query execution exeption");
-		}
-		return queryResult;
-	}
-	
-	public OperationResult<ColumnList<String>> readColumns(String keyspace, String columnFamilyName, String rowKey,Collection<String> columns) {
-
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connectInsights();
-		} else {
-			queryKeyspace = connectSearch();
-		}
-		try {
-			RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getKey(rowKey);
-		
-			if(baseAPIService.checkNull(columns)){
-				rowQuery.withColumnSlice(columns);
-			}
-			return rowQuery.execute();
-		} catch (ConnectionException e) {
-
-			e.printStackTrace();
-			System.out.println("Query execution exeption");
-		}
-		return null;
-
-	}
-
-	public ColumnFamily<String, String> accessColumnFamily(String columnFamilyName) {
-
-		ColumnFamily<String, String> columnFamily;
-
-		columnFamily = new ColumnFamily<String, String>(columnFamilyName, StringSerializer.get(), StringSerializer.get());
-
-		return columnFamily;
 	}
 }
 
