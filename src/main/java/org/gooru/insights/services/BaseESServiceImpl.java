@@ -1582,7 +1582,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			String[] fields = groupBy.split(",");
 			JSONObject json = new JSONObject(resultData);
 			json = new JSONObject(json.get("aggregations").toString());
-			JSONObject requestJSON = new JSONObject(esFields(json.get(fields[0]).toString()));
+			JSONObject requestJSON = new JSONObject(json.get(esFields(fields[0])).toString());
 			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 			if(fields.length == 2){
 			Set<Object> subKeys = new HashSet<Object>();
@@ -1641,7 +1641,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			String[] fields = groupBy.split(",");
 			JSONObject json = new JSONObject(resultData);
 			json = new JSONObject(json.get("aggregations").toString());
-			JSONObject requestJSON = new JSONObject(esFields(json.get(fields[0]).toString()));
+			JSONObject requestJSON = new JSONObject(json.get(esFields(fields[0])).toString());
 			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 			if(fields.length == 2){
 			Set<Object> subKeys = new HashSet<Object>();
@@ -1649,7 +1649,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 				Object key=newJson.get("key");
 				String granularity=newJson.getString("key_as_string");
-				newJson = new JSONObject(esFields(newJson.get(fields[1]).toString()));
+				newJson = new JSONObject(newJson.get(esFields(fields[1])).toString());
 				JSONArray subJsonArray = new JSONArray(newJson.get("buckets").toString());
 				for(int j=0;j<subJsonArray.length();j++){
 					JSONObject metricsJson = new JSONObject(subJsonArray.get(j).toString());
