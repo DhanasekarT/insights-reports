@@ -1858,7 +1858,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			if(!dataKey.equalsIgnoreCase("fields")){
 			for(int i =0;i< jsonArray.length();i++){
 				json = new JSONObject(jsonArray.get(i).toString());
-				resultJsonArray.put(json.get(dataKey));
+				JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
+				json = new JSONObject();
+				
+				Iterator<String> keys = fieldJson.keys();
+				while(keys.hasNext()){
+					String key =keys.next(); 
+					json.put(esFields(key), fieldJson.get(key));
+				}
+				resultJsonArray.put(json);
 			}
 			}else{
 				for(int i =0;i< jsonArray.length();i++){
@@ -1870,9 +1878,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					 String key = keys.next();
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
-					 resultJson.put(key,fieldJsonArray.get(0));
+					 resultJson.put(esFields(key),fieldJsonArray.get(0));
 					}else{
-						resultJson.put(key,fieldJsonArray);
+						resultJson.put(esFields(key),fieldJsonArray);
 					}
 				 }
 				 resultJsonArray.put(resultJson);

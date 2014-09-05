@@ -48,6 +48,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		}catch(Exception e){
 			e.printStackTrace();
+			errorMap.put(500, "Invalid JSON format");
 			return new JSONArray();
 		}
 		Map<String,Boolean> validatedData = validateData(requestParamsDTO);
