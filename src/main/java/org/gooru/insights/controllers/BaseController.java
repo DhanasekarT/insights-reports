@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mortbay.util.ajax.JSON;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -71,6 +72,7 @@ public class BaseController {
 		}
 			return model;
 		}
+	
 	public void addFilterDate(ModelAndView model,Map<String,String> messageData){
 		if(messageData != null){
 	
@@ -137,20 +139,26 @@ public class BaseController {
 	}
 	}
 	
-	public void sendError(HttpServletResponse response,Map<Integer,String> errorMap) throws IOException{
-		
-		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){
-			
+	public void sendError(HttpServletResponse response,Map<Integer,String> errorMap){
+
+		try {
 			JSONObject json = new JSONObject();
-			try {
-				json.put("developer Message:", entry.getValue()); 
-				json.put("status Code:", entry.getKey());
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-			response.sendError(entry.getKey(),json.toString());
+			json.put("paginate", new JSONObject());
+			json.put("content", new JSONArray());
+			Map<Object,Object> message = new HashMap<Object, Object>();
+			Integer errorCode =500;
+		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){
+			errorCode =  entry.getKey();
+				message.put(errorCode, entry.getValue()); 
+				json.append("message", message);
 		}
+		response.getWriter().write(json.toString());
+		
+	} catch (Exception e) {
+		e.printStackTrace();
 	}
+	}
+	
 	public Map<String,String> getMessage(){
 	return this.dataData;
 	}

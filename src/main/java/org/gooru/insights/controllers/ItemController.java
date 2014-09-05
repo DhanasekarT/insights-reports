@@ -44,7 +44,11 @@ public class ItemController extends BaseController{
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
+		
+		if(!errorMap.isEmpty()){
 		sendError(response,errorMap);
+		return null;
+		}
 		return getModel(jsonArray, getMessage());
 //		ModelAndView model = new ModelAndView();
 //		model.setViewName("content");

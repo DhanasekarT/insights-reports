@@ -1606,11 +1606,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	public List<Map<String,Object>> processGFAJson(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap){
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		try {
-			System.out.println("result "+resultData);
 			String[] fields = groupBy.split(",");
 			JSONObject json = new JSONObject(resultData);
 			json = new JSONObject(json.get("aggregations").toString());
-			System.out.println("aggregation "+json);
 			JSONObject requestJSON = new JSONObject(json.get(esFields(fields[0])).toString());
 			JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 			if(fields.length == 2){
@@ -1878,9 +1876,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					 String key = keys.next();
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
-					 resultJson.put(esFields(key),fieldJsonArray.get(0));
+					 resultJson.put(apiFields(key),fieldJsonArray.get(0));
 					}else{
-						resultJson.put(esFields(key),fieldJsonArray);
+						resultJson.put(apiFields(key),fieldJsonArray);
 					}
 				 }
 				 resultJsonArray.put(resultJson);
@@ -1902,6 +1900,27 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 			if(mappingfields.containsKey(field)){
 				esFields.append(mappingfields.get(field));
+			}else{
+				esFields.append(field);
+			}
+		}
+		return esFields.toString();
+	}
+	
+	public String apiFields(String fields){
+		Map<String,String> mappingfields = baseConnectionService.getFields();
+		Set<String> keys = mappingfields.keySet();
+		Map<String,String> apiFields =new HashMap<String, String>();
+		for(String key : keys){
+			apiFields.put(mappingfields.get(key), key);
+		}
+		StringBuffer esFields = new StringBuffer();
+		for(String field : fields.split(",")){
+			if(esFields.length() > 0){
+				esFields.append(",");
+			}
+			if(apiFields.containsKey(field)){
+				esFields.append(apiFields.get(field));
 			}else{
 				esFields.append(field);
 			}
