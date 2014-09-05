@@ -94,10 +94,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return response.execute().actionGet().getCount();
 	}
 
-	public String searchData(RequestParamsDTO requestParamsDTO,
+	public JSONArray searchData(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types, String fields,
 			QueryBuilder query, FilterBuilder filters, Integer offset,
-			Integer limit, Map<String, String> sort,Map<String,Boolean> validatedData) {
+			Integer limit, Map<String, String> sort,Map<String,Boolean> validatedData,Map<String,String> dataRecord,Map<Integer,String> errorRecord) {
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 		Map<String,String> metricsName = new HashMap<String,String>();
@@ -105,8 +105,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		boolean aggregate = false;
 		boolean granularityFilter = false;
 		boolean granularity = false;
-		
+		String result ="[{}]";
 		fields = esFields(fields);
+		
+		String dataKey=esSources.SOURCE.esSource();
+		
+
+		if(validatedData.get(hasdata.HAS_FEILDS.check())){
+			dataKey=esSources.FIELDS.esSource();
+		}
 		
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
 			for (String field : fields.split(",")) {
@@ -147,7 +154,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		paginate(offset, limit, searchRequestBuilder);
 		System.out.println("query \n"+searchRequestBuilder);
 		
-		String result =  searchRequestBuilder.execute().actionGet().toString();
+		try{
+		result =  searchRequestBuilder.execute().actionGet().toString();
+		
+		}catch(Exception e){
+			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
+			return new JSONArray();
+		}
+		
 		if(filterAggregate){
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
@@ -157,26 +171,25 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			//			List<Map<String,Object>> subresultList = getSource(result);
 //			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,indices, fields, filtersMap);
 //			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
-		return formDataJSONArray(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList)).toString();
+		return formDataJSONArray(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
 		}
 		
 		if(granularityFilter){
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> dataMap = processGFAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
 			try {
-				return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
+				return baseAPIService.formatKeyValueJson(dataMap,"date");
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
 			
-			return baseAPIService.convertListtoJsonArray(dataMap).toString();
+			return baseAPIService.convertListtoJsonArray(dataMap);
 		}
 			if(granularity){
 				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 				List<Map<String,Object>> dataMap = processGAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
-				System.out.println(" process data "+ dataMap);
 				try {
-					return baseAPIService.formatKeyValueJson(dataMap,"date").toString();
+					return baseAPIService.formatKeyValueJson(dataMap,"date");
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
@@ -186,7 +199,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 				List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 //				result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
-			return formDataJSONArray(processAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList)).toString();
+			return formDataJSONArray(processAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
 			
 			}
 			
@@ -195,7 +208,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 //			System.out.println(" sub-result List "+subresultList);
 //			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
 		
-		return result;
+		return getRecords(result,dataRecord,errorRecord,dataKey);
 
 	}
 	
@@ -1830,6 +1843,46 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	public Client getClient() {
 		return baseConnectionService.getClient();
+	}
+	
+	
+	public JSONArray getRecords(String data,Map<String,String> dataRecord,Map<Integer,String> errorRecord,String dataKey){
+		JSONObject json;
+		JSONArray jsonArray = new JSONArray();
+		JSONArray resultJsonArray = new JSONArray();
+		try {
+			json = new JSONObject(data);
+			json = new JSONObject(json.get("hits").toString());
+			dataRecord.put("totalRows", json.get("total").toString());
+			jsonArray = new JSONArray(json.get("hits").toString());
+			if(!dataKey.equalsIgnoreCase("fields")){
+			for(int i =0;i< jsonArray.length();i++){
+				json = new JSONObject(jsonArray.get(i).toString());
+				resultJsonArray.put(json.get(dataKey));
+			}
+			}else{
+				for(int i =0;i< jsonArray.length();i++){
+					JSONObject resultJson = new JSONObject();
+				json = new JSONObject(jsonArray.get(i).toString());
+				json = new JSONObject(json.get(dataKey).toString());
+				 Iterator<String> keys =json.keys();
+				 while(keys.hasNext()){
+					 String key = keys.next();
+					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
+					if(fieldJsonArray.length() == 1){	 
+					 resultJson.put(key,fieldJsonArray.get(0));
+					}else{
+						resultJson.put(key,fieldJsonArray);
+					}
+				 }
+				 resultJsonArray.put(resultJson);
+			}
+			}
+			return resultJsonArray;
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return resultJsonArray;
 	}
 	
 	public String esFields(String fields){

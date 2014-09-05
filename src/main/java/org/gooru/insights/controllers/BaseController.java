@@ -137,6 +137,20 @@ public class BaseController {
 	}
 	}
 	
+	public void sendError(HttpServletResponse response,Map<Integer,String> errorMap) throws IOException{
+		
+		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){
+			
+			JSONObject json = new JSONObject();
+			try {
+				json.put("developer Message:", entry.getValue());
+				json.put("status Code:", entry.getKey());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			response.sendError(entry.getKey(),json.toString());
+		}
+	}
 	public Map<String,String> getMessage(){
 	return this.dataData;
 	}

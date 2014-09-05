@@ -43,7 +43,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		FilterBuilder filterBuilder = null;
 		Integer offset =0;
 		Integer limit =10;
-		String dataKey=esSources.SOURCE.esSource();
+		
 		try{
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		}catch(Exception e){
@@ -55,10 +55,6 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			errorMap.put(400, "should provide the data source to be fetched");
 			return new JSONArray();
 		}
-		if(validatedData.get(hasdata.HAS_FEILDS.check())){
-			dataKey=esSources.FIELDS.esSource();
-		}
-		
 			if(validatedData.get(hasdata.HAS_Offset.check())){
 			offset = requestParamsDTO.getPagination().getOffset();
 			}
@@ -74,66 +70,11 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			}
 			}
 			String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
-			if(validatedData.get(hasdata.HAS_GRANULARITY.check())){
-				try {
-					return new JSONArray(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
-			}
 			
-			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_AGGREGATE.check())){
-				try {
-				JSONArray jsonArray = new JSONArray(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData));
-				return jsonArray;
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
-			}
-			
-		return getRecords(esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData),dataRecord,errorMap,dataKey);
+		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData,dataRecord,errorMap);
 		
 	}
 
-	public JSONArray getRecords(String data,Map<String,String> dataRecord,Map<Integer,String> errorRecord,String dataKey){
-		JSONObject json;
-		JSONArray jsonArray = new JSONArray();
-		JSONArray resultJsonArray = new JSONArray();
-		try {
-			json = new JSONObject(data);
-			json = new JSONObject(json.get("hits").toString());
-			dataRecord.put("totalRows", json.get("total").toString());
-			jsonArray = new JSONArray(json.get("hits").toString());
-			if(!dataKey.equalsIgnoreCase("fields")){
-			for(int i =0;i< jsonArray.length();i++){
-				json = new JSONObject(jsonArray.get(i).toString());
-				resultJsonArray.put(json.get(dataKey));
-			}
-			}else{
-				for(int i =0;i< jsonArray.length();i++){
-					JSONObject resultJson = new JSONObject();
-				json = new JSONObject(jsonArray.get(i).toString());
-				json = new JSONObject(json.get(dataKey).toString());
-				 Iterator<String> keys =json.keys();
-				 while(keys.hasNext()){
-					 String key = keys.next();
-					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
-					if(fieldJsonArray.length() == 1){	 
-					 resultJson.put(key,fieldJsonArray.get(0));
-					}else{
-						resultJson.put(key,fieldJsonArray);
-					}
-				 }
-				 resultJsonArray.put(resultJson);
-			}
-			}
-			return resultJsonArray;
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return resultJsonArray;
-	}
-	
 	public String checkSort(String sortOrder){
 		if("ASC".equalsIgnoreCase(sortOrder)){
 			return "ASC";

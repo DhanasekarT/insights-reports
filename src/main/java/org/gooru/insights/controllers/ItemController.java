@@ -44,19 +44,11 @@ public class ItemController extends BaseController{
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
-		sendError(errorMap, response);
+		sendError(response,errorMap);
 		return getModel(jsonArray, getMessage());
 //		ModelAndView model = new ModelAndView();
 //		model.setViewName("content");
 //		model.addObject("content",itemService.getEventDetail(data,getMessage(),errorMap));
 //	return model;
-	}
-	
-	public void sendError(Map<Integer,String> errorMap,HttpServletResponse response) throws IOException{
-		if(errorMap != null && !errorMap.isEmpty()){
-			for(Map.Entry<Integer, String> map : errorMap.entrySet()){
-			response.sendError(map.getKey(), map.getValue());
-			}
-		}
 	}
 }

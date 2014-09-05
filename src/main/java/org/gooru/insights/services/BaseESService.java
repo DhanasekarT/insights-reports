@@ -10,7 +10,7 @@ import org.json.JSONArray;
 
 public interface BaseESService {
 
-	String searchData(RequestParamsDTO requestParamsDTO,String[] indices,String[] types,String field,QueryBuilder query,FilterBuilder filters,Integer offset,Integer limit,Map<String,String> sort,Map<String,Boolean> validatedData);
+	JSONArray searchData(RequestParamsDTO requestParamsDTO,String[] indices,String[] types,String field,QueryBuilder query,FilterBuilder filters,Integer offset,Integer limit,Map<String,String> sort,Map<String,Boolean> validatedData,Map<String,String> dataRecord,Map<Integer,String> errorRecord);
 	
 	JSONArray formDataJSONArray(Map<Integer,Map<String,Object>> requestMap);
 }
