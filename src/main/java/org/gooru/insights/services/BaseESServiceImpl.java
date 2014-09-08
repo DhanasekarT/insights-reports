@@ -150,6 +150,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		sortData(sort, searchRequestBuilder);
 		
+		 searchRequestBuilder.setPreference("_primaries");
+		 searchRequestBuilder.setSize(1000);
 
 		paginate(offset, limit, searchRequestBuilder);
 		System.out.println("query \n"+searchRequestBuilder);
@@ -1470,27 +1472,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				Object key=newJson.get("key");
 				keys.add(key);
 				if(counter+1 == fields.length){
+					Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+					boolean processed = false;
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(newJson.has(entry.getValue())){
-						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[counter], newJson.get("key"));
-							boolean processed = false;
-							if(baseAPIService.checkNull(dataMap)){
-								if(dataMap.containsKey(i)){
-									processed = true;
-									Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-									tempMap = dataMap.get(i);
-									resultMap.putAll(tempMap);
-									dataMap.put(i, resultMap);
-								}
-							}
-							if(!processed){
-								dataMap.put(i, resultMap);	
-							}
-						resultList.add(resultMap);
 						}
 						}
+					resultList.add(resultMap);
+					if(baseAPIService.checkNull(dataMap)){
+						if(dataMap.containsKey(i)){
+							processed = true;
+							Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+							tempMap = dataMap.get(i);
+							resultMap.putAll(tempMap);
+							dataMap.put(i, resultMap);
+						}
+					}
+					if(!processed){
+						dataMap.put(i, resultMap);	
+					}
+
 						
 				}else{
 					JSONArray tempArray = new JSONArray();
@@ -1546,27 +1549,27 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				keys.add(key);
 				if(newJson.has("filters")){
 					JSONObject metricsJson = new JSONObject(newJson.get("filters").toString());
+					Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+					boolean processed = false;
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(metricsJson.has(entry.getValue())){
-						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[counter], newJson.get("key"));
-							boolean processed = false;
-							if(baseAPIService.checkNull(dataMap)){
-								if(dataMap.containsKey(i)){
-									processed = true;
-									Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-									tempMap = dataMap.get(i);
-									resultMap.putAll(tempMap);
-									dataMap.put(i, resultMap);
-								}
-							}
-							if(!processed){
-								dataMap.put(i, resultMap);	
-							}
-						resultList.add(resultMap);
 						}
 						}
+					resultList.add(resultMap);
+					if(baseAPIService.checkNull(dataMap)){
+						if(dataMap.containsKey(i)){
+							processed = true;
+							Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+							tempMap = dataMap.get(i);
+							resultMap.putAll(tempMap);
+							dataMap.put(i, resultMap);
+						}
+					}
+					if(!processed){
+						dataMap.put(i, resultMap);	
+					}
 						
 				}else{
 					JSONArray tempArray = new JSONArray();
@@ -1624,16 +1627,16 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					Object subKey=metricsJson.get("key");
 					subKeys.add(subKey);
 					metricsJson = new JSONObject(metricsJson.get("filters").toString());
+					Map<String,Object> resultMap = new HashMap<String,Object>();
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(metricsJson.has(entry.getValue())){
-						Map<String,Object> resultMap = new HashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[1], subKey);
 							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
 							resultMap.put("date", granularity);
-							resultList.add(resultMap);
 						}
 					}
+					resultList.add(resultMap);
 				}
 			}
 			filterMap.put(esFields(fields[1]), subKeys);
@@ -1686,16 +1689,16 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					JSONObject metricsJson = new JSONObject(subJsonArray.get(j).toString());
 					Object subKey=metricsJson.get("key");
 					subKeys.add(subKey);
+					Map<String,Object> resultMap = new HashMap<String,Object>();
 					for(Map.Entry<String,String> entry : metrics.entrySet()){
 						if(metricsJson.has(entry.getValue())){
-						Map<String,Object> resultMap = new HashMap<String,Object>();
 							resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
 							resultMap.put(fields[1], subKey);
 							resultMap.put(fields[0], baseAPIService.convertTimeMstoISO(key));
 							resultMap.put("date", granularity);
-							resultList.add(resultMap);
 						}
 					}
+					resultList.add(resultMap);
 				}
 			}
 			filterMap.put(esFields(fields[1]), subKeys);
