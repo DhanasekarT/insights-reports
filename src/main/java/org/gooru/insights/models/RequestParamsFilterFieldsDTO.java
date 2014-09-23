@@ -23,6 +23,17 @@ public class RequestParamsFilterFieldsDTO implements Serializable{
 	
 	private String to;
 	
+	private String format;
+	
+	
+	public String getFormat() {
+		return format;
+	}
+
+	public void setFormat(String format) {
+		this.format = format;
+	}
+
 	public String getOperator() {
 		return Operator;
 	}

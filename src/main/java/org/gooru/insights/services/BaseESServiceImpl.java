@@ -31,6 +31,7 @@ import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
@@ -71,6 +72,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 	@Autowired
 	BaseAPIService baseAPIService;
+	
+	@Autowired
+	UpdatedService updatedService;
 
 	RequestParamsSortDTO requestParamsSortDTO;
 
@@ -81,7 +85,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				.execute().actionGet();
 		return response.getSource();
 	}
-
 	public long recordCount(String[] indices, String[] types,
 			QueryBuilder query, String id) {
 		CountRequestBuilder response = getClient().prepareCount(indices);
@@ -100,6 +103,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Integer limit, Map<String, String> sort,Map<String,Boolean> validatedData,Map<String,String> dataRecord,Map<Integer,String> errorRecord) {
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
+		QueryBuilder queryBuilder = null;
+		FilterBuilder filterBuilder = null;
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean filterAggregate = false;
 		boolean aggregate = false;
@@ -126,26 +131,33 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_FILTER.check())) {
-			granularityFAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
-			granularityFilter = true;
-		}
+//			granularityFAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
+//			granularityFilter = true;
+		updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder);
+			
+			} 
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
 			granularityAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
 			granularity = true;
+			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder);
+//			updatedService.FilterAggregate(requestParamsDTO, searchRequestBuilder);
 		}
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_FILTER.check())) {
-			filterAggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			filterAggregate = true;
+//			filterAggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+//			filterAggregate = true;
+			updatedService.aggregate(requestParamsDTO, searchRequestBuilder);
+//			updatedService.FilterAggregate(requestParamsDTO, searchRequestBuilder);
 		}
 		
+//		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
+//			aggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+//		}
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
-			aggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			aggregate = true;
-		}
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
-			aggregateFunction(requestParamsDTO, searchRequestBuilder);
+//			aggregateFunction(requestParamsDTO, searchRequestBuilder);
+//			aggregate = true;
+			updatedService.aggregate(requestParamsDTO, searchRequestBuilder);
 		}
 		
 		sortData(sort, searchRequestBuilder);
@@ -155,13 +167,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 		paginate(offset, limit, searchRequestBuilder);
 		System.out.println("query \n"+searchRequestBuilder);
-		
 		try{
 		result =  searchRequestBuilder.execute().actionGet().toString();
-		
 		}catch(Exception e){
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
-			return new JSONArray();
 		}
 		
 		if(filterAggregate){
@@ -175,12 +184,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 //			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
 		return formDataJSONArray(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
 		}
-		
 		if(granularityFilter){
+			String[] groupBys = requestParamsDTO.getGroupBy().split(",");
 			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 			List<Map<String,Object>> dataMap = processGFAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
 			try {
-				return baseAPIService.formatKeyValueJson(dataMap,"date");
+				return baseAPIService.formatKeyValueJson(dataMap,groupBys[groupBys.length-1]);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -188,10 +197,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			return baseAPIService.convertListtoJsonArray(dataMap);
 		}
 			if(granularity){
+				String[] groupBys = requestParamsDTO.getGroupBy().split(",");
 				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
 				List<Map<String,Object>> dataMap = processGAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
+				System.out.println("dataMap 2"+dataMap);
 				try {
-					return baseAPIService.formatKeyValueJson(dataMap,"date");
+					System.out.println("groupBy fields 2 "+groupBys[groupBys.length-1]);
+					return baseAPIService.formatKeyValueJson(dataMap,groupBys[groupBys.length-1]);
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
@@ -235,7 +247,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								.field(firstField);
 					}
 					
-					String currentField = groupBy[j];
+					String currentField = esFields(groupBy[j]);
 					TermsBuilder subTermBuilder = new TermsBuilder(currentField)
 							.field(currentField);
 					subTermBuilder.size(1000);

@@ -30,6 +30,9 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	@Autowired
 	BaseESService esService;
 	
+	@Autowired
+	UpdatedService updatedService;
+	
 	Map<String,String> indexMap = new HashMap<String,String>();
 
 	ItemServiceImpl(){
