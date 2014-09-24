@@ -3,8 +3,11 @@ package org.gooru.insights.services;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -82,18 +85,20 @@ public class UpdatedServiceImpl implements UpdatedService{
 			boolean isFirstDateHistogram = false;
 			for(int i=groupBy.length-1; i >= 0;i--){
 				TermsBuilder tempBuilder = null;
+				String groupByName = esFields(groupBy[i]);
 				//date field checker	
-				if(i==0){
-					dateHistogram = dateHistogram(requestParamsDTO.getGranularity(),"field"+i,esFields(groupBy[i]));
+				if(baseConnectionService.getFieldsDataType().containsKey(groupByName) && baseConnectionService.getFieldsDataType().get(groupByName).equalsIgnoreCase("date")){
+					dateHistogram = dateHistogram(requestParamsDTO.getGranularity(),"field"+i,groupByName);
 					isFirstDateHistogram =true;
 					if(termBuilder != null){
 						dateHistogram.subAggregation(termBuilder);
+						dateHistogram.minDocCount(1000);
 						termBuilder = null;
 						}
 					}else{
 						
 						if(termBuilder != null){
-						tempBuilder = AggregationBuilders.terms("field"+i).field(esFields(groupBy[i]));
+						tempBuilder = AggregationBuilders.terms("field"+i).field(groupByName);
 						if(dateHistogram != null){
 							if(termBuilder != null){
 								dateHistogram.subAggregation(termBuilder);
@@ -104,11 +109,11 @@ public class UpdatedServiceImpl implements UpdatedService{
 						}
 						termBuilder = tempBuilder;
 						}else{
-							termBuilder = AggregationBuilders.terms("field"+i).field(esFields(groupBy[i]));
+							termBuilder = AggregationBuilders.terms("field"+i).field(groupByName);
 						}
+						termBuilder.size(1000);
 						isFirstDateHistogram =false;
 					}
-				termBuilder.size(1000);
 				System.out.println("i"+i+"groupBy -1 :"+(groupBy.length-1));
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					System.out.println("expected");
@@ -478,4 +483,80 @@ public class UpdatedServiceImpl implements UpdatedService{
 		}
 			return null;
 	}
+		
+		public Map<Integer,Map<String,Object>> processFilterAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
+
+			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
+			try {
+				int counter=0;
+				String[] fields = groupBy.split(",");
+				JSONObject json = new JSONObject(resultData);
+				json = new JSONObject(json.get("aggregations").toString());
+				while(counter < fields.length){
+					JSONObject requestJSON = new JSONObject(json.get(esFields(fields[counter])).toString());
+				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+				JSONArray subJsonArray = new JSONArray();
+				Set<Object> keys = new HashSet<Object>();
+				boolean hasSubAggregate = false;
+				for(int i=0;i<jsonArray.length();i++){
+					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+					Object key=newJson.get("key");
+					keys.add(key);
+					if(newJson.has("filters")){
+						JSONObject metricsJson = new JSONObject(newJson.get("filters").toString());
+						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+						boolean processed = false;
+						for(Map.Entry<String,String> entry : metrics.entrySet()){
+							if(metricsJson.has(entry.getValue())){
+								resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
+								resultMap.put(fields[counter], newJson.get("key"));
+							}
+							}
+						resultList.add(resultMap);
+						if(baseAPIService.checkNull(dataMap)){
+							if(dataMap.containsKey(i)){
+								processed = true;
+								Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+								tempMap = dataMap.get(i);
+								resultMap.putAll(tempMap);
+								dataMap.put(i, resultMap);
+							}
+						}
+						if(!processed){
+							dataMap.put(i, resultMap);	
+						}
+							
+					}else{
+						JSONArray tempArray = new JSONArray();
+						newJson = new JSONObject(newJson.get(esFields(fields[counter+1])).toString());
+						tempArray = new JSONArray(newJson.get("buckets").toString());
+						for(int j=0;j<tempArray.length();j++){
+							subJsonArray.put(tempArray.get(j));
+						}
+						Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+						if(baseAPIService.checkNull(dataMap)){
+							if(dataMap.containsKey(i)){
+								tempMap = dataMap.get(i);
+							}
+						}
+						tempMap.put(fields[counter], key);
+							dataMap.put(i, tempMap);
+						hasSubAggregate = true;
+					}
+				}
+				if(hasSubAggregate){
+					json = new JSONObject();
+					requestJSON.put("buckets", subJsonArray);
+					json.put(fields[counter+1], requestJSON);
+				}
+				
+				filterMap.put(fields[counter], keys);
+				counter++;
+				}
+			} catch (JSONException e) {
+				System.out.println("some logical problem in filter aggregate json ");
+				e.printStackTrace();
+			}
+			return dataMap;
+		}
 }

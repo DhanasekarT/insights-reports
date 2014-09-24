@@ -54,6 +54,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,String> fieldsCache;
 	
+	private static Map<String,String> fieldsDataTypeCache;
+	
 	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
 	 
 	@Autowired
@@ -148,7 +150,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initESConnection(){
-		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONNECTION_CONFIG_SETTING.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
 		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
@@ -200,11 +202,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		fieldsCache = new HashMap<String, String>();
 		for(Row<String, String> row : rows){
 			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
+			fieldsDataTypeCache.put(row.getKey(),row.getColumns().getStringValue("description",row.getKey()));
 		}
 		System.out.println("fields"+fieldsCache);
 	}
+	
 	public Map<String, String> getFields() {
 		return fieldsCache;
+	}
+	
+	public Map<String, String> getFieldsDataType() {
+		return fieldsDataTypeCache;
 	}
 }
 

@@ -43,7 +43,7 @@ public interface CassandraConstants {
 	}
 	
 	public enum columnFamilies{
-		CONNECTION_CONFIG_SETTING("connection_config_setting"),EVENT_FIELDS("event_fields");
+		CONNECTION_CONFIG_SETTING("connection_config_setting"),EVENT_FIELDS("event_fields"),CONFIG_SETTINGS("config_settings");
 		
 		private String columnFamilyName;
 		
