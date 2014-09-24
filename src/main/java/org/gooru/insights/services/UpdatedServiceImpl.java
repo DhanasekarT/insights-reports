@@ -40,7 +40,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	BaseAPIService baseAPIService;
 	
 	
-	public boolean aggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder) {
+	public boolean aggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
 		try{
 			TermsBuilder termBuilder = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(",");
@@ -57,7 +57,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 				System.out.println("i"+i+"groupBy -1 :"+(groupBy.length-1));
 				if( i == groupBy.length-1){
 					System.out.println("expected");
-					includeAggregation(requestParamsDTO, termBuilder);
+					includeAggregation(requestParamsDTO, termBuilder,metricsName);
 				}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
@@ -77,7 +77,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public boolean granularityAggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder) {
+	public boolean granularityAggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
 		try{
 			TermsBuilder termBuilder = null;
 			DateHistogramBuilder dateHistogram = null;
@@ -87,7 +87,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 				TermsBuilder tempBuilder = null;
 				String groupByName = esFields(groupBy[i]);
 				//date field checker	
-				if(baseConnectionService.getFieldsDataType().containsKey(groupByName) && baseConnectionService.getFieldsDataType().get(groupByName).equalsIgnoreCase("date")){
+				if(baseConnectionService.getFieldsDataType().containsKey(groupBy[i]) && baseConnectionService.getFieldsDataType().get(groupBy[i]).equalsIgnoreCase("date")){
+					System.out.println("entered date histogram");
 					dateHistogram = dateHistogram(requestParamsDTO.getGranularity(),"field"+i,groupByName);
 					isFirstDateHistogram =true;
 					if(termBuilder != null){
@@ -103,13 +104,17 @@ public class UpdatedServiceImpl implements UpdatedService{
 							if(termBuilder != null){
 								dateHistogram.subAggregation(termBuilder);
 							}
-							tempBuilder.subAggregation(dateHistogram);
+							
 						}else{
 						tempBuilder.subAggregation(termBuilder);
 						}
 						termBuilder = tempBuilder;
 						}else{
 							termBuilder = AggregationBuilders.terms("field"+i).field(groupByName);
+						}
+						if(dateHistogram != null){
+							termBuilder.subAggregation(dateHistogram);
+							dateHistogram = null;
 						}
 						termBuilder.size(1000);
 						isFirstDateHistogram =false;
@@ -118,14 +123,14 @@ public class UpdatedServiceImpl implements UpdatedService{
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					System.out.println("expected");
 					if(termBuilder != null ){
-					includeAggregation(requestParamsDTO, termBuilder);
+					includeAggregation(requestParamsDTO, termBuilder,metricsName);
 					}
 					}
 				
 				if( i == groupBy.length-1 && isFirstDateHistogram){
 					System.out.println("expected");
 					if(dateHistogram != null ){
-					includeAggregation(requestParamsDTO, dateHistogram);
+					includeAggregation(requestParamsDTO, dateHistogram,metricsName);
 					}
 					}
 			}
@@ -134,7 +139,12 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(filterBuilder == null){
 				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
-			FilterAggregationBuilder filterAgrgregate = new FilterAggregationBuilder("filters").filter(filterBuilder).subAggregation(termBuilder);
+			FilterAggregationBuilder filterAgrgregate = new FilterAggregationBuilder("filters").filter(filterBuilder);
+			if(isFirstDateHistogram){
+				filterAgrgregate.subAggregation(dateHistogram);
+			}else{
+				filterAgrgregate.subAggregation(termBuilder);	
+			}
 			searchRequestBuilder.addAggregation(filterAgrgregate);
 			}else{
 				searchRequestBuilder.addAggregation(termBuilder);
@@ -146,7 +156,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder){
+	public void includeAggregation(RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder,Map<String,String> metricsName){
 	if (!requestParamsDTO.getAggregations().isEmpty()) {
 		try{
 		Gson gson = new Gson();
@@ -174,6 +184,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 								continue;
 							}
 						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), aggregateName);
+						String fieldName = esFields(jsonObject.get(aggregateName).toString());
+						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
+
 						}
 				}
 		}
@@ -183,7 +196,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,DateHistogramBuilder  dateHistogramBuilder){
+	public void includeAggregation(RequestParamsDTO requestParamsDTO,DateHistogramBuilder  dateHistogramBuilder,Map<String,String> metricsName){
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
 			try{
 			Gson gson = new Gson();
@@ -211,6 +224,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 									continue;
 								}
 							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), aggregateName);
+							String fieldName = esFields(jsonObject.get(aggregateName).toString());
+							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
+
 							}
 					}
 			}
@@ -484,6 +500,81 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return null;
 	}
 		
+
+		public Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
+
+			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
+			try {
+				int counter=0;
+				String[] fields = groupBy.split(",");
+				JSONObject json = new JSONObject(resultData);
+				json = new JSONObject(json.get("aggregations").toString());
+				if(hasFilter){
+					json = new JSONObject(json.get("filters").toString());
+				}
+				while(counter < fields.length){
+					JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
+				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+				JSONArray subJsonArray = new JSONArray();
+				boolean hasSubAggregate = false;
+				for(int i=0;i<jsonArray.length();i++){
+					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+					Object key=newJson.get("key");
+					if(counter == (fields.length -1)){
+						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+						boolean processed = false;
+						for(Map.Entry<String,String> entry : metrics.entrySet()){
+							if(newJson.has(entry.getValue())){
+								resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+								resultMap.put(fields[counter], newJson.get("key"));
+							}
+							}
+						if(baseAPIService.checkNull(dataMap)){
+							if(dataMap.containsKey(i)){
+								processed = true;
+								Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+								tempMap = dataMap.get(i);
+								resultMap.putAll(tempMap);
+								dataMap.put(i, resultMap);
+							}
+						}
+						if(!processed){
+							dataMap.put(i, resultMap);	
+						}
+							
+					}else{
+						JSONArray tempArray = new JSONArray();
+						newJson = new JSONObject(newJson.get(esFields(fields[counter+1])).toString());
+						tempArray = new JSONArray(newJson.get("buckets").toString());
+						for(int j=0;j<tempArray.length();j++){
+							subJsonArray.put(tempArray.get(j));
+						}
+						Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+						if(baseAPIService.checkNull(dataMap)){
+							if(dataMap.containsKey(i)){
+								tempMap = dataMap.get(i);
+							}
+						}
+						tempMap.put(fields[counter], key);
+							dataMap.put(i, tempMap);
+						hasSubAggregate = true;
+					}
+				}
+				if(hasSubAggregate){
+					json = new JSONObject();
+					requestJSON.put("buckets", subJsonArray);
+					json.put(fields[counter+1], requestJSON);
+				}
+				
+				counter++;
+				}
+			} catch (JSONException e) {
+				System.out.println("some logical problem in filter aggregate json ");
+				e.printStackTrace();
+			}
+			return dataMap;
+		}
+
 		public Map<Integer,Map<String,Object>> processFilterAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
 
 			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();

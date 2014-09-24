@@ -200,6 +200,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
 		fieldsCache = new HashMap<String, String>();
+		fieldsDataTypeCache = new HashMap<String, String>();
 		for(Row<String, String> row : rows){
 			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 			fieldsDataTypeCache.put(row.getKey(),row.getColumns().getStringValue("description",row.getKey()));

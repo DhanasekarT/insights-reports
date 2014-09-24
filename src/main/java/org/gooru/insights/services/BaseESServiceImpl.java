@@ -106,10 +106,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		QueryBuilder queryBuilder = null;
 		FilterBuilder filterBuilder = null;
 		Map<String,String> metricsName = new HashMap<String,String>();
-		boolean filterAggregate = false;
 		boolean aggregate = false;
-		boolean granularityFilter = false;
-		boolean granularity = false;
 		String result ="[{}]";
 		fields = esFields(fields);
 		
@@ -130,34 +127,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		addFilters(requestParamsDTO.getFilter(), searchRequestBuilder);
 		
 		
-		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_FILTER.check())) {
-//			granularityFAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
-//			granularityFilter = true;
-		updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder);
-			
+		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder,metricsName);
+			aggregate = true;
 			} 
 		
-		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
-			granularityAFunction(requestParamsDTO, searchRequestBuilder, metricsName, validatedData);
-			granularity = true;
-			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder);
-//			updatedService.FilterAggregate(requestParamsDTO, searchRequestBuilder);
-		}
-		
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_FILTER.check())) {
-//			filterAggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-//			filterAggregate = true;
-			updatedService.aggregate(requestParamsDTO, searchRequestBuilder);
-//			updatedService.FilterAggregate(requestParamsDTO, searchRequestBuilder);
-		}
-		
-//		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
-//			aggregateFunction(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-//		}
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check()) && !validatedData.get(hasdata.HAS_FILTER.check())) {
-//			aggregateFunction(requestParamsDTO, searchRequestBuilder);
-//			aggregate = true;
-			updatedService.aggregate(requestParamsDTO, searchRequestBuilder);
+		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			updatedService.aggregate(requestParamsDTO, searchRequestBuilder,metricsName);
+			aggregate = true;
 		}
 		
 		sortData(sort, searchRequestBuilder);
@@ -173,54 +150,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
 		}
 		
-		if(filterAggregate){
-			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
-			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
-//			List<Map<String,Object>> dataMap = formDataList(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
-
-			//inorder to get source from the return call
-			//			List<Map<String,Object>> subresultList = getSource(result);
-//			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,indices, fields, filtersMap);
-//			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
-		return formDataJSONArray(processFilterAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
+		if(aggregate){
+		return formDataJSONArray(updatedService.processAggregateJSON(requestParamsDTO.getGroupBy(), result, metricsName, validatedData.get(hasdata.HAS_FILTER.check())));
 		}
-		if(granularityFilter){
-			String[] groupBys = requestParamsDTO.getGroupBy().split(",");
-			Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
-			List<Map<String,Object>> dataMap = processGFAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
-			try {
-				return baseAPIService.formatKeyValueJson(dataMap,groupBys[groupBys.length-1]);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-			
-			return baseAPIService.convertListtoJsonArray(dataMap);
-		}
-			if(granularity){
-				String[] groupBys = requestParamsDTO.getGroupBy().split(",");
-				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
-				List<Map<String,Object>> dataMap = processGAJson(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap);
-				System.out.println("dataMap 2"+dataMap);
-				try {
-					System.out.println("groupBy fields 2 "+groupBys[groupBys.length-1]);
-					return baseAPIService.formatKeyValueJson(dataMap,groupBys[groupBys.length-1]);
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
-			}
-			
-			if(aggregate){
-				Map<String,Set<Object>> filtersMap = new HashMap<String,Set<Object>>();
-				List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
-//				result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
-			return formDataJSONArray(processAggregateJSON(requestParamsDTO.getGroupBy(),result,metricsName,filtersMap,resultList));
-			
-			}
-			
-			//enable below three lines if you have to do multiget
-			//			List<Map<String,Object>> subresultList = subSearch(requestParamsDTO,ALL_INDICES, fields,new HashMap<String,Set<Object>>());
-//			System.out.println(" sub-result List "+subresultList);
-//			result = baseAPIService.InnerJoin(subresultList,dataMap).toString();
 		
 		return getRecords(result,dataRecord,errorRecord,dataKey);
 
