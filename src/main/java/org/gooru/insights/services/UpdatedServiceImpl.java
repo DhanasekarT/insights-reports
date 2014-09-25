@@ -297,6 +297,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			e.printStackTrace();
 		} 
 		}
+	
 	//search Filter
 		public BoolFilterBuilder addFilters(
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
@@ -544,7 +545,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 							
 					}else{
 						JSONArray tempArray = new JSONArray();
-						newJson = new JSONObject(newJson.get(esFields(fields[counter+1])).toString());
+						System.out.println("new JSON "+newJson);
+						newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
 						tempArray = new JSONArray(newJson.get("buckets").toString());
 						for(int j=0;j<tempArray.length();j++){
 							subJsonArray.put(tempArray.get(j));
@@ -563,85 +565,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 				if(hasSubAggregate){
 					json = new JSONObject();
 					requestJSON.put("buckets", subJsonArray);
-					json.put(fields[counter+1], requestJSON);
+					json.put("field"+(counter+1), requestJSON);
 				}
 				
-				counter++;
-				}
-			} catch (JSONException e) {
-				System.out.println("some logical problem in filter aggregate json ");
-				e.printStackTrace();
-			}
-			return dataMap;
-		}
-
-		public Map<Integer,Map<String,Object>> processFilterAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,Map<String,Set<Object>> filterMap,List<Map<String,Object>> resultList){
-
-			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
-			try {
-				int counter=0;
-				String[] fields = groupBy.split(",");
-				JSONObject json = new JSONObject(resultData);
-				json = new JSONObject(json.get("aggregations").toString());
-				while(counter < fields.length){
-					JSONObject requestJSON = new JSONObject(json.get(esFields(fields[counter])).toString());
-				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
-				JSONArray subJsonArray = new JSONArray();
-				Set<Object> keys = new HashSet<Object>();
-				boolean hasSubAggregate = false;
-				for(int i=0;i<jsonArray.length();i++){
-					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
-					Object key=newJson.get("key");
-					keys.add(key);
-					if(newJson.has("filters")){
-						JSONObject metricsJson = new JSONObject(newJson.get("filters").toString());
-						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
-						boolean processed = false;
-						for(Map.Entry<String,String> entry : metrics.entrySet()){
-							if(metricsJson.has(entry.getValue())){
-								resultMap.put(entry.getKey(), new JSONObject(metricsJson.get(entry.getValue()).toString()).get("value"));
-								resultMap.put(fields[counter], newJson.get("key"));
-							}
-							}
-						resultList.add(resultMap);
-						if(baseAPIService.checkNull(dataMap)){
-							if(dataMap.containsKey(i)){
-								processed = true;
-								Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-								tempMap = dataMap.get(i);
-								resultMap.putAll(tempMap);
-								dataMap.put(i, resultMap);
-							}
-						}
-						if(!processed){
-							dataMap.put(i, resultMap);	
-						}
-							
-					}else{
-						JSONArray tempArray = new JSONArray();
-						newJson = new JSONObject(newJson.get(esFields(fields[counter+1])).toString());
-						tempArray = new JSONArray(newJson.get("buckets").toString());
-						for(int j=0;j<tempArray.length();j++){
-							subJsonArray.put(tempArray.get(j));
-						}
-						Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-						if(baseAPIService.checkNull(dataMap)){
-							if(dataMap.containsKey(i)){
-								tempMap = dataMap.get(i);
-							}
-						}
-						tempMap.put(fields[counter], key);
-							dataMap.put(i, tempMap);
-						hasSubAggregate = true;
-					}
-				}
-				if(hasSubAggregate){
-					json = new JSONObject();
-					requestJSON.put("buckets", subJsonArray);
-					json.put(fields[counter+1], requestJSON);
-				}
-				
-				filterMap.put(fields[counter], keys);
 				counter++;
 				}
 			} catch (JSONException e) {
@@ -651,3 +577,5 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return dataMap;
 		}
 }
+
+ 

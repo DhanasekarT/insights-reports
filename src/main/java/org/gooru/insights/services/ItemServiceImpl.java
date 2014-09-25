@@ -62,17 +62,21 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			if(validatedData.get(hasdata.HAS_Offset.check())){
 			offset = requestParamsDTO.getPagination().getOffset();
 			}
+			
 			if(validatedData.get(hasdata.HAS_LIMIT.check())){
 			limit = requestParamsDTO.getPagination().getLimit();
 			}
+			
 			if(validatedData.get(hasdata.HAS_SORTBY.check())){
-			List<RequestParamsSortDTO> requestParamsSortDTO = requestParamsDTO.getPagination().getOrder();
+			
+				List<RequestParamsSortDTO> requestParamsSortDTO = requestParamsDTO.getPagination().getOrder();
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
 				if(validatedData.get(hasdata.HAS_SORTBY.check())){
 					sort.put(sortData.getSortBy(), baseAPIService.checkNull(sortData.getSortOrder()) ? checkSort(sortData.getSortOrder()) : "ASC");
 				}
 			}
 			}
+			
 			String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
 			
 		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData,dataRecord,errorMap);

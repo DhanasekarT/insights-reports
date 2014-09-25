@@ -19,7 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class BaseController {
 
-	Map<String,String> dataData = new HashMap<String,String>();
+	Map<String,String> errorData = new HashMap<String,String>();
 	
 	protected ModelAndView getModel(JSONArray data,Map<String,String> messageData){
 		return  this.resultSet(data,messageData);
@@ -160,11 +160,11 @@ public class BaseController {
 	}
 	
 	public Map<String,String> getMessage(){
-	return this.dataData;
+	return this.errorData;
 	}
 	
 	public void clearMessage(){
-		this.dataData = new HashMap<String,String>();
+		this.errorData = new HashMap<String,String>();
 	}
 	
 }
