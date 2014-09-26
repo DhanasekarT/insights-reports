@@ -15,6 +15,8 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.NestedFilterBuilder;
+import org.elasticsearch.index.query.NestedFilterParser;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -303,13 +305,13 @@ public class UpdatedServiceImpl implements UpdatedService{
 	//search Filter
 		public BoolFilterBuilder addFilters(
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
+			BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 			BoolFilterBuilder subFilter = FilterBuilders.boolFilter();
 			if (requestParamsFiltersDetailDTO != null) {
 				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
 					if (fieldData != null) {
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
-						BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 						for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
 							String fieldName = esFields(fieldsDetails.getFieldName());
 							if (fieldsDetails.getType()
@@ -383,24 +385,29 @@ public class UpdatedServiceImpl implements UpdatedService{
 											checkDataType(fieldsDetails.getValue(),
 													fieldsDetails.getValueType(),fieldsDetails.getFormat())));
 								}
-							} 
-							}
+					}
+						}
+						
 						if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 								"AND")) {
-							subFilter.must(FilterBuilders.andFilter(boolFilter));
+							boolFilter.should(FilterBuilders.andFilter(boolFilter));
 						} else if (fieldData.getLogicalOperatorPrefix()
 								.equalsIgnoreCase("OR")) {
-							subFilter.must(FilterBuilders.orFilter(boolFilter));
+							boolFilter.should(FilterBuilders.orFilter(boolFilter));
 						} else if (fieldData.getLogicalOperatorPrefix()
 								.equalsIgnoreCase("NOT")) {
-							subFilter.must(FilterBuilders.notFilter(boolFilter));
+							boolFilter.should(FilterBuilders.notFilter(boolFilter));
 						}
 					}
 				}
 			}
-			return subFilter;
+			return boolFilter;
 		}
 
+		public void includeFilter(BoolFilterBuilder boolFilter,List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs){
+			
+		}
+				
 		public Object checkDataType(String value, String valueType,String dateformat) {
 			
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
@@ -517,11 +524,15 @@ public class UpdatedServiceImpl implements UpdatedService{
 				Map<Object,Map<String,Object>> intermediateMap = new HashMap<Object,Map<String,Object>>(); 
 				List<Map<Object,Map<String,Object>>> intermediateList = new ArrayList<Map<Object,Map<String, Object>>>(); 
 				while(counter < fields.length){
+					System.out.println("json "+json);
+					if(json.length() > 0){
 					JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
 				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 				JSONArray subJsonArray = new JSONArray();
 				boolean hasSubAggregate = false;
+				boolean hasRecord = false;
 				for(int i=0;i<jsonArray.length();i++){
+					hasRecord = true;
 					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 					Object key=newJson.get("key");
 //					if(counter == (fields.length -1)){
@@ -533,7 +544,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 								resultMap.put(fields[counter], newJson.get("key"));
 							}
 							}
+						if(baseAPIService.checkNull(intermediateMap.get(key))){
 						resultMap.putAll(intermediateMap.get(key));
+						}
 						dataMap.add(resultMap);
 					}else{
 						JSONArray tempArray = new JSONArray();
@@ -542,17 +555,15 @@ public class UpdatedServiceImpl implements UpdatedService{
 						String data ="";
 						for(int j=0;j<tempArray.length();j++){
 							JSONObject subJson = new JSONObject(tempArray.get(j).toString());
-							if(baseAPIService.checkNull(intermediateMap)){
 								Map<String,Object> tempMap = new HashMap<String, Object>();
 								if(intermediateMap.containsKey(key)){
 									tempMap.putAll(intermediateMap.get(key));
-									tempMap.put(fields[counter], subJson.get("key").toString());
+									tempMap.put(fields[counter], key);
 									intermediateMap.put(subJson.get("key"),tempMap);
 								}else{
-									tempMap.put(fields[counter], subJson.get("key").toString());
+									tempMap.put(fields[counter], key);
 									intermediateMap.put(subJson.get("key"), tempMap);
 								}
-							}
 							subJsonArray.put(tempArray.get(j));
 						}
 						hasSubAggregate = true;
@@ -564,6 +575,10 @@ public class UpdatedServiceImpl implements UpdatedService{
 					json.put("field"+(counter+1), requestJSON);
 				}
 				
+				if(!hasRecord){
+					json = new JSONObject();	
+				}
+					}
 				counter++;
 				}
 			} catch (JSONException e) {

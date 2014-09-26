@@ -1215,15 +1215,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						}
 					if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 							"AND")) {
-						subFilter = FilterBuilders.andFilter(boolFilter);
+						searchRequestBuilder.setPostFilter((boolFilter));
 					} else if (fieldData.getLogicalOperatorPrefix()
 							.equalsIgnoreCase("OR")) {
-						subFilter = FilterBuilders.orFilter(boolFilter);
+						searchRequestBuilder.setPostFilter(FilterBuilders.orFilter(boolFilter));
 					} else if (fieldData.getLogicalOperatorPrefix()
 							.equalsIgnoreCase("NOT")) {
-						subFilter = FilterBuilders.notFilter(boolFilter);
+						searchRequestBuilder.setPostFilter(FilterBuilders.notFilter(boolFilter));
 					}
-					searchRequestBuilder.setPostFilter(subFilter);
 				}
 			}
 		}
