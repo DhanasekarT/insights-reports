@@ -65,12 +65,11 @@ public class UpdatedServiceImpl implements UpdatedService{
 				}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
-			FilterBuilder filterBuilder = null;
+				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
 				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
-			FilterAggregationBuilder filterAgrgregate = new FilterAggregationBuilder("filters").filter(filterBuilder).subAggregation(termBuilder);
-			searchRequestBuilder.addAggregation(filterAgrgregate);
+			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
@@ -139,17 +138,16 @@ public class UpdatedServiceImpl implements UpdatedService{
 					}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
-			FilterBuilder filterBuilder = null;
+				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
 				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
-			FilterAggregationBuilder filterAgrgregate = new FilterAggregationBuilder("filters").filter(filterBuilder);
 			if(isFirstDateHistogram){
-				filterAgrgregate.subAggregation(dateHistogram);
+				filterBuilder.subAggregation(dateHistogram);
 			}else{
-				filterAgrgregate.subAggregation(termBuilder);	
+				filterBuilder.subAggregation(termBuilder);	
 			}
-			searchRequestBuilder.addAggregation(filterAgrgregate);
+			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
@@ -303,12 +301,13 @@ public class UpdatedServiceImpl implements UpdatedService{
 		}
 	
 	//search Filter
-		public BoolFilterBuilder addFilters(
+		public FilterAggregationBuilder addFilters(
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
-			BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 			BoolFilterBuilder subFilter = FilterBuilders.boolFilter();
+			FilterAggregationBuilder filterBuilder = null;
 			if (requestParamsFiltersDetailDTO != null) {
 				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
+					BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 					if (fieldData != null) {
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
@@ -390,18 +389,18 @@ public class UpdatedServiceImpl implements UpdatedService{
 						
 						if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 								"AND")) {
-							boolFilter.should(FilterBuilders.andFilter(boolFilter));
+							filterBuilder.filter(FilterBuilders.andFilter(boolFilter));
 						} else if (fieldData.getLogicalOperatorPrefix()
 								.equalsIgnoreCase("OR")) {
-							boolFilter.should(FilterBuilders.orFilter(boolFilter));
+							filterBuilder.filter(FilterBuilders.orFilter(boolFilter));
 						} else if (fieldData.getLogicalOperatorPrefix()
 								.equalsIgnoreCase("NOT")) {
-							boolFilter.should(FilterBuilders.notFilter(boolFilter));
+							filterBuilder.filter(FilterBuilders.notFilter(boolFilter));
 						}
 					}
 				}
 			}
-			return boolFilter;
+			return filterBuilder;
 		}
 
 		public void includeFilter(BoolFilterBuilder boolFilter,List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs){
