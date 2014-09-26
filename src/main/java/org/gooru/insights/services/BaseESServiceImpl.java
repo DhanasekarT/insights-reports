@@ -150,11 +150,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			e.printStackTrace();
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
 		}
-		System.out.println("result "+result);
 		if(aggregate){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			return baseAPIService.formatKeyValueJson(formDataList(updatedService.processAggregateJSON(requestParamsDTO.getGroupBy(), result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()))),groupBy[groupBy.length]);
+//			return baseAPIService.formatKeyValueJson(formDataList(updatedService.processAggregateJSON(requestParamsDTO.getGroupBy(), result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()))),groupBy[groupBy.length-1]);
+			return baseAPIService.formatKeyValueJson(updatedService.buildAggregateJSON(requestParamsDTO.getGroupBy(), result, metricsName, validatedData.get(hasdata.HAS_FILTER.check())),groupBy[groupBy.length-1]);
+			
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}

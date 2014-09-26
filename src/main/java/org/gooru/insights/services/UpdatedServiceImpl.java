@@ -3,6 +3,8 @@ package org.gooru.insights.services;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -501,7 +503,76 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return null;
 	}
 		
+		public List<Map<String,Object>> buildAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
+			List<Map<String,Object>> dataMap = new ArrayList<Map<String,Object>>();
+			try {
+				int counter=0;
+				String[] fields = groupBy.split(",");
+				JSONObject json = new JSONObject(resultData);
+				json = new JSONObject(json.get("aggregations").toString());
+				if(hasFilter){
+					json = new JSONObject(json.get("filters").toString());
+				}
+				Map<Object,Map<String,Object>> intermediateMap = new HashMap<Object,Map<String,Object>>(); 
+				List<Map<Object,Map<String,Object>>> intermediateList = new ArrayList<Map<Object,Map<String, Object>>>(); 
+				while(counter < fields.length){
+					JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
+				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+				JSONArray subJsonArray = new JSONArray();
+				boolean hasSubAggregate = false;
+				for(int i=0;i<jsonArray.length();i++){
+					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+					Object key=newJson.get("key");
+//					if(counter == (fields.length -1)){
+						if(counter+1 == (fields.length)){
+						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+						for(Map.Entry<String,String> entry : metrics.entrySet()){
+							if(newJson.has(entry.getValue())){
+								resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+								resultMap.put(fields[counter], newJson.get("key"));
+							}
+							}
+						resultMap.putAll(intermediateMap.get(key));
+						dataMap.add(resultMap);
+					}else{
+						JSONArray tempArray = new JSONArray();
+						newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
+						tempArray = new JSONArray(newJson.get("buckets").toString());
+						String data ="";
+						for(int j=0;j<tempArray.length();j++){
+							JSONObject subJson = new JSONObject(tempArray.get(j).toString());
+							if(baseAPIService.checkNull(intermediateMap)){
+								Map<String,Object> tempMap = new HashMap<String, Object>();
+								if(intermediateMap.containsKey(key)){
+									tempMap.putAll(intermediateMap.get(key));
+									tempMap.put(fields[counter], subJson.get("key").toString());
+									intermediateMap.put(subJson.get("key"),tempMap);
+								}else{
+									tempMap.put(fields[counter], subJson.get("key").toString());
+									intermediateMap.put(subJson.get("key"), tempMap);
+								}
+							}
+							subJsonArray.put(tempArray.get(j));
+						}
+						hasSubAggregate = true;
+					}
+				}
+				if(hasSubAggregate){
+					json = new JSONObject();
+					requestJSON.put("buckets", subJsonArray);
+					json.put("field"+(counter+1), requestJSON);
+				}
+				
+				counter++;
+				}
+			} catch (JSONException e) {
+				System.out.println("some logical problem in filter aggregate json ");
+				e.printStackTrace();
+			}
+			System.out.println("dataMap "+dataMap);
+			return dataMap;
+		}
 		public Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
 			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
@@ -521,7 +592,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 				for(int i=0;i<jsonArray.length();i++){
 					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 					Object key=newJson.get("key");
-					if(counter == (fields.length -1)){
+//					if(counter == (fields.length -1)){
+						if(counter+1 == (fields.length)){
 						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 						boolean processed = false;
 						for(Map.Entry<String,String> entry : metrics.entrySet()){
@@ -545,7 +617,6 @@ public class UpdatedServiceImpl implements UpdatedService{
 							
 					}else{
 						JSONArray tempArray = new JSONArray();
-						System.out.println("new JSON "+newJson);
 						newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
 						tempArray = new JSONArray(newJson.get("buckets").toString());
 						for(int j=0;j<tempArray.length();j++){
@@ -558,7 +629,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 							}
 						}
 						tempMap.put(fields[counter], key);
-							dataMap.put(i, tempMap);
+						System.out.println("tempMap "+tempMap);
+						dataMap.put(i, tempMap);
 						hasSubAggregate = true;
 					}
 				}
@@ -574,6 +646,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 				System.out.println("some logical problem in filter aggregate json ");
 				e.printStackTrace();
 			}
+			System.out.println("dataMap "+dataMap);
 			return dataMap;
 		}
 }
