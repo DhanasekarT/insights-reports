@@ -12,11 +12,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.MatchAllFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterParser;
+import org.elasticsearch.index.query.NotFilterBuilder;
+import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -67,7 +72,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = addFilters(requestParamsDTO.getFilter());
+				filterBuilder = includeFilters(requestParamsDTO.getFilter());
+//				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
@@ -140,7 +146,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = addFilters(requestParamsDTO.getFilter());
+				filterBuilder = includeFilters(requestParamsDTO.getFilter());
+//				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			if(isFirstDateHistogram){
 				filterBuilder.subAggregation(dateHistogram);
@@ -303,15 +310,17 @@ public class UpdatedServiceImpl implements UpdatedService{
 	//search Filter
 		public FilterAggregationBuilder addFilters(
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
-			BoolFilterBuilder subFilter = FilterBuilders.boolFilter();
-			FilterAggregationBuilder filterBuilder = null;
+			MatchAllFilterBuilder subFilter = FilterBuilders.matchAllFilter();
+			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
 			if (requestParamsFiltersDetailDTO != null) {
 				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
-					BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
+				
 					if (fieldData != null) {
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
+						BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 						for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+							FilterBuilder filter = null;
 							String fieldName = esFields(fieldsDetails.getFieldName());
 							if (fieldsDetails.getType()
 									.equalsIgnoreCase("selector")) {
@@ -386,23 +395,160 @@ public class UpdatedServiceImpl implements UpdatedService{
 								}
 					}
 						}
-						
-						if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
-								"AND")) {
-							filterBuilder.filter(FilterBuilders.andFilter(boolFilter));
-						} else if (fieldData.getLogicalOperatorPrefix()
-								.equalsIgnoreCase("OR")) {
-							filterBuilder.filter(FilterBuilders.orFilter(boolFilter));
-						} else if (fieldData.getLogicalOperatorPrefix()
-								.equalsIgnoreCase("NOT")) {
-							filterBuilder.filter(FilterBuilders.notFilter(boolFilter));
+							if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+									"AND")) {
+								filterBuilder.filter(FilterBuilders.andFilter(boolFilter));
+//								subFilter.must(FilterBuilders.andFilter(boolFilter));
+//								filterBuilder.filter(FilterBuilders.andFilter(boolFilter));
+							} else if (fieldData.getLogicalOperatorPrefix()
+									.equalsIgnoreCase("OR")) {
+								filterBuilder.filter(FilterBuilders.orFilter(boolFilter));
+//								filterBuilder.filter(FilterBuilders.orFilter(boolFilter));
+							} else if (fieldData.getLogicalOperatorPrefix()
+									.equalsIgnoreCase("NOT")) {
+								filterBuilder.filter(FilterBuilders.notFilter(boolFilter));
+//								filterBuilder.filter(FilterBuilders.notFilter(boolFilter));
+							
 						}
+						
 					}
 				}
+				filterBuilder.filter(subFilter);
 			}
+			
 			return filterBuilder;
 		}
 
+		public FilterAggregationBuilder includeFilters(
+				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
+			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
+			if (requestParamsFiltersDetailDTO != null) {
+				
+				BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
+				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
+					if (fieldData != null) {
+						AndFilterBuilder andFilter = null;
+						OrFilterBuilder orFilter = null;
+						NotFilterBuilder notFilter = null;
+						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
+								.getFields();
+			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+				FilterBuilder filter = null;
+				String fieldName = esFields(fieldsDetails.getFieldName());
+				if (fieldsDetails.getType()
+						.equalsIgnoreCase("selector")) {
+					if (fieldsDetails.getOperator().equalsIgnoreCase(
+							"rg")) {
+							filter = FilterBuilders
+								.rangeFilter(fieldName)
+								.from(checkDataType(
+										fieldsDetails.getFrom(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()))
+								.to(checkDataType(
+										fieldsDetails.getTo(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("nrg")) {
+						filter =  FilterBuilders
+								.rangeFilter(fieldName)
+								.from(checkDataType(
+										fieldsDetails.getFrom(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()))
+								.to(checkDataType(
+										fieldsDetails.getTo(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("eq")) {
+						filter = FilterBuilders.termFilter(
+								fieldName,
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("lk")) {
+						filter =  FilterBuilders.prefixFilter(
+								fieldName,
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat())
+										.toString());
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("ex")) {
+						filter = FilterBuilders
+								.existsFilter(checkDataType(
+										fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat())
+										.toString());
+					}   else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("in")) {
+						filter = FilterBuilders.inFilter(fieldName,
+								fieldsDetails.getValue().split(","));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("le")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).lte(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("ge")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).gte(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("lt")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).lt(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("gt")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).gt(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					}
+					}
+
+			
+			if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"AND")) {
+				if(andFilter == null){
+					andFilter = FilterBuilders.andFilter(filter);
+				}else{
+					andFilter.add(filter);
+				}
+			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"OR")) {
+				if(andFilter == null){
+					orFilter = FilterBuilders.orFilter(filter);
+				}else{
+					orFilter.add(filter);
+				}
+			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"NOT")) {
+				if(notFilter == null){
+					notFilter = FilterBuilders.notFilter(filter);
+			}
+			}
+			}
+			if(andFilter == null){
+				
+				boolFilter.must(andFilter);
+			}
+			if(orFilter == null){
+				
+				boolFilter.must(orFilter);
+			}
+			if(notFilter == null){
+	
+				boolFilter.must(notFilter);
+			}
+					}
+			}
+				filterBuilder.filter(boolFilter);
+			}
+			return filterBuilder;
+		}
+		
 		public void includeFilter(BoolFilterBuilder boolFilter,List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs){
 			
 		}
