@@ -248,28 +248,27 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			String esAggregateName= esFields(jsonObject.get(fieldName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
 					.sum(aggregateName)
-					.field(aggregateName));
+					.field(fieldName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.avg(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.max(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.min(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.count(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
 			}
 	
 		} catch (Exception e) {
@@ -279,31 +278,30 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	public void performAggregation(DateHistogramBuilder dateHistogramBuilder,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			String esAggregateName= esFields(jsonObject.get(fieldName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
 			.subAggregation(AggregationBuilders
-					.sum(esAggregateName)
-					.field(esAggregateName));
+					.sum(aggregateName)
+					.field(fieldName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.avg(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.max(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.min(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.count(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
 			}
 	
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} 
 		}
