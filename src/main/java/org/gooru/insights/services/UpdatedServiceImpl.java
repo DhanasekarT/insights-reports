@@ -235,7 +235,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 								}
 								String fieldName = esFields(jsonObject.get(aggregateName[j]).toString());
 							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+j,fieldName);
-							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+j);
+							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
 
 							}
 					}
@@ -248,6 +248,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
+			String esAggregateName= esFields(jsonObject.get(fieldName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
@@ -255,20 +256,20 @@ public class UpdatedServiceImpl implements UpdatedService{
 					.field(aggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(esAggregateName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(esAggregateName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(esAggregateName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(esAggregateName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(esAggregateName));
 			}
 	
 		} catch (Exception e) {
@@ -278,30 +279,31 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	public void performAggregation(DateHistogramBuilder dateHistogramBuilder,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
+			String esAggregateName= esFields(jsonObject.get(fieldName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
 			.subAggregation(AggregationBuilders
-					.sum(aggregateName)
-					.field(fieldName));
+					.sum(esAggregateName)
+					.field(esAggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(esAggregateName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(esAggregateName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(esAggregateName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(esAggregateName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(esAggregateName));
 			}
 	
-		} catch (Exception e) {
+		} catch (JSONException e) {
 			e.printStackTrace();
 		} 
 		}
