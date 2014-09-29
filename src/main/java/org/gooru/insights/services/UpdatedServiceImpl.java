@@ -186,14 +186,14 @@ public class UpdatedServiceImpl implements UpdatedService{
 						String requestValues = jsonObject
 								.get("requestValues")
 								.toString();
-						for (String aggregateName : requestValues
-								.split(",")) {
+						String metricField[] =requestValues.split(","); 
+						for (int j=0;j<metricField.length;j++) {
 							if (!jsonObject
-									.has(aggregateName)) {
+									.has(metricField[j])) {
 								continue;
 							}
-						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), aggregateName);
-						String fieldName = esFields(jsonObject.get(aggregateName).toString());
+						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), metricField[j]);
+						String fieldName = esFields(jsonObject.get(metricField[j]).toString());
 						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
 
 						}
