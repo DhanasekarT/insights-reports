@@ -29,9 +29,12 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuild
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.gooru.insights.constants.APIConstants.hasdata;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsPaginationDTO;
+import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,7 +53,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	BaseAPIService baseAPIService;
 	
 	
-	public boolean aggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
+	public boolean aggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		try{
 			TermsBuilder termBuilder = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(",");
@@ -73,7 +76,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = includeFilters(requestParamsDTO.getFilter());
+				filterBuilder = includeFilterAggregate(requestParamsDTO.getFilter());
 //				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
@@ -87,7 +90,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public boolean granularityAggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
+	public boolean granularityAggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		try{
 			TermsBuilder termBuilder = null;
 			DateHistogramBuilder dateHistogram = null;
@@ -102,9 +105,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 					isFirstDateHistogram =true;
 					if(termBuilder != null){
 						dateHistogram.subAggregation(termBuilder);
-						dateHistogram.order(Order.KEY_ASC);
 						termBuilder = null;
 						}
+					includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram);
 					}else{
 						
 						if(termBuilder != null){
@@ -125,6 +128,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 							termBuilder.subAggregation(dateHistogram);
 							dateHistogram = null;
 						}
+						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null);
 						termBuilder.size(1000);
 						isFirstDateHistogram =false;
 					}
@@ -144,7 +148,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = includeFilters(requestParamsDTO.getFilter());
+				filterBuilder = includeFilterAggregate(requestParamsDTO.getFilter());
 //				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			if(isFirstDateHistogram){
@@ -416,7 +420,131 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return filterBuilder;
 		}
 
-		public FilterAggregationBuilder includeFilters(
+		public BoolFilterBuilder includeFilter(
+				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
+			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
+			if (requestParamsFiltersDetailDTO != null) {
+				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
+					if (fieldData != null) {
+						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
+								.getFields();
+						AndFilterBuilder andFilter = null;
+						OrFilterBuilder orFilter = null;
+						NotFilterBuilder notFilter =null;
+			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
+				FilterBuilder filter = null;
+				String fieldName = esFields(fieldsDetails.getFieldName());
+				if (fieldsDetails.getType()
+						.equalsIgnoreCase("selector")) {
+					if (fieldsDetails.getOperator().equalsIgnoreCase(
+							"rg")) {
+							filter = FilterBuilders
+								.rangeFilter(fieldName)
+								.from(checkDataType(
+										fieldsDetails.getFrom(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()))
+								.to(checkDataType(
+										fieldsDetails.getTo(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("nrg")) {
+						filter =  FilterBuilders
+								.rangeFilter(fieldName)
+								.from(checkDataType(
+										fieldsDetails.getFrom(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()))
+								.to(checkDataType(
+										fieldsDetails.getTo(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("eq")) {
+						filter = FilterBuilders.termFilter(
+								fieldName,
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("lk")) {
+						filter =  FilterBuilders.prefixFilter(
+								fieldName,
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat())
+										.toString());
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("ex")) {
+						filter = FilterBuilders
+								.existsFilter(checkDataType(
+										fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat())
+										.toString());
+					}   else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("in")) {
+						filter = FilterBuilders.inFilter(fieldName,
+								fieldsDetails.getValue().split(","));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("le")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).lte(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("ge")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).gte(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("lt")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).lt(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					} else if (fieldsDetails.getOperator()
+							.equalsIgnoreCase("gt")) {
+						filter = FilterBuilders.rangeFilter(
+								fieldName).gt(
+								checkDataType(fieldsDetails.getValue(),
+										fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					}
+					}
+
+			
+			if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"AND")) {
+				if(andFilter == null){
+					andFilter = FilterBuilders.andFilter(filter);
+				}else{
+					andFilter.add(filter);
+				}
+			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"OR")) {
+				if(orFilter == null){
+					orFilter = FilterBuilders.orFilter(filter);
+				}else{
+					orFilter.add(filter);
+				}
+			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
+					"NOT")) {
+				if(notFilter == null){
+					notFilter = FilterBuilders.notFilter(filter);
+				}
+			}
+			}
+			if(andFilter != null){
+				boolFilter.must(andFilter);
+			}
+			if(orFilter != null){
+				boolFilter.must(orFilter);
+			}
+			if(notFilter != null){
+				boolFilter.must(notFilter);
+			}
+					}
+				}
+			}
+			return boolFilter;
+		}
+		
+		public FilterAggregationBuilder includeFilterAggregate(
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
 			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
 			if (requestParamsFiltersDetailDTO != null) {
@@ -656,9 +784,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 					json = new JSONObject(json.get("filters").toString());
 				}
 				Map<Object,Map<String,Object>> intermediateMap = new HashMap<Object,Map<String,Object>>(); 
-				List<Map<Object,Map<String,Object>>> intermediateList = new ArrayList<Map<Object,Map<String, Object>>>(); 
 				while(counter < fields.length){
-					System.out.println("json "+json);
 					if(json.length() > 0){
 					JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
 				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
@@ -669,7 +795,6 @@ public class UpdatedServiceImpl implements UpdatedService{
 					hasRecord = true;
 					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 					Object key=newJson.get("key");
-//					if(counter == (fields.length -1)){
 						if(counter+1 == (fields.length)){
 						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 						for(Map.Entry<String,String> entry : metrics.entrySet()){
@@ -686,7 +811,6 @@ public class UpdatedServiceImpl implements UpdatedService{
 						JSONArray tempArray = new JSONArray();
 						newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
 						tempArray = new JSONArray(newJson.get("buckets").toString());
-						String data ="";
 						for(int j=0;j<tempArray.length();j++){
 							JSONObject subJson = new JSONObject(tempArray.get(j).toString());
 								Map<String,Object> tempMap = new HashMap<String, Object>();
@@ -797,6 +921,35 @@ public class UpdatedServiceImpl implements UpdatedService{
 			}
 			System.out.println("dataMap "+dataMap);
 			return dataMap;
+		}
+		
+		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder){
+			
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
+				RequestParamsPaginationDTO pagination = requestParamsDTO.getPagination();
+				List<RequestParamsSortDTO> orderDatas = pagination.getOrder();
+				for(RequestParamsSortDTO orderData : orderDatas){
+					if(termsBuilder != null){
+						if(fieldName.equalsIgnoreCase(orderData.getSortBy())){
+							if(orderData.getSortOrder().equalsIgnoreCase("DESC")){
+								
+								termsBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(false));
+							}else{
+								termsBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(true));	
+							}
+						}
+					}else if(dateHistogramBuilder != null){
+						if(fieldName.equalsIgnoreCase(orderData.getSortBy())){
+							if(orderData.getSortOrder().equalsIgnoreCase("DESC")){
+								
+								dateHistogramBuilder.order(Order.KEY_DESC);
+							}else{
+								dateHistogramBuilder.order(Order.KEY_ASC);	
+							}
+						}
+					}
+				}
+			}
 		}
 }
 

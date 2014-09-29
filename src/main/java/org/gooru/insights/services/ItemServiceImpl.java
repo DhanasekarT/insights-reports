@@ -106,6 +106,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		processedData.put("hasSortBy",false);
 		processedData.put("hasSortOrder",false);
 		processedData.put("hasGranularity",false);
+		processedData.put("hasPagination",false);
 		if(baseAPIService.checkNull(requestParamsDTO.getFields())){
 			processedData.put("hasFields", true);
 		}
@@ -129,6 +130,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			processedData.put("hasAggregate",true);	
 		}
 		if(baseAPIService.checkNull(requestParamsDTO.getPagination())){
+				processedData.put("hasPagination",true);
 			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getLimit())){
 				processedData.put("hasLimit",true);
 			}

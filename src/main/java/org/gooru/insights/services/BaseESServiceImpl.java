@@ -103,15 +103,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Integer limit, Map<String, String> sort,Map<String,Boolean> validatedData,Map<String,String> dataRecord,Map<Integer,String> errorRecord) {
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
-		QueryBuilder queryBuilder = null;
-		FilterBuilder filterBuilder = null;
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean aggregate = false;
 		String result ="[{}]";
 		fields = esFields(fields);
 		
 		String dataKey=esSources.SOURCE.esSource();
-		
 
 		if(validatedData.get(hasdata.HAS_FEILDS.check())){
 			dataKey=esSources.FIELDS.esSource();
@@ -123,26 +120,27 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		
-		// Add filter in Query
-		addFilters(requestParamsDTO.getFilter(), searchRequestBuilder);
-		
-		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder,metricsName);
+			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			aggregate = true;
 			} 
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			updatedService.aggregate(requestParamsDTO, searchRequestBuilder,metricsName);
+			updatedService.aggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			aggregate = true;
 		}
 		
-		sortData(sort, searchRequestBuilder);
+		if(!aggregate){
+		
+			// Add filter in Query
+			updatedService.includeFilter(requestParamsDTO.getFilter());
+		}
+		
+		searchRequestBuilder = sortData(sort, searchRequestBuilder);
 		
 		 searchRequestBuilder.setPreference("_primaries");
-		 searchRequestBuilder.setSize(1000);
 
-		paginate(offset, limit, searchRequestBuilder);
+		 searchRequestBuilder = paginate(offset, limit, searchRequestBuilder);
 		System.out.println("query \n"+searchRequestBuilder);
 		try{
 		result =  searchRequestBuilder.execute().actionGet().toString();
@@ -1347,7 +1345,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return Integer.valueOf(value);
 	}
 	
-	public void sortData(Map<String,String> sort,SearchRequestBuilder searchRequestBuilder){
+	public SearchRequestBuilder sortData(Map<String,String> sort,SearchRequestBuilder searchRequestBuilder){
 		
 		if (baseAPIService.checkNull(sort)) {
 			for (Map.Entry<String, String> map : sort.entrySet()) {
@@ -1356,11 +1354,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						: SortOrder.DESC));
 			}
 		}
+		return searchRequestBuilder;
 	}
 
-	public void paginate(Integer offset, Integer limit,SearchRequestBuilder searchRequestBuilder) {
+	public SearchRequestBuilder paginate(Integer offset, Integer limit,SearchRequestBuilder searchRequestBuilder) {
 		searchRequestBuilder.setFrom(offset.intValue());
 		searchRequestBuilder.setSize(limit.intValue());
+		return searchRequestBuilder;
 	}
 
 	public Map<String,Object>  fetchAggregateData(String resultJson,String groupByData,String metrics){
