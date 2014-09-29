@@ -423,13 +423,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
 			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
 			if (requestParamsFiltersDetailDTO != null) {
-				
-				BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
+				BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 				for (RequestParamsFilterDetailDTO fieldData : requestParamsFiltersDetailDTO) {
 					if (fieldData != null) {
-						AndFilterBuilder andFilter = null;
-						OrFilterBuilder orFilter = null;
-						NotFilterBuilder notFilter = null;
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
 			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
@@ -511,39 +507,17 @@ public class UpdatedServiceImpl implements UpdatedService{
 			
 			if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"AND")) {
-				if(andFilter == null){
-					andFilter = FilterBuilders.andFilter(filter);
-				}else{
-					andFilter.add(filter);
-				}
+					boolFilter.must(filter);
 			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"OR")) {
-				if(andFilter == null){
-					orFilter = FilterBuilders.orFilter(filter);
-				}else{
-					orFilter.add(filter);
-				}
+					boolFilter.should(filter);
 			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"NOT")) {
-				if(notFilter == null){
-					notFilter = FilterBuilders.notFilter(filter);
+					boolFilter.mustNot(filter);
 			}
-			}
-			}
-			if(andFilter == null){
-				
-				boolFilter.must(andFilter);
-			}
-			if(orFilter == null){
-				
-				boolFilter.must(orFilter);
-			}
-			if(notFilter == null){
-	
-				boolFilter.must(notFilter);
 			}
 					}
-			}
+				}
 				filterBuilder.filter(boolFilter);
 			}
 			return filterBuilder;
