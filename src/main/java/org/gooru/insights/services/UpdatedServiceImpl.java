@@ -192,9 +192,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 									.has(metricField[j])) {
 								continue;
 							}
-						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), metricField[j]);
-						String fieldName = esFields(jsonObject.get(metricField[j]).toString());
-						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
+							String fieldName = esFields(jsonObject.get(metricField[j]).toString());
+						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+i,fieldName);
+						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+i);
 
 						}
 				}
@@ -226,15 +226,16 @@ public class UpdatedServiceImpl implements UpdatedService{
 							String requestValues = jsonObject
 									.get("requestValues")
 									.toString();
-							for (String aggregateName : requestValues
-									.split(",")) {
+							String aggregateName[] = requestValues
+									.split(",");
+							for (int j=0;j<aggregateName.length;j++) {
 								if (!jsonObject
-										.has(aggregateName)) {
+										.has(aggregateName[j])) {
 									continue;
 								}
-							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), aggregateName);
-							String fieldName = esFields(jsonObject.get(aggregateName).toString());
-							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, fieldName);
+								String fieldName = esFields(jsonObject.get(aggregateName[j]).toString());
+							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+j,fieldName);
+							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+j);
 
 							}
 					}
@@ -245,64 +246,62 @@ public class UpdatedServiceImpl implements UpdatedService{
 		}
 		}
 	
-	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName){
+	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			String esAggregateName= esFields(jsonObject.get(aggregateName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
-					.sum(esAggregateName)
-					.field(esAggregateName));
+					.sum(aggregateName)
+					.field(aggregateName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.avg(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.max(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.min(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.count(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				mainFilter
-				.subAggregation(AggregationBuilders.cardinality(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
 			}
 	
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} 
 		}
 	
-	public void performAggregation(DateHistogramBuilder dateHistogramBuilder,JSONObject jsonObject,String aggregateType,String aggregateName){
+	public void performAggregation(DateHistogramBuilder dateHistogramBuilder,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			String esAggregateName= esFields(jsonObject.get(aggregateName).toString());
 			if("SUM".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
 			.subAggregation(AggregationBuilders
-					.sum(esAggregateName)
-					.field(esAggregateName));
+					.sum(aggregateName)
+					.field(fieldName));
 			}else if("AVG".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.avg(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if("MAX".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.max(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
 			}else if("MIN".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.min(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
 				
 			}else if("COUNT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.count(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if("DISTINCT".equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder
-				.subAggregation(AggregationBuilders.cardinality(esAggregateName).field(esAggregateName));
+				.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
 			}
 	
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} 
 		}
