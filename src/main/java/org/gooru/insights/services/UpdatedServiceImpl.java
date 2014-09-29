@@ -26,6 +26,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -97,12 +98,11 @@ public class UpdatedServiceImpl implements UpdatedService{
 				String groupByName = esFields(groupBy[i]);
 				//date field checker	
 				if(baseConnectionService.getFieldsDataType().containsKey(groupBy[i]) && baseConnectionService.getFieldsDataType().get(groupBy[i]).equalsIgnoreCase("date")){
-					System.out.println("entered date histogram");
 					dateHistogram = dateHistogram(requestParamsDTO.getGranularity(),"field"+i,groupByName);
 					isFirstDateHistogram =true;
 					if(termBuilder != null){
 						dateHistogram.subAggregation(termBuilder);
-						dateHistogram.minDocCount(1000);
+						dateHistogram.order(Order.KEY_ASC);
 						termBuilder = null;
 						}
 					}else{
@@ -128,16 +128,14 @@ public class UpdatedServiceImpl implements UpdatedService{
 						termBuilder.size(1000);
 						isFirstDateHistogram =false;
 					}
-				System.out.println("i"+i+"groupBy -1 :"+(groupBy.length-1));
+				System.out.println("i"+i+"groupBy  :"+(groupBy.length-1));
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
-					System.out.println("expected");
 					if(termBuilder != null ){
 					includeAggregation(requestParamsDTO, termBuilder,metricsName);
 					}
 					}
 				
 				if( i == groupBy.length-1 && isFirstDateHistogram){
-					System.out.println("expected");
 					if(dateHistogram != null ){
 					includeAggregation(requestParamsDTO, dateHistogram,metricsName);
 					}
@@ -427,6 +425,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 					if (fieldData != null) {
 						List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs = fieldData
 								.getFields();
+						AndFilterBuilder andFilter = null;
+						OrFilterBuilder orFilter = null;
+						NotFilterBuilder notFilter =null;
 			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
 				FilterBuilder filter = null;
 				String fieldName = esFields(fieldsDetails.getFieldName());
@@ -506,14 +507,33 @@ public class UpdatedServiceImpl implements UpdatedService{
 			
 			if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"AND")) {
-					boolFilter.must(filter);
+				if(andFilter == null){
+					andFilter = FilterBuilders.andFilter(filter);
+				}else{
+					andFilter.add(filter);
+				}
 			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"OR")) {
-					boolFilter.should(filter);
+				if(orFilter == null){
+					orFilter = FilterBuilders.orFilter(filter);
+				}else{
+					orFilter.add(filter);
+				}
 			}else if (fieldData.getLogicalOperatorPrefix().equalsIgnoreCase(
 					"NOT")) {
-					boolFilter.mustNot(filter);
+				if(notFilter == null){
+					notFilter = FilterBuilders.notFilter(filter);
+				}
 			}
+			}
+			if(andFilter != null){
+				boolFilter.must(andFilter);
+			}
+			if(orFilter != null){
+				boolFilter.must(orFilter);
+			}
+			if(notFilter != null){
+				boolFilter.must(notFilter);
 			}
 					}
 				}
@@ -521,11 +541,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			}
 			return filterBuilder;
 		}
-		
-		public void includeFilter(BoolFilterBuilder boolFilter,List<RequestParamsFilterFieldsDTO> requestParamsFilterFieldsDTOs){
-			
-		}
-				
+
 		public Object checkDataType(String value, String valueType,String dateformat) {
 			
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
