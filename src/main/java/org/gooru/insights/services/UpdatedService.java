@@ -20,5 +20,5 @@ public interface UpdatedService {
 
 	BoolFilterBuilder includeFilter(List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
 	
-	List<Map<String,Object>> buildHistogramAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
+	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 }

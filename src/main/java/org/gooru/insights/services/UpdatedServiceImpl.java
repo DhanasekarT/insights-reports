@@ -849,7 +849,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return data;
 		}
 
-		public List<Map<String,Object>> buildHistogramAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
+		public List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
 			List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		       try {
@@ -895,7 +895,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		                   hasSubAggregate = true;
 		                   for(int j=0;j<tempArray.length();j++){
 		                       JSONObject subJson = new JSONObject(tempArray.get(j).toString());
-		                       subJson.put(groupBy[i], key);
+		                       subJson.put(groupBy[counter], key);
 		                       subJsonArray.put(subJson);
 		                   }
 		               }

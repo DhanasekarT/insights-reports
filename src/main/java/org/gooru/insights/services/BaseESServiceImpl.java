@@ -165,7 +165,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(hasAggregate){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			List<Map<String,Object>> data = updatedService.buildHistogramAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
+			List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
 			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 			return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
 			
@@ -177,7 +177,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(hasDateAggregate){
 			try {
 				String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-				List<Map<String,Object>> data = updatedService.buildHistogramAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
+				List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
 				data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 				return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
 				
@@ -383,7 +383,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				Map<String,Object> resultMap = new HashMap<String, Object>();
 				while(keys.hasNext()){
 					String key =keys.next(); 
-					resultMap.put(esFields(key), fieldJson.get(key));
+					resultMap.put(apiFields(key), fieldJson.get(key));
 				}
 				resultList.add(resultMap);
 			}
