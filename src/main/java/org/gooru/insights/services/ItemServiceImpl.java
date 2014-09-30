@@ -40,12 +40,8 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	indexMap.put("content", "content_catalog");
 	}
 	
-	public JSONArray getEventDetail(String data,Map<String,String> dataRecord,Map<Integer,String> errorMap){
+	public JSONArray getEventDetail(String data,Map<Integer,String> errorMap){
 		RequestParamsDTO requestParamsDTO = null;
-		Map<String,String> sort = new HashMap<String, String>();
-		FilterBuilder filterBuilder = null;
-		Integer offset =0;
-		Integer limit =10;
 		
 		try{
 		requestParamsDTO = baseAPIService.buildRequestParameters(data);
@@ -54,45 +50,20 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			errorMap.put(500, "Invalid JSON format");
 			return new JSONArray();
 		}
+		
 		Map<String,Boolean> validatedData = validateData(requestParamsDTO);
+
 		if(!validatedData.get(hasdata.HAS_DATASOURCE.check())){
 			errorMap.put(400, "should provide the data source to be fetched");
 			return new JSONArray();
 		}
-			if(validatedData.get(hasdata.HAS_Offset.check())){
-			offset = requestParamsDTO.getPagination().getOffset();
-			}
+
+		String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
 			
-			if(validatedData.get(hasdata.HAS_LIMIT.check())){
-			limit = requestParamsDTO.getPagination().getLimit();
-			}
-			
-			if(validatedData.get(hasdata.HAS_SORTBY.check())){
-			
-				List<RequestParamsSortDTO> requestParamsSortDTO = requestParamsDTO.getPagination().getOrder();
-			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
-				if(validatedData.get(hasdata.HAS_SORTBY.check())){
-					sort.put(sortData.getSortBy(), baseAPIService.checkNull(sortData.getSortOrder()) ? checkSort(sortData.getSortOrder()) : "ASC");
-				}
-			}
-			}
-			
-			String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
-			
-		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),requestParamsDTO.getFields(), null, filterBuilder,offset,limit,sort,validatedData,dataRecord,errorMap);
+		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),validatedData,errorMap);
 		
 	}
 
-	public String checkSort(String sortOrder){
-		if("ASC".equalsIgnoreCase(sortOrder)){
-			return "ASC";
-		}else if("DESC".equalsIgnoreCase(sortOrder)){
-			return "DESC";
-		}else{
-			return "ASC";
-		}
-	}
-	
 	public Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO){
 		Map<String,Boolean> processedData = new HashMap<String,Boolean>();
 		processedData.put("hasFields", false);
@@ -157,9 +128,8 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		String[] indices = new String[names.split(",").length];
 		String[] requestNames = names.split(",");
 		for(int i =0;i<indices.length;i++){
-			if(indexMap.containsKey(requestNames[i])){
+			if(indexMap.containsKey(requestNames[i]))
 				indices[i] = indexMap.get(requestNames[i]);
-			}
 		}
 		return indices;
 	}

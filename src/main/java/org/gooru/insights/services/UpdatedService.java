@@ -16,7 +16,7 @@ public interface UpdatedService {
 
 	Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 
-	List<Map<String,Object>> buildAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
+	List<Map<String,Object>> buildAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 
 	BoolFilterBuilder includeFilter(List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
 }

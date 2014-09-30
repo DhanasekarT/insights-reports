@@ -772,19 +772,18 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return null;
 	}
 		
-		public List<Map<String,Object>> buildAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
+		public List<Map<String,Object>> buildAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
 			List<Map<String,Object>> dataMap = new ArrayList<Map<String,Object>>();
 			try {
 				int counter=0;
-				String[] fields = groupBy.split(",");
 				JSONObject json = new JSONObject(resultData);
 				json = new JSONObject(json.get("aggregations").toString());
 				if(hasFilter){
 					json = new JSONObject(json.get("filters").toString());
 				}
 				Map<Object,Map<String,Object>> intermediateMap = new HashMap<Object,Map<String,Object>>(); 
-				while(counter < fields.length){
+				while(counter < groupBy.length){
 					if(json.length() > 0){
 					JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
 				JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
@@ -795,12 +794,12 @@ public class UpdatedServiceImpl implements UpdatedService{
 					hasRecord = true;
 					JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 					Object key=newJson.get("key");
-						if(counter+1 == (fields.length)){
+						if(counter+1 == (groupBy.length)){
 						Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 						for(Map.Entry<String,String> entry : metrics.entrySet()){
 							if(newJson.has(entry.getValue())){
 								resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
-								resultMap.put(fields[counter], newJson.get("key"));
+								resultMap.put(groupBy[counter], newJson.get("key"));
 							}
 							}
 						if(baseAPIService.checkNull(intermediateMap.get(key))){
@@ -816,10 +815,10 @@ public class UpdatedServiceImpl implements UpdatedService{
 								Map<String,Object> tempMap = new HashMap<String, Object>();
 								if(intermediateMap.containsKey(key)){
 									tempMap.putAll(intermediateMap.get(key));
-									tempMap.put(fields[counter], key);
+									tempMap.put(groupBy[counter], key);
 									intermediateMap.put(subJson.get("key"),tempMap);
 								}else{
-									tempMap.put(fields[counter], key);
+									tempMap.put(groupBy[counter], key);
 									intermediateMap.put(subJson.get("key"), tempMap);
 								}
 							subJsonArray.put(tempArray.get(j));
