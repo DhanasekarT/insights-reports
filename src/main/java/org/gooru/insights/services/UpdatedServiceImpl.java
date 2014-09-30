@@ -869,6 +869,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		           for(int i=0;i<jsonArray.length();i++){
 		               JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 		               Object key=newJson.get("key");
+		               System.out.println("new Key"+newJson);
 		               keys.add(key);
 		               if(counter+1 == (groupBy.length)){
 		            	   Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
@@ -882,6 +883,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		                   newJson.remove("doc_count");
 		                   newJson.remove("key_as_string");
 		                   newJson.remove("key");
+		                   newJson.remove("buckets");
 		                   Iterator<String> rowKeys = newJson.sortedKeys();
 		                   while(rowKeys.hasNext()){
 		                	   String rowKey = rowKeys.next();
@@ -890,14 +892,22 @@ public class UpdatedServiceImpl implements UpdatedService{
 		                   dataList.add(resultMap);
 		               }else{
 		                   JSONArray tempArray = new JSONArray();
-		                   newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
-		                   tempArray = new JSONArray(newJson.get("buckets").toString());
+		                   JSONObject dataJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
+		                   tempArray = new JSONArray(dataJson.get("buckets").toString());
 		                   hasSubAggregate = true;
 		                   for(int j=0;j<tempArray.length();j++){
 		                       JSONObject subJson = new JSONObject(tempArray.get(j).toString());
 		                       subJson.put(groupBy[counter], key);
+		                       Iterator<String> dataKeys = newJson.sortedKeys();
+		                       while(dataKeys.hasNext()){
+		                       String dataKey = dataKeys.next();
+		                       System.out.println(dataKey);
+		                       subJson.put(dataKey, newJson.get(dataKey));
+		                        }
+
 		                       subJsonArray.put(subJson);
 		                   }
+		                   System.out.println("sub join"+subJsonArray);
 		               }
 		           }
 		           if(hasSubAggregate){
