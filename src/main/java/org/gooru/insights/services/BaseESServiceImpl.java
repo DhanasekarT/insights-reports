@@ -149,7 +149,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		 searchRequestBuilder.setPreference("_primaries");
 
-		 //currently its not working in current ES version 1.2.2,its shows record count is 1*no of shades = total Records
+		 //currently its not working in current ES version 1.2.2,its shows record count is 1 * no of shades = total Records
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
