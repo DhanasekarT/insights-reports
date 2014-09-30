@@ -162,7 +162,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			List<Map<String,Object>> data = updatedService.buildAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-			customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 			return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
 			
 		} catch (JSONException e) {
@@ -170,7 +170,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		}
 		List<Map<String,Object>> data = getRecords(result,errorRecord,dataKey);
-		customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+		data = customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 		return convertJSONArray(data);
 
 	}
@@ -187,8 +187,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 	}
 	
-	public void customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+	public List<Map<String,Object>> customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
 		int dataSize = data.size();
+		List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
 		if(baseAPIService.checkNull(requestParamsPaginationDTO)){
 			if(validatedData.get(hasdata.HAS_SORTBY.check())){
 				List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
@@ -200,16 +201,17 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10; 
 			
 			if(limit < dataSize && offset < dataSize){
-				data = data.subList(offset, limit);
+				customizedData = data.subList(offset, limit);
 			}else if(limit >= dataSize &&  offset < dataSize){
-				data = data.subList(offset, dataSize);
+				customizedData = data.subList(offset, dataSize);
 			}else if(limit < dataSize &&  offset >= dataSize){
-				data = data.subList(0,limit);
+				customizedData = data.subList(0,limit);
 			}else if(limit >= dataSize &&  offset >= dataSize){
-				data = data.subList(0,dataSize);
+				customizedData = data.subList(0,dataSize);
 			}
 		}
 		returnMap.put("totalRecords",dataSize);
+		return customizedData;
 	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
