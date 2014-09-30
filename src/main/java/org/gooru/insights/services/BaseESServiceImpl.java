@@ -140,8 +140,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				searchRequestBuilder.setPostFilter(updatedService.includeFilter(requestParamsDTO.getFilter()));
 		}
 		
-		if(validatedData.get(hasdata.HAS_SORTBY.check()))
+		
+		/*we comment ES level sorting since it does not support metrics sort
+		 * if(validatedData.get(hasdata.HAS_SORTBY.check()) && !hasAggregate)
 		sortData(requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
+		*/
 		
 		 searchRequestBuilder.setPreference("_primaries");
 

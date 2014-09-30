@@ -66,7 +66,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 				}else{
 					termBuilder = AggregationBuilders.terms("field"+i).field(esFields(groupBy[i]));
 				}
-				termBuilder.size(1000);
+				termBuilder.size(500);
 				System.out.println("i"+i+"groupBy -1 :"+(groupBy.length-1));
 				if( i == groupBy.length-1){
 					System.out.println("expected");
@@ -129,9 +129,10 @@ public class UpdatedServiceImpl implements UpdatedService{
 							dateHistogram = null;
 						}
 						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null);
-						termBuilder.size(1000);
+						termBuilder.size(500);
 						isFirstDateHistogram =false;
 					}
+				
 				System.out.println("i"+i+"groupBy  :"+(groupBy.length-1));
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					if(termBuilder != null ){
