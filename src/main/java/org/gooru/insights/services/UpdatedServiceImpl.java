@@ -879,6 +879,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 		                       newJson.remove(entry.getValue());    
 		                       }
 		                       }
+		                   newJson.remove("doc_count");
+		                   newJson.remove("key_as_string");
+		                   newJson.remove("key");
 		                   Iterator<String> rowKeys = newJson.sortedKeys();
 		                   while(rowKeys.hasNext()){
 		                	   String rowKey = rowKeys.next();
