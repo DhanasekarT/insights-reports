@@ -107,6 +107,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean hasAggregate = false;
+		boolean hasDateAggregate = false;
 		String result ="[{}]";
 		String fields = esFields(requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
@@ -126,7 +127,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			hasAggregate = true;
+			hasDateAggregate = true;
 			} 
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
@@ -134,7 +135,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			hasAggregate = true;
 		}
 		
-		if(!hasAggregate){
+		if(!hasAggregate && !hasDateAggregate){
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
 				searchRequestBuilder.setPostFilter(updatedService.includeFilter(requestParamsDTO.getFilter()));
@@ -164,7 +165,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(hasAggregate){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			List<Map<String,Object>> data = updatedService.buildAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
+			List<Map<String,Object>> data = updatedService.buildHistogramAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
 			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 			return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
 			
@@ -172,6 +173,19 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			e.printStackTrace();
 		}
 		}
+		
+		if(hasDateAggregate){
+			try {
+				String groupBy[] = requestParamsDTO.getGroupBy().split(",");
+				List<Map<String,Object>> data = updatedService.buildHistogramAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
+				data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+				return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			}
+		
 		List<Map<String,Object>> data = getRecords(result,errorRecord,dataKey);
 		data = customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 		return convertJSONArray(data);

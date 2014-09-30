@@ -847,6 +847,90 @@ public class UpdatedServiceImpl implements UpdatedService{
 			
 			return data;
 		}
+
+		public List<Map<String,Object>> buildHistogramAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
+
+		       Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
+		       try {
+		    		int counter=0;
+					JSONObject json = new JSONObject(resultData);
+					json = new JSONObject(json.get("aggregations").toString());
+					if(hasFilter){
+						json = new JSONObject(json.get("filters").toString());
+					}
+		           while(counter < groupBy.length){
+		        	   if(json.length() > 0){
+		               JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
+		           JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+		           JSONArray subJsonArray = new JSONArray();
+		           Set<Object> keys = new HashSet<Object>();
+		           boolean hasSubAggregate = false;
+		           for(int i=0;i<jsonArray.length();i++){
+		               JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+		               Object key=newJson.get("key");
+		               keys.add(key);
+		               if(counter+1 == (groupBy.length)){
+		                   for(Map.Entry<String,String> entry : metrics.entrySet()){
+		                       if(newJson.has(entry.getValue())){
+		                       Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+		                           resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+		                           resultMap.put(groupBy[counter], newJson.get("key"));
+		                           boolean processed = false;
+		                           if(baseAPIService.checkNull(dataMap)){
+		                               if(dataMap.containsKey(i)){
+		                                   processed = true;
+		                                   Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+		                                   tempMap = dataMap.get(i);
+		                                   resultMap.putAll(tempMap);
+		                                   dataMap.put(i, resultMap);
+		                               }
+		                           }
+		                           if(!processed){
+		                               dataMap.put(i, resultMap);    
+		                           }
+		                       }
+		                       }
+		                       
+		               }else{
+		                   JSONArray tempArray = new JSONArray();
+		                   newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
+		                   tempArray = new JSONArray(newJson.get("buckets").toString());
+		                   for(int j=0;j<tempArray.length();j++){
+		                       subJsonArray.put(tempArray.get(j));
+		                   }
+		                   Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
+		                   if(baseAPIService.checkNull(dataMap)){
+		                       if(dataMap.containsKey(i)){
+		                           tempMap = dataMap.get(i);
+		                       }
+		                   }
+		                   tempMap.put(groupBy[counter], key);
+		                       dataMap.put(i, tempMap);
+		                   hasSubAggregate = true;
+		               }
+		           }
+		           if(hasSubAggregate){
+		               json = new JSONObject();
+		               requestJSON.put("buckets", subJsonArray);
+		               json.put("field"+(counter+1), requestJSON);
+		           }
+		        	   }
+		           counter++;
+		           }
+		       } catch (JSONException e) {
+		           System.out.println("some logical problem in filter aggregate json ");
+		           e.printStackTrace();
+		       }
+		       return formDataList(dataMap);
+		}
+		
+		  public List<Map<String,Object>> formDataList(Map<Integer,Map<String,Object>> requestMap){
+		       List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+		       for(Map.Entry<Integer,Map<String,Object>> entry : requestMap.entrySet()){
+		           resultList.add(entry.getValue());
+		       }
+		       return resultList;
+		   }
 		public Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
 			Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
