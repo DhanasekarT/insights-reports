@@ -895,18 +895,24 @@ public class UpdatedServiceImpl implements UpdatedService{
 		                   JSONArray tempArray = new JSONArray();
 		                   newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
 		                   tempArray = new JSONArray(newJson.get("buckets").toString());
-		                   for(int j=0;j<tempArray.length();j++){
-		                       subJsonArray.put(tempArray.get(j));
-		                   }
 		                   Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
 		                   if(baseAPIService.checkNull(dataMap)){
-		                       if(dataMap.containsKey(i)){
-		                           tempMap = dataMap.get(i);
-		                       }
+		                	   if(dataMap.containsKey(i)){
+		                		   tempMap = dataMap.get(i);
+		                	   }
 		                   }
 		                   tempMap.put(groupBy[counter], key);
-		                       dataMap.put(i, tempMap);
+		                   dataMap.put(i, tempMap);
 		                   hasSubAggregate = true;
+		                   for(int j=0;j<tempArray.length();j++){
+		                       JSONObject subJson = new JSONObject(tempArray.get(j).toString());
+		                       if(dataMap.containsKey(i)){
+		                    		   for(Map.Entry<String, Object> map : dataMap.get(i).entrySet()){
+		                    			   subJson.put(map.getKey(),map.getValue());
+		                    		   }
+		                       }
+		                       subJsonArray.put(subJson);
+		                   }
 		               }
 		           }
 		           if(hasSubAggregate){
