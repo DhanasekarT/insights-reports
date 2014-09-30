@@ -209,8 +209,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}else if(limit >= dataSize &&  offset >= dataSize){
 				customizedData = data.subList(0,dataSize);
 			}
+		}else{
+			customizedData = data;
 		}
-		returnMap.put("totalRecords",dataSize);
+		returnMap.put("totalRows",customizedData.size());
 		return customizedData;
 	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
@@ -361,12 +363,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
 				
 				Iterator<String> keys = fieldJson.keys();
+				Map<String,Object> resultMap = new HashMap<String, Object>();
 				while(keys.hasNext()){
-					Map<String,Object> resultMap = new HashMap<String, Object>();
 					String key =keys.next(); 
 					resultMap.put(esFields(key), fieldJson.get(key));
-					resultList.add(resultMap);
 				}
+				resultList.add(resultMap);
 			}
 			}else{
 				for(int i =0;i< jsonArray.length();i++){
