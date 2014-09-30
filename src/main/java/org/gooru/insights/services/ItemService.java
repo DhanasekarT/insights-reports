@@ -10,5 +10,5 @@ public interface ItemService {
 
 	String getClasspageCollectionDetail(String data);
 	
-	JSONArray getEventDetail(String data,Map<Integer,String> errorMap);
+	JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 }

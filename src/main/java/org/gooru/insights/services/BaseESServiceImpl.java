@@ -18,6 +18,7 @@ import javax.persistence.criteria.Order;
 import org.antlr.misc.Interval;
 import org.antlr.misc.IntervalSet;
 import org.apache.lucene.index.Terms;
+import org.apache.xmlbeans.impl.regex.REUtil;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -62,6 +63,8 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.gdata.client.blogger.BlogPostQuery.OrderBy;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import com.yammer.metrics.core.Histogram;
 
@@ -100,7 +103,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 	public JSONArray searchData(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
-			Map<String,Boolean> validatedData,Map<Integer,String> errorRecord) {
+			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
 		
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean hasAggregate = false;
@@ -126,7 +129,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			hasAggregate = true;
 			} 
 		
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check())) {
+		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
 			updatedService.aggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 		}
@@ -142,6 +145,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		 searchRequestBuilder.setPreference("_primaries");
 
+		 //currently its not working in current ES version 1.2.2,its shows record count is 1*no of shades = total Records
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
@@ -157,18 +161,56 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(hasAggregate){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			
-			return baseAPIService.formatKeyValueJson(updatedService.buildAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check())),groupBy[groupBy.length-1]);
+			List<Map<String,Object>> data = updatedService.buildAggregateJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
+			customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+			return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
 			
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 		}
-		
-		return getRecords(result,errorRecord,dataKey);
+		List<Map<String,Object>> data = getRecords(result,errorRecord,dataKey);
+		customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+		return convertJSONArray(data);
 
 	}
 	
+	public JSONArray convertJSONArray(List<Map<String,Object>> data){
+		try {
+		Gson gson = new Gson();
+		Type listType = new TypeToken<List<Map<String,Object>>>(){}.getType();
+		JsonElement jsonArray = gson.toJsonTree(data, listType);
+			return new JSONArray(jsonArray.toString());
+		} catch (JSONException e) {
+			e.printStackTrace();
+			return new JSONArray();
+		}
+	}
+	
+	public void customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+		int dataSize = data.size();
+		if(baseAPIService.checkNull(requestParamsPaginationDTO)){
+			if(validatedData.get(hasdata.HAS_SORTBY.check())){
+				List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
+				for(RequestParamsSortDTO sortData : orderDatas){
+					baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
+				}
+			}
+			int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() : 0; 
+			int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10; 
+			
+			if(limit < dataSize && offset < dataSize){
+				data = data.subList(offset, limit);
+			}else if(limit >= dataSize &&  offset < dataSize){
+				data = data.subList(offset, dataSize);
+			}else if(limit < dataSize &&  offset >= dataSize){
+				data = data.subList(0,limit);
+			}else if(limit >= dataSize &&  offset >= dataSize){
+				data = data.subList(0,dataSize);
+			}
+		}
+		returnMap.put("totalRecords",dataSize);
+	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
 				if(validatedData.get(hasdata.HAS_SORTBY.check()))
@@ -303,10 +345,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	
 	
-	public JSONArray getRecords(String data,Map<Integer,String> errorRecord,String dataKey){
+	public List<Map<String,Object>> getRecords(String data,Map<Integer,String> errorRecord,String dataKey){
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
-		JSONArray resultJsonArray = new JSONArray();
+		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		try {
 			json = new JSONObject(data);
 			json = new JSONObject(json.get("hits").toString());
@@ -315,18 +357,18 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			for(int i =0;i< jsonArray.length();i++){
 				json = new JSONObject(jsonArray.get(i).toString());
 				JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
-				json = new JSONObject();
 				
 				Iterator<String> keys = fieldJson.keys();
 				while(keys.hasNext()){
+					Map<String,Object> resultMap = new HashMap<String, Object>();
 					String key =keys.next(); 
-					json.put(esFields(key), fieldJson.get(key));
+					resultMap.put(esFields(key), fieldJson.get(key));
+					resultList.add(resultMap);
 				}
-				resultJsonArray.put(json);
 			}
 			}else{
 				for(int i =0;i< jsonArray.length();i++){
-					JSONObject resultJson = new JSONObject();
+					Map<String,Object> resultMap = new HashMap<String, Object>();
 				json = new JSONObject(jsonArray.get(i).toString());
 				json = new JSONObject(json.get(dataKey).toString());
 				 Iterator<String> keys =json.keys();
@@ -334,19 +376,19 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					 String key = keys.next();
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
-					 resultJson.put(apiFields(key),fieldJsonArray.get(0));
+						resultMap.put(apiFields(key),fieldJsonArray.get(0));
 					}else{
-						resultJson.put(apiFields(key),fieldJsonArray);
+						resultMap.put(apiFields(key),fieldJsonArray);
 					}
 				 }
-				 resultJsonArray.put(resultJson);
+				 resultList.add(resultMap);
 			}
 			}
-			return resultJsonArray;
+			return resultList;
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		return resultJsonArray;
+		return resultList;
 	}
 	
 	public String esFields(String fields){

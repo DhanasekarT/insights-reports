@@ -19,9 +19,9 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class BaseController {
 
-	Map<String,String> errorData = new HashMap<String,String>();
+	Map<String,Object> errorData = new HashMap<String,Object>();
 	
-	protected ModelAndView getModel(JSONArray data,Map<String,String> messageData){
+	protected ModelAndView getModel(JSONArray data,Map<String,Object> messageData){
 		return  this.resultSet(data,messageData);
 	}
 
@@ -44,10 +44,10 @@ public class BaseController {
 		}
 	}
 	
-	public ModelAndView resultSet(List<String> data,Map<String,String> messageData){
+	public ModelAndView resultSet(List<String> data,Map<String,Object> messageData){
 		ModelAndView model = new ModelAndView("content");
 		model.addObject("content", data);
-		addFilterDate(model, messageData);
+		addFilterData(model, messageData);
 		if(messageData != null){
 		model.addObject("message", messageData);
 		
@@ -56,12 +56,12 @@ public class BaseController {
 		return model;
 	}
 	
-	public ModelAndView resultSet(JSONArray data,Map<String,String> messageData){
+	public ModelAndView resultSet(JSONArray data,Map<String,Object> messageData){
 		ModelAndView model = new ModelAndView("content");
 		try {
 			JSONObject resultMap = new JSONObject();
 				resultMap.put("content",data );
-			addFilterDate(resultMap, messageData);
+			addFilterData(resultMap, messageData);
 			if(messageData != null){
 			resultMap.put("message",messageData );
 			}
@@ -73,63 +73,25 @@ public class BaseController {
 			return model;
 		}
 	
-	public void addFilterDate(ModelAndView model,Map<String,String> messageData){
+	public void addFilterData(ModelAndView model,Map<String,Object> messageData){
 		if(messageData != null){
-	
-			List<Map<String,String>> dateRange = new ArrayList<Map<String,String>>();
-			Map<String,String> filterDate = new HashMap<String,String>();
-			String unixStartDate = null;
-			String unixEndDate = null;
-			String totalRows = null;
-				unixStartDate  = messageData.get("unixStartDate");
-				unixEndDate = messageData.get("unixEndDate");
-				totalRows = messageData.get("totalRows");
-				if(unixStartDate != null){
-					filterDate.put("unixStartDate", unixStartDate);
-					messageData.remove("unixStartDate");
-				}
-				if(unixEndDate != null){
-					filterDate.put("unixEndDate", unixEndDate);
-					messageData.remove("unixEndDate");
-				}
-				if(totalRows != null){
-					messageData.remove("totalRows");
-				}
-			dateRange.add(filterDate);
-			
-			model.addObject("dateRange",dateRange);
-			filterDate = new HashMap<String, String>();
-			dateRange = new ArrayList<Map<String,String>>() ;
+			Map<String,Object> filterDate = new HashMap<String,Object>();
+			Object totalRows = messageData.get("totalRows");
 			if(totalRows != null){
 				filterDate.put("totalRows",totalRows);
-				dateRange.add(filterDate);
-				
 			}
 			model.addObject("paginate",filterDate);
+			messageData.remove("totalRows");
 	}
 	}
 	
-	public void addFilterDate(JSONObject data,Map<String,String> messageData) throws JSONException{
+	public void addFilterData(JSONObject data,Map<String,Object> messageData) throws JSONException{
 		if(messageData != null){
-			Map<String,String> filterDate = new HashMap<String,String>();
-			String unixStartDate = null;
-			String unixEndDate = null;
 			Long totalRows;
-				unixStartDate  = messageData.get("unixStartDate");
-				unixEndDate = messageData.get("unixEndDate");
-				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows")) : 0L );				
-				if(unixStartDate != null){
-					filterDate.put("unixStartDate", unixStartDate);
-					messageData.remove("unixStartDate");
-				}
-				if(unixEndDate != null){
-					filterDate.put("unixEndDate", unixEndDate);
-					messageData.remove("unixEndDate");
-				}
+				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows").toString()) : 0L );				
 				if(totalRows != null){
 					messageData.remove("totalRows");
 				}
-			data.put("dateRange", filterDate);
 			Map<String,Long> paginateData = new HashMap<String, Long>();
 			if(totalRows != null){
 			paginateData.put("totalRows",totalRows);
@@ -159,12 +121,12 @@ public class BaseController {
 	}
 	}
 	
-	public Map<String,String> getMessage(){
+	public Map<String,Object> getMessage(){
 	return this.errorData;
 	}
 	
 	public void clearMessage(){
-		this.errorData = new HashMap<String,String>();
+		this.errorData = new HashMap<String,Object>();
 	}
 	
 }

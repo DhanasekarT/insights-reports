@@ -774,7 +774,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		
 		public List<Map<String,Object>> buildAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
-			List<Map<String,Object>> dataMap = new ArrayList<Map<String,Object>>();
+			List<Map<String,Object>> data = new ArrayList<Map<String,Object>>();
 			try {
 				int counter=0;
 				JSONObject json = new JSONObject(resultData);
@@ -805,7 +805,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 						if(baseAPIService.checkNull(intermediateMap.get(key))){
 						resultMap.putAll(intermediateMap.get(key));
 						}
-						dataMap.add(resultMap);
+						data.add(resultMap);
 					}else{
 						JSONArray tempArray = new JSONArray();
 						newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
@@ -842,8 +842,9 @@ public class UpdatedServiceImpl implements UpdatedService{
 				System.out.println("some logical problem in filter aggregate json ");
 				e.printStackTrace();
 			}
-			System.out.println("dataMap "+dataMap);
-			return dataMap;
+			System.out.println("data "+data);
+			
+			return data;
 		}
 		public Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 

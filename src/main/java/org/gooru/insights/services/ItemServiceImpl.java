@@ -40,7 +40,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	indexMap.put("content", "content_catalog");
 	}
 	
-	public JSONArray getEventDetail(String data,Map<Integer,String> errorMap){
+	public JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap){
 		RequestParamsDTO requestParamsDTO = null;
 		
 		try{
@@ -60,7 +60,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 
 		String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
 			
-		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),validatedData,errorMap);
+		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),validatedData,dataMap,errorMap);
 		
 	}
 
