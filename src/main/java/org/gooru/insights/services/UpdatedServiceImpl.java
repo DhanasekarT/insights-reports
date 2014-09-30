@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -850,7 +851,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 
 		public List<Map<String,Object>> buildHistogramAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
 
-		       Map<Integer,Map<String,Object>> dataMap = new LinkedHashMap<Integer,Map<String,Object>>();
+			List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		       try {
 		    		int counter=0;
 					JSONObject json = new JSONObject(resultData);
@@ -870,47 +871,28 @@ public class UpdatedServiceImpl implements UpdatedService{
 		               Object key=newJson.get("key");
 		               keys.add(key);
 		               if(counter+1 == (groupBy.length)){
+		            	   Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 		                   for(Map.Entry<String,String> entry : metrics.entrySet()){
 		                       if(newJson.has(entry.getValue())){
-		                       Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 		                           resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
 		                           resultMap.put(groupBy[counter], newJson.get("key"));
-		                           boolean processed = false;
-		                           if(baseAPIService.checkNull(dataMap)){
-		                               if(dataMap.containsKey(i)){
-		                                   processed = true;
-		                                   Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-		                                   tempMap = dataMap.get(i);
-		                                   resultMap.putAll(tempMap);
-		                                   dataMap.put(i, resultMap);
-		                               }
-		                           }
-		                           if(!processed){
-		                               dataMap.put(i, resultMap);    
-		                           }
+		                       newJson.remove(entry.getValue());    
 		                       }
 		                       }
-		                       
+		                   Iterator<String> rowKeys = newJson.sortedKeys();
+		                   while(rowKeys.hasNext()){
+		                	   String rowKey = rowKeys.next();
+		                	   resultMap.put(rowKey, newJson.get(rowKey));
+		                   }
+		                   dataList.add(resultMap);
 		               }else{
 		                   JSONArray tempArray = new JSONArray();
 		                   newJson = new JSONObject(newJson.get("field"+(counter+1)).toString());
 		                   tempArray = new JSONArray(newJson.get("buckets").toString());
-		                   Map<String,Object> tempMap = new LinkedHashMap<String,Object>();
-		                   if(baseAPIService.checkNull(dataMap)){
-		                	   if(dataMap.containsKey(i)){
-		                		   tempMap = dataMap.get(i);
-		                	   }
-		                   }
-		                   tempMap.put(groupBy[counter], key);
-		                   dataMap.put(i, tempMap);
 		                   hasSubAggregate = true;
 		                   for(int j=0;j<tempArray.length();j++){
 		                       JSONObject subJson = new JSONObject(tempArray.get(j).toString());
-		                       if(dataMap.containsKey(i)){
-		                    		   for(Map.Entry<String, Object> map : dataMap.get(i).entrySet()){
-		                    			   subJson.put(map.getKey(),map.getValue());
-		                    		   }
-		                       }
+		                       subJson.put(groupBy[i], key);
 		                       subJsonArray.put(subJson);
 		                   }
 		               }
@@ -927,7 +909,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		           System.out.println("some logical problem in filter aggregate json ");
 		           e.printStackTrace();
 		       }
-		       return formDataList(dataMap);
+		       return dataList;
 		}
 		
 		  public List<Map<String,Object>> formDataList(Map<Integer,Map<String,Object>> requestMap){
