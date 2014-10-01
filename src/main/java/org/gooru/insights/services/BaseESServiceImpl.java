@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.persistence.criteria.Order;
 
@@ -166,9 +167,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
-			return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
-			
+//			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+			data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
+			data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
+			data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+			return buildAggregateJSON(data);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -178,8 +181,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			try {
 				String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 				List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-				data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
-				return baseAPIService.formatKeyValueJson(data,groupBy[groupBy.length-1]);
+//				data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+				data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
+				data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
+				data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+				return buildAggregateJSON(data);
 				
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -202,6 +208,42 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			e.printStackTrace();
 			return new JSONArray();
 		}
+	}
+	
+	public List<Map<String,Object>> formatAggregateKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
+		
+		JSONArray jsonArray = new JSONArray();
+		JSONObject json = new JSONObject();
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+		Gson gson = new Gson();
+		for(Map<String,Object> map : dataMap){
+			if(map.containsKey(key)){
+				String jsonKey = map.get(key).toString();
+				map.remove(key);
+					json.accumulate(jsonKey, map);
+			}
+		}
+		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
+	
+		/*	Map<String,Object> Treedata = new TreeMap<String, Object>(resultMap);
+		resultList.add(Treedata);
+		for(Map.Entry<String, Object> entry : Treedata.entrySet()){
+			JSONObject resultJson = new JSONObject();
+			resultJson.put(entry.getKey(), entry.getValue());
+			jsonArray.put(resultJson);
+		}*/
+		
+		resultList.add(resultMap);
+		return resultList;
+	}
+	
+	public JSONArray buildAggregateJSON(List<Map<String,Object>> resultList) throws JSONException{
+		JSONArray jsonArray = new JSONArray();
+		Gson gson = new Gson();
+		String resultArray = gson.toJson(resultList,jsonArray.getClass());
+		System.out.println("resultArray "+resultArray +" included array "+jsonArray);
+		return new JSONArray(resultArray);
 	}
 	
 	public List<Map<String,Object>> customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
@@ -230,6 +272,44 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			customizedData = data;
 		}
 		returnMap.put("totalRows",customizedData.size());
+		return customizedData;
+	}
+	
+	public List<Map<String,Object>> aggregatePaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+		int dataSize = data.size();
+		List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
+		if(baseAPIService.checkNull(requestParamsPaginationDTO)){
+			int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() : 0; 
+			int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10; 
+			
+			if(limit < dataSize && offset < dataSize){
+				customizedData = data.subList(offset, limit);
+			}else if(limit >= dataSize &&  offset < dataSize){
+				customizedData = data.subList(offset, dataSize);
+			}else if(limit < dataSize &&  offset >= dataSize){
+				customizedData = data.subList(0,limit);
+			}else if(limit >= dataSize &&  offset >= dataSize){
+				customizedData = data.subList(0,dataSize);
+			}
+		}else{
+			customizedData = data;
+		}
+		returnMap.put("totalRows",customizedData.size());
+		return customizedData;
+	}
+	
+	public List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData){
+		List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
+		if(baseAPIService.checkNull(requestParamsPaginationDTO)){
+			if(validatedData.get(hasdata.HAS_SORTBY.check())){
+				List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
+				for(RequestParamsSortDTO sortData : orderDatas){
+					baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
+				}
+			}
+		}else{
+			customizedData = data;
+		}
 		return customizedData;
 	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
