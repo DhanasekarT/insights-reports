@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -212,18 +213,23 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> formatAggregateKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
 		
-		JSONObject json = new JSONObject();
-		Map<String,Object> resultMap = new HashMap<String, Object>();
+//		JSONObject json = new JSONObject();
+		Map<String,Map<String,Object>> resultMap = new LinkedHashMap<String, Map<String,Object>>();
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		Gson gson = new Gson();
 		for(Map<String,Object> map : dataMap){
 			if(map.containsKey(key)){
 				String jsonKey = map.get(key).toString();
 				map.remove(key);
-					json.accumulate(jsonKey, map);
+				if(resultMap.containsKey(jsonKey)){
+					
+					map.putAll(resultMap.get(jsonKey));
+				}
+				resultMap.put(jsonKey, map);;
+//					json.accumulate(jsonKey, map);
 			}
 		}
-		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
+//		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
 	
 		/*	Map<String,Object> Treedata = new TreeMap<String, Object>(resultMap);
 		resultList.add(Treedata);
@@ -232,7 +238,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			resultJson.put(entry.getKey(), entry.getValue());
 			jsonArray.put(resultJson);
 		}*/
-		for(Map.Entry<String,Object> entry : resultMap.entrySet()){
+		for(Entry<String, Map<String, Object>> entry : resultMap.entrySet()){
 			Map<String,Object> tempMap = new HashMap<String, Object>();
 			tempMap.put(entry.getKey(), entry.getValue());
 			resultList.add(tempMap);
