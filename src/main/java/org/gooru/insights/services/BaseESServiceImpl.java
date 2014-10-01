@@ -212,7 +212,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> formatAggregateKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
 		
-		JSONArray jsonArray = new JSONArray();
 		JSONObject json = new JSONObject();
 		Map<String,Object> resultMap = new HashMap<String, Object>();
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
@@ -233,16 +232,17 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			resultJson.put(entry.getKey(), entry.getValue());
 			jsonArray.put(resultJson);
 		}*/
-		
-		resultList.add(resultMap);
+		for(Map.Entry<String,Object> entry : resultMap.entrySet()){
+			Map<String,Object> tempMap = new HashMap<String, Object>();
+			tempMap.put(entry.getKey(), entry.getValue());
+			resultList.add(tempMap);
+		}
 		return resultList;
 	}
 	
 	public JSONArray buildAggregateJSON(List<Map<String,Object>> resultList) throws JSONException{
-		JSONArray jsonArray = new JSONArray();
 		Gson gson = new Gson();
-		String resultArray = gson.toJson(resultList,jsonArray.getClass());
-		System.out.println("resultArray "+resultArray +" included array "+jsonArray);
+		String resultArray = gson.toJson(resultList,resultList.getClass());
 		return new JSONArray(resultArray);
 	}
 	
@@ -294,6 +294,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}else{
 			customizedData = data;
 		}
+		System.out.println("customized "+customizedData+" data set "+customizedData.size());
 		returnMap.put("totalRows",customizedData.size());
 		return customizedData;
 	}
@@ -307,9 +308,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
 				}
 			}
-		}else{
-			customizedData = data;
-		}
+			
+		}	
+		customizedData = data;
+		
+		System.out.println("custom data "+customizedData);
 		return customizedData;
 	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
