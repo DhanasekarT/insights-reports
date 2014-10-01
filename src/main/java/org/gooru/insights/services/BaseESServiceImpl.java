@@ -214,18 +214,21 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	public List<Map<String,Object>> formatAggregateKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
 		
 //		JSONObject json = new JSONObject();
-		Map<String,Map<String,Object>> resultMap = new LinkedHashMap<String, Map<String,Object>>();
+		Map<String,List<Map<String,Object>>> resultMap = new LinkedHashMap<String, List<Map<String,Object>>>();
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		Gson gson = new Gson();
 		for(Map<String,Object> map : dataMap){
 			if(map.containsKey(key)){
+				List<Map<String,Object>> tempList = new ArrayList<Map<String,Object>>();
 				String jsonKey = map.get(key).toString();
 				map.remove(key);
 				if(resultMap.containsKey(jsonKey)){
-					
-					map.putAll(resultMap.get(jsonKey));
+					tempList.addAll(resultMap.get(jsonKey));
 				}
-				resultMap.put(jsonKey, map);;
+				Map<String,Object> tempMap = new HashMap<String, Object>();
+					tempMap.put(jsonKey, map);
+					tempList.add(tempMap);
+				resultMap.put(jsonKey, tempList);
 //					json.accumulate(jsonKey, map);
 			}
 		}
@@ -238,7 +241,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			resultJson.put(entry.getKey(), entry.getValue());
 			jsonArray.put(resultJson);
 		}*/
-		for(Entry<String, Map<String, Object>> entry : resultMap.entrySet()){
+		for(Entry<String, List<Map<String, Object>>> entry : resultMap.entrySet()){
 			Map<String,Object> tempMap = new HashMap<String, Object>();
 			tempMap.put(entry.getKey(), entry.getValue());
 			resultList.add(tempMap);
