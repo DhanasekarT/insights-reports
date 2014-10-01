@@ -225,9 +225,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				if(resultMap.containsKey(jsonKey)){
 					tempList.addAll(resultMap.get(jsonKey));
 				}
-				Map<String,Object> tempMap = new HashMap<String, Object>();
-					tempMap.put(jsonKey, map);
-					tempList.add(tempMap);
+					tempList.add(map);
 				resultMap.put(jsonKey, tempList);
 //					json.accumulate(jsonKey, map);
 			}
@@ -303,7 +301,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}else{
 			customizedData = data;
 		}
-		System.out.println("customized "+customizedData+" data set "+customizedData.size());
 		returnMap.put("totalRows",customizedData.size());
 		return customizedData;
 	}
@@ -321,7 +318,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}	
 		customizedData = data;
 		
-		System.out.println("custom data "+customizedData);
 		return customizedData;
 	}
 	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
