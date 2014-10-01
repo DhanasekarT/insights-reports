@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.activation.DataHandler;
+
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.index.query.AndFilterBuilder;
@@ -79,6 +81,10 @@ public class UpdatedServiceImpl implements UpdatedService{
 			if(filterBuilder == null){
 				filterBuilder = includeFilterAggregate(requestParamsDTO.getFilter());
 //				filterBuilder = addFilters(requestParamsDTO.getFilter());
+			}
+			if(termBuilder != null){
+				
+				filterBuilder.subAggregation(termBuilder);
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
@@ -197,8 +203,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 								continue;
 							}
 							String fieldName = esFields(jsonObject.get(metricField[j]).toString());
-						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+j,fieldName);
-						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+j);
+						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+i,fieldName);
+						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+i);
 
 						}
 				}
@@ -238,8 +244,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 									continue;
 								}
 								String fieldName = esFields(jsonObject.get(aggregateName[j]).toString());
-							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+j,fieldName);
-							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+j);
+							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+i,fieldName);
+							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+i);
 
 							}
 					}
@@ -252,6 +258,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
+			System.out.println("included aggregate");
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
