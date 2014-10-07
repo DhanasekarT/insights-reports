@@ -1,10 +1,7 @@
 package org.gooru.insights.services;
 
 import java.lang.reflect.Type;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,47 +10,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 
-import javax.persistence.criteria.Order;
-
-import org.antlr.misc.Interval;
-import org.antlr.misc.IntervalSet;
-import org.apache.lucene.index.Terms;
-import org.apache.xmlbeans.impl.regex.REUtil;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.search.aggregations.bucket.histogram.*;
-import org.elasticsearch.common.joda.time.DateTime;
-import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
-import org.elasticsearch.common.joda.time.format.DateTimeFormatterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
-import org.elasticsearch.search.facet.FacetBuilder;
-import org.elasticsearch.search.facet.FacetBuilders;
-import org.elasticsearch.search.facet.datehistogram.DateHistogramFacetBuilder;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.constants.APIConstants;
-import org.gooru.insights.constants.APIConstants.hasdata;
 import org.gooru.insights.constants.ESConstants;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
-import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
@@ -62,13 +32,9 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.google.gdata.client.blogger.BlogPostQuery.OrderBy;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
-import com.yammer.metrics.core.Histogram;
 
 @Service
 public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants {
@@ -103,15 +69,133 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return response.execute().actionGet().getCount();
 	}
 
-	public JSONArray searchData(RequestParamsDTO requestParamsDTO,
-			String[] indices, String[] types,
+	public JSONArray itemSearch(RequestParamsDTO requestParamsDTO,
+			String[] indices,
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
+		
+		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
+		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
+		boolean multiGet = false; 
+		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
+		if(dataList.isEmpty())
+		return new JSONArray();			
+		filterMap = fetchFilters(indices[0], dataList);
+		for(int i=1;i<indices.length;i++){
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size());
+			
+			dataList = leftJoin(dataList, resultList, filterMap.keySet());
+		}
+		
+	return new JSONArray();
+	}
+	
+	public List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
+			String[] indices, String[] types,
+			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit) {
+		
+		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
+				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
+
+		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+		String result ="[{}]";
+		String dataKey=esSources.SOURCE.esSource();
+		String fields = esFields(indices[0],requestParamsDTO.getFields());
+		
+		if(validatedData.get(hasdata.HAS_FEILDS.check()))
+			dataKey=esSources.FIELDS.esSource();
+		
+		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
+			for (String field : fields.split(",")) {
+				searchRequestBuilder.addField(field);
+			}
+		}
+
+		if(!filterMap.isEmpty())
+		searchRequestBuilder.setPostFilter(updatedService.customFilter(filterMap));
+
+
+		searchRequestBuilder.setPreference("_primaries");
+
+		searchRequestBuilder.setSize(limit);
+		
+		try{
+		result =  searchRequestBuilder.execute().actionGet().toString();
+		}catch(Exception e){
+			e.printStackTrace();
+			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
+		}
+
+		resultList = getRecords(indices,result, errorRecord, dataKey);
+		
+		return resultList;
+	}
+	
+	public List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys){
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (Map<String, Object> parentEntry : parent) {
+			boolean occured = false;
+			Map<String, Object> appended = new HashMap<String, Object>();
+			for (Map<String, Object> childEntry : child) {
+				boolean validated = false;
+				for(String key : keys){
+				if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
+					if (childEntry.get(key).equals(parentEntry.get(key))) {
+					}else{
+						
+						validated = true;
+					}
+				}else{
+					validated = true;
+				}
+				}
+				if(validated){
+						occured = true;
+						appended.putAll(childEntry);
+						appended.putAll(parentEntry);
+						break;
+				}
+			if (!occured) {
+				appended.putAll(parentEntry);
+			}
+			}
+
+			resultList.add(appended);
+		}
+		return resultList;
+	}
+	
+	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey) {
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (Map<String, Object> parentEntry : parent) {
+			boolean occured = false;
+			Map<String, Object> appended = new HashMap<String, Object>();
+			for (Map<String, Object> childEntry : child) {
+				if (childEntry.containsKey(childKey) && parentEntry.containsKey(parentKey)) {
+					if (childEntry.get(childKey).equals(parentEntry.get(parentKey))) {
+						occured = true;
+						appended.putAll(childEntry);
+						appended.putAll(parentEntry);
+						break;
+					}
+				}
+			}
+			if (!occured) {
+				appended.putAll(parentEntry);
+			}
+
+			resultList.add(appended);
+		}
+		return resultList;
+	}
+	
+	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
+			String[] indices, String[] types,
+			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Boolean multiGet,Map<String,Set<Object>> filterMap) {
 		
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean hasAggregate = false;
-		boolean hasDateAggregate = false;
 		String result ="[{}]";
-		String fields = esFields(requestParamsDTO.getFields());
+		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
 
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
@@ -128,19 +212,19 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
-			updatedService.granularityAggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			hasDateAggregate = true;
+			updatedService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			hasAggregate = true;
 			} 
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			updatedService.aggregate(requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			updatedService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 		}
 		
-		if(!hasAggregate && !hasDateAggregate){
+		if(!hasAggregate){
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
-				searchRequestBuilder.setPostFilter(updatedService.includeFilter(requestParamsDTO.getFilter()));
+				searchRequestBuilder.setPostFilter(updatedService.includeFilter(indices[0],requestParamsDTO.getFilter()));
 		}
 		
 		
@@ -172,31 +256,48 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
 			data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
 			data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
-			return buildAggregateJSON(data);
+			return data;
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 		}
 		
-		if(hasDateAggregate){
-			try {
-				String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-				List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-//				data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
-				data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
-				data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
-				data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
-				return buildAggregateJSON(data);
-				
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
+		List<Map<String,Object>> data = getRecords(indices,result,errorRecord,dataKey);
+		data = customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+		
+		if(multiGet){
+			
+		}
+		return data;
+
+	}
+	
+	public Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList){
+		
+		Map<String,String> filterFields = new HashMap<String, String>();
+		Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
+		if(baseConnectionService.getFieldsJoinCache().containsKey(index)){
+			filterFields = baseConnectionService.getFieldsJoinCache().get(index);
+		}
+			for(Map<String,Object> dataMap : dataList){
+				Set<String> keySet = filterFields.keySet();
+				for(String key : keySet){
+					String esKey =esFields(index, key);
+					if(dataMap.containsKey(key)){
+						if(!filters.isEmpty() && !filters.containsKey(esKey)){
+							Set<Object> filterValue = filters.get(esKey);
+							filterValue.add(dataMap.get(key));
+							filters.put(index, filterValue);
+						}else{
+							Set<Object> filterValue = new HashSet<Object>();
+							filterValue.add(dataMap.get(key));
+							filters.put(esKey, filterValue);
+						}
+					}
+				}
 			}
 		
-		List<Map<String,Object>> data = getRecords(result,errorRecord,dataKey);
-		data = customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
-		return convertJSONArray(data);
-
+			return filters;
 	}
 	
 	public JSONArray convertJSONArray(List<Map<String,Object>> data){
@@ -320,10 +421,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		return customizedData;
 	}
-	public void sortData(List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
+	public void sortData(String[] indices,List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
 				if(validatedData.get(hasdata.HAS_SORTBY.check()))
-				searchRequestBuilder.addSort(esFields(sortData.getSortBy()), (baseAPIService.checkNull(sortData.getSortOrder()) && sortData.getSortOrder().equalsIgnoreCase("DESC")) ? SortOrder.DESC : SortOrder.ASC);
+				searchRequestBuilder.addSort(esFields(indices[0],sortData.getSortBy()), (baseAPIService.checkNull(sortData.getSortOrder()) && sortData.getSortOrder().equalsIgnoreCase("DESC")) ? SortOrder.DESC : SortOrder.ASC);
 		}
 	}
 
@@ -347,7 +448,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		for(Map.Entry<String,Set<Object>> entry : filtersData.entrySet()){
 			boolFilter.must(FilterBuilders.inFilter(entry.getKey(),baseAPIService.convertSettoArray(entry.getValue())));
 		}
-		updatedService.includeFilter(requestParamsDTOs.getFilter());
+		updatedService.includeFilter(indices[0],requestParamsDTOs.getFilter());
 		searchRequestBuilder.setPostFilter(boolFilter);
 	System.out.println(" sub query \n"+searchRequestBuilder);
 	
@@ -454,7 +555,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	
 	
-	public List<Map<String,Object>> getRecords(String data,Map<Integer,String> errorRecord,String dataKey){
+	public List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey){
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
@@ -471,7 +572,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				Map<String,Object> resultMap = new HashMap<String, Object>();
 				while(keys.hasNext()){
 					String key =keys.next(); 
-					resultMap.put(apiFields(key), fieldJson.get(key));
+					resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
 				}
 				resultList.add(resultMap);
 			}
@@ -485,9 +586,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					 String key = keys.next();
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
-						resultMap.put(apiFields(key),fieldJsonArray.get(0));
+						resultMap.put(apiFields(indices[0],key),fieldJsonArray.get(0));
 					}else{
-						resultMap.put(apiFields(key),fieldJsonArray);
+						resultMap.put(apiFields(indices[0],key),fieldJsonArray);
 					}
 				 }
 				 resultList.add(resultMap);
@@ -500,8 +601,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return resultList;
 	}
 	
-	public String esFields(String fields){
-		Map<String,String> mappingfields = baseConnectionService.getFields();
+	public String esFields(String index,String fields){
+		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 		StringBuffer esFields = new StringBuffer();
 		for(String field : fields.split(",")){
 			if(esFields.length() > 0){
@@ -516,8 +617,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return esFields.toString();
 	}
 	
-	public String apiFields(String fields){
-		Map<String,String> mappingfields = baseConnectionService.getFields();
+	public String apiFields(String index,String fields){
+		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 		Set<String> keys = mappingfields.keySet();
 		Map<String,String> apiFields =new HashMap<String, String>();
 		for(String key : keys){

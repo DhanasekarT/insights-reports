@@ -33,12 +33,8 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	@Autowired
 	UpdatedService updatedService;
 	
-	Map<String,String> indexMap = new HashMap<String,String>();
-
-	ItemServiceImpl(){
-	indexMap.put("rawdata", "event_logger");
-	indexMap.put("content", "content_catalog");
-	}
+	@Autowired
+	BaseConnectionService baseConnectionService;
 	
 	public JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap){
 		RequestParamsDTO requestParamsDTO = null;
@@ -59,8 +55,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		}
 
 		String[] indices = getIndices(requestParamsDTO.getDataSource().toLowerCase());
-			
-		return esService.searchData(requestParamsDTO,indices,baseAPIService.convertStringtoArray(esTypes.EVENT_DETAIL.esType()),validatedData,dataMap,errorMap);
+		return esService.itemSearch(requestParamsDTO,indices,validatedData,dataMap,errorMap);
 		
 	}
 
@@ -128,8 +123,8 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		String[] indices = new String[names.split(",").length];
 		String[] requestNames = names.split(",");
 		for(int i =0;i<indices.length;i++){
-			if(indexMap.containsKey(requestNames[i]))
-				indices[i] = indexMap.get(requestNames[i]);
+			if(baseConnectionService.getIndexMap().containsKey(requestNames[i]))
+				indices[i] = baseConnectionService.getIndexMap().get(requestNames[i]);
 		}
 		return indices;
 	}

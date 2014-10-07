@@ -52,11 +52,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Keyspace searchKeyspace;
 	
-	private static Map<String,String> fieldsCache;
+//	private static Map<String,String> fieldsCache;
 	
 	private static Map<String,String> fieldsDataTypeCache;
 	
-	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	private static Map<String,Map<String,String>> fieldsConfigCache;
+	
+	private static Map<String,Map<String,String>> fieldsCache;
+	
+	private static Map<String,String> indexMap;
+		
+	protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
 	 
 	@Autowired
 	BaseAPIService baseAPIService;
@@ -197,23 +203,57 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 
 
 	public void eventFields(){
+		
+		
+		fieldsCache = new HashMap<String,Map<String,String>>();
+		fieldsDataTypeCache = new HashMap<String, String>();
+		fieldsConfigCache = new HashMap<String, Map<String,String>>();
+		indexMap = new HashMap<String,String>();
+
+		indexMap.put("rawdata", "event_logger_info");
+		indexMap.put("content", "content_catalog_info");
+		indexMap.put("userdata", "user_catalog");
+		
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
-		fieldsCache = new HashMap<String, String>();
-		fieldsDataTypeCache = new HashMap<String, String>();
+		
 		for(Row<String, String> row : rows){
-			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
+//			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 			fieldsDataTypeCache.put(row.getKey(),row.getColumns().getStringValue("description",row.getKey()));
 		}
+		
+		operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),indexMap.keySet(),new ArrayList<String>());
+		rows = operationalResult.getResult();
+		
+		for(Row<String,String> row : rows){
+			Map<String,String> configMap = new HashMap<String, String>();
+			Map<String,String> fieldsMap = new HashMap<String, String>();
+			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields").getStringValue());
+			for(Column<String> column : row.getColumns()){
+				fieldsMap.put(column.getName(),column.getStringValue());
+			}
+			fieldsCache.put(row.getKey(),fieldsMap);
+			fieldsConfigCache.put(row.getKey(), configMap);
+		}
+		
 		System.out.println("fields"+fieldsCache);
+		System.out.println("fields join "+fieldsConfigCache);
 	}
 	
-	public Map<String, String> getFields() {
+	public Map<String,Map<String,String>> getFields() {
 		return fieldsCache;
 	}
 	
 	public Map<String, String> getFieldsDataType() {
 		return fieldsDataTypeCache;
+	}
+
+	public Map<String, Map<String, String>> getFieldsJoinCache() {
+		return fieldsConfigCache;
+	}
+	
+	public Map<String, String> getIndexMap() {
+		return indexMap;
 	}
 }
 

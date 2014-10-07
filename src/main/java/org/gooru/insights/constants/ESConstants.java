@@ -3,7 +3,9 @@ package org.gooru.insights.constants;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cassandra.db.migration.avro.IndexType;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.lucene.codecs.sep.IntIndexInput.Index;
 
 public interface ESConstants {
 
@@ -32,6 +34,21 @@ public interface ESConstants {
 	}
 	
 	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog"};
+	
+	public static Map<String,String> indexTypes = new HashMap<String,String>(){
+		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public String put(String arg0, String arg1) {
+			super.put("event_logger", "event_detail");
+			return super.put("content_catalog", "dim_resource");
+		}
+	};
+		
 	
 	public enum esIndices{
 		RAW_DATA("rawdata");

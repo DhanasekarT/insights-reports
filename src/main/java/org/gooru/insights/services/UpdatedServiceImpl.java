@@ -56,30 +56,30 @@ public class UpdatedServiceImpl implements UpdatedService{
 	BaseAPIService baseAPIService;
 	
 	
-	public boolean aggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+	public boolean aggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		try{
 			TermsBuilder termBuilder = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(",");
 			for(int i=groupBy.length-1; i >= 0;i--){
 				TermsBuilder tempBuilder = null;
 				if(termBuilder != null){
-						tempBuilder = AggregationBuilders.terms("field"+i).field(esFields(groupBy[i]));
+						tempBuilder = AggregationBuilders.terms("field"+i).field(esFields(index,groupBy[i]));
 						tempBuilder.subAggregation(termBuilder);
 						termBuilder = tempBuilder;
 				}else{
-					termBuilder = AggregationBuilders.terms("field"+i).field(esFields(groupBy[i]));
+					termBuilder = AggregationBuilders.terms("field"+i).field(esFields(index,groupBy[i]));
 				}
 				termBuilder.size(500);
 				System.out.println("i"+i+"groupBy -1 :"+(groupBy.length-1));
 				if( i == groupBy.length-1){
 					System.out.println("expected");
-					includeAggregation(requestParamsDTO, termBuilder,metricsName);
+					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
 				}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = includeFilterAggregate(requestParamsDTO.getFilter());
+				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
 //				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			if(termBuilder != null){
@@ -97,7 +97,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public boolean granularityAggregate(RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+	public boolean granularityAggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
 		try{
 			TermsBuilder termBuilder = null;
 			DateHistogramBuilder dateHistogram = null;
@@ -105,7 +105,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			boolean isFirstDateHistogram = false;
 			for(int i=groupBy.length-1; i >= 0;i--){
 				TermsBuilder tempBuilder = null;
-				String groupByName = esFields(groupBy[i]);
+				String groupByName = esFields(index,groupBy[i]);
 				//date field checker	
 				if(baseConnectionService.getFieldsDataType().containsKey(groupBy[i]) && baseConnectionService.getFieldsDataType().get(groupBy[i]).equalsIgnoreCase("date")){
 					dateHistogram = dateHistogram(requestParamsDTO.getGranularity(),"field"+i,groupByName);
@@ -143,20 +143,20 @@ public class UpdatedServiceImpl implements UpdatedService{
 				System.out.println("i"+i+"groupBy  :"+(groupBy.length-1));
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					if(termBuilder != null ){
-					includeAggregation(requestParamsDTO, termBuilder,metricsName);
+					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
 					}
 					}
 				
 				if( i == groupBy.length-1 && isFirstDateHistogram){
 					if(dateHistogram != null ){
-					includeAggregation(requestParamsDTO, dateHistogram,metricsName);
+					includeAggregation(index,requestParamsDTO, dateHistogram,metricsName);
 					}
 					}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
-				filterBuilder = includeFilterAggregate(requestParamsDTO.getFilter());
+				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
 //				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
 			if(isFirstDateHistogram){
@@ -175,7 +175,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder,Map<String,String> metricsName){
+	public void includeAggregation(String index,RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder,Map<String,String> metricsName){
 	if (!requestParamsDTO.getAggregations().isEmpty()) {
 		try{
 		Gson gson = new Gson();
@@ -202,7 +202,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 									.has(metricField[j])) {
 								continue;
 							}
-							String fieldName = esFields(jsonObject.get(metricField[j]).toString());
+							String fieldName = esFields(index,jsonObject.get(metricField[j]).toString());
 						performAggregation(termBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+i,fieldName);
 						metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+i);
 
@@ -215,7 +215,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	}
 	}
 	
-	public void includeAggregation(RequestParamsDTO requestParamsDTO,DateHistogramBuilder  dateHistogramBuilder,Map<String,String> metricsName){
+	public void includeAggregation(String index,RequestParamsDTO requestParamsDTO,DateHistogramBuilder  dateHistogramBuilder,Map<String,String> metricsName){
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
 			try{
 			Gson gson = new Gson();
@@ -243,7 +243,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 										.has(aggregateName[j])) {
 									continue;
 								}
-								String fieldName = esFields(jsonObject.get(aggregateName[j]).toString());
+								String fieldName = esFields(index,jsonObject.get(aggregateName[j]).toString());
 							performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString("formula"), "metrics"+i,fieldName);
 							metricsName.put(jsonObject.getString("name") != null ? jsonObject.getString("name") : fieldName, "metrics"+i);
 
@@ -319,7 +319,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 	
 	//search Filter
 		public FilterAggregationBuilder addFilters(
-				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
+				String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
 			MatchAllFilterBuilder subFilter = FilterBuilders.matchAllFilter();
 			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
 			if (requestParamsFiltersDetailDTO != null) {
@@ -331,7 +331,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 						BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
 						for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
 							FilterBuilder filter = null;
-							String fieldName = esFields(fieldsDetails.getFieldName());
+							String fieldName = esFields(index,fieldsDetails.getFieldName());
 							if (fieldsDetails.getType()
 									.equalsIgnoreCase("selector")) {
 								if (fieldsDetails.getOperator().equalsIgnoreCase(
@@ -428,8 +428,21 @@ public class UpdatedServiceImpl implements UpdatedService{
 			
 			return filterBuilder;
 		}
+		
+		public BoolFilterBuilder customFilter(Map<String,Set<Object>> filterMap){
+		
+			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
+			
+			Set<String> keys = filterMap.keySet();
+			for(String key : keys){
+			Set<Object> data = filterMap.get(key);	
+			if(!data.isEmpty())
+				boolFilter.must(FilterBuilders.inFilter(key, data));
+			}
+			return boolFilter;
+		}
 
-		public BoolFilterBuilder includeFilter(
+		public BoolFilterBuilder includeFilter(String index,
 				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
 			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 			if (requestParamsFiltersDetailDTO != null) {
@@ -442,7 +455,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 						NotFilterBuilder notFilter =null;
 			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
 				FilterBuilder filter = null;
-				String fieldName = esFields(fieldsDetails.getFieldName());
+				String fieldName = esFields(index,fieldsDetails.getFieldName());
 				if (fieldsDetails.getType()
 						.equalsIgnoreCase("selector")) {
 					if (fieldsDetails.getOperator().equalsIgnoreCase(
@@ -554,7 +567,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 		}
 		
 		public FilterAggregationBuilder includeFilterAggregate(
-				List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
+				String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO) {
 			FilterAggregationBuilder filterBuilder = new FilterAggregationBuilder("filters");
 			if (requestParamsFiltersDetailDTO != null) {
 				BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
@@ -567,7 +580,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 						NotFilterBuilder notFilter =null;
 			for (RequestParamsFilterFieldsDTO fieldsDetails : requestParamsFilterFieldsDTOs) {
 				FilterBuilder filter = null;
-				String fieldName = esFields(fieldsDetails.getFieldName());
+				String fieldName = esFields(index,fieldsDetails.getFieldName());
 				if (fieldsDetails.getType()
 						.equalsIgnoreCase("selector")) {
 					if (fieldsDetails.getOperator().equalsIgnoreCase(
@@ -711,8 +724,8 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return Integer.valueOf(value);
 		}
 		
-		public String esFields(String fields){
-			Map<String,String> mappingfields = baseConnectionService.getFields();
+		public String esFields(String index,String fields){
+			Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 			StringBuffer esFields = new StringBuffer();
 			for(String field : fields.split(",")){
 				if(esFields.length() > 0){

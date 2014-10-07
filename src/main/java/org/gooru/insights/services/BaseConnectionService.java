@@ -14,7 +14,11 @@ public interface BaseConnectionService {
 	
 	Client getClient();
 	
-	Map<String, String> getFields();
+	Map<String,Map<String,String>> getFields();
 	
 	Map<String, String> getFieldsDataType();
+	
+	Map<String, Map<String, String>> getFieldsJoinCache();
+	
+	Map<String, String> getIndexMap();
 }
