@@ -3,8 +3,10 @@ package org.gooru.insights.services;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -18,6 +20,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
+import org.hibernate.criterion.InExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -221,14 +224,22 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 //			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 			fieldsDataTypeCache.put(row.getKey(),row.getColumns().getStringValue("description",row.getKey()));
 		}
-		
-		operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),indexMap.keySet(),new ArrayList<String>());
+		System.out.println("key set"+ indexMap.keySet());
+		Set<String> indexKeys = indexMap.keySet();
+		Set<String> fetchFields = new HashSet<String>(); 
+		for(String indexKey : indexKeys){
+			fetchFields.add(indexMap.get(indexKey));
+			
+		}
+		operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),fetchFields,new ArrayList<String>());
 		rows = operationalResult.getResult();
 		
 		for(Row<String,String> row : rows){
 			Map<String,String> configMap = new HashMap<String, String>();
 			Map<String,String> fieldsMap = new HashMap<String, String>();
+			if(row.getColumns().getColumnByName("common_fields") != null && row.getColumns().getColumnByName("fetch_fields") != null){
 			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields").getStringValue());
+			}
 			for(Column<String> column : row.getColumns()){
 				fieldsMap.put(column.getName(),column.getStringValue());
 			}

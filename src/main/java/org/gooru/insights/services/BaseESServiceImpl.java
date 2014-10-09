@@ -76,7 +76,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
 		boolean multiGet = false; 
+		String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
+		System.out.println(" result data : "+dataList);
 		if(dataList.isEmpty())
 		return new JSONArray();			
 		filterMap = fetchFilters(indices[0], dataList);
@@ -85,8 +87,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			
 			dataList = leftJoin(dataList, resultList, filterMap.keySet());
 		}
-		
-	return new JSONArray();
+		try {
+			dataList = formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		dataList = aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData, dataMap);		
+	return convertJSONArray(dataList);
 	}
 	
 	public List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
@@ -236,6 +243,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		 searchRequestBuilder.setPreference("_primaries");
 
 		 //currently its not working in current ES version 1.2.2,its shows record count is 1 * no of shades = total Records
+System.out.println(" pagination status "+validatedData);
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
@@ -254,10 +262,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
 //			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 			data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
-			data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
-			data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+//			data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
+//			data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 			return data;
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		}
@@ -602,6 +610,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 	
 	public String esFields(String index,String fields){
+		System.out.println("index : "+index+" and fields : "+fields );
 		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 		StringBuffer esFields = new StringBuffer();
 		for(String field : fields.split(",")){

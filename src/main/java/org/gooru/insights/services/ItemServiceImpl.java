@@ -95,6 +95,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		if(baseAPIService.checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")){
 			processedData.put("hasAggregate",true);	
 		}
+		System.out.println(baseAPIService.checkNull(requestParamsDTO.getPagination()));
 		if(baseAPIService.checkNull(requestParamsDTO.getPagination())){
 				processedData.put("hasPagination",true);
 			if(baseAPIService.checkNull(requestParamsDTO.getPagination().getLimit())){
