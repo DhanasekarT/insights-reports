@@ -63,6 +63,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,Map<String,String>> fieldsCache;
 	
+	
 	private static Map<String,String> indexMap;
 		
 	protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;

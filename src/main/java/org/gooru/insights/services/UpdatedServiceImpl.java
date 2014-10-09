@@ -434,10 +434,15 @@ public class UpdatedServiceImpl implements UpdatedService{
 			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 			
 			Set<String> keys = filterMap.keySet();
+			Map<String,String> supportFilters = baseConnectionService.getFieldsJoinCache().get(index);
+			String supportKeys = supportFilters.get("common_fields");
 			for(String key : keys){
-			Set<Object> data = filterMap.get(key);	
+			
+				if(supportKeys.contains(key)){
+				Set<Object> data = filterMap.get(key);	
 			if(!data.isEmpty())
 				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));
+			}
 			}
 			return boolFilter;
 		}
