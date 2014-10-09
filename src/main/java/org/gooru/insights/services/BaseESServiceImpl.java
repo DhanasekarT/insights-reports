@@ -76,7 +76,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
 		boolean multiGet = false; 
-		String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
 		System.out.println(" result data : "+dataList);
 		if(dataList.isEmpty())
@@ -88,12 +87,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			
 			dataList = leftJoin(dataList, resultList, filterMap.keySet());
 		}
+		if(validatedData.get(hasdata.HAS_GROUPBY.check())){
 		try {
+			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			dataList = formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 		dataList = aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData, dataMap);		
+		}
 	return convertJSONArray(dataList);
 	}
 	
@@ -108,6 +110,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String result ="[{}]";
 		String dataKey=esSources.SOURCE.esSource();
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
+		
+		if(fields.contains("code_id") || fields.contains("label")){
+		fields = fields+",depth";	
+		}
 		
 		if(validatedData.get(hasdata.HAS_FEILDS.check()))
 			dataKey=esSources.FIELDS.esSource();
@@ -134,12 +140,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			e.printStackTrace();
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
 		}
-
+		
+		Map<String,Map<String,String>> compareMap = new HashMap<String, Map<String,String>>();
+		
 		resultList = getRecords(indices,result, errorRecord, dataKey);
 		
 		return resultList;
 	}
-	
 	public List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys){
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 		for (Map<String, Object> parentEntry : parent) {
@@ -148,6 +155,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			for (Map<String, Object> childEntry : child) {
 				boolean validated = false;
 				for(String key : keys){
+					
 				if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
 					if (childEntry.get(key).equals(parentEntry.get(key))) {
 					}else{
@@ -158,7 +166,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					validated = true;
 				}
 				}
-				if(validated){
+				if(!validated){
 						occured = true;
 						appended.putAll(childEntry);
 						appended.putAll(parentEntry);
@@ -613,6 +621,81 @@ System.out.println(" pagination status "+validatedData);
 		return resultList;
 	}
 	
+	public List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey){
+		JSONObject json;
+		JSONArray jsonArray = new JSONArray();
+		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
+		try {
+			json = new JSONObject(data);
+			json = new JSONObject(json.get("hits").toString());
+			jsonArray = new JSONArray(json.get("hits").toString());
+			if(!dataKey.equalsIgnoreCase("fields")){
+			for(int i =0;i< jsonArray.length();i++){
+				json = new JSONObject(jsonArray.get(i).toString());
+				JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
+				
+				Iterator<String> keys = fieldJson.keys();
+				Map<String,Object> resultMap = new HashMap<String, Object>();
+				while(keys.hasNext()){
+					String key =keys.next(); 
+					if(comparekey.containsKey(key)){
+						Map<String,String> comparable = new HashMap<String, String>();
+						comparable = comparekey.get(key);
+						for(Map.Entry<String, String> compare : comparable.entrySet()){
+							
+							if(compare.getKey().equalsIgnoreCase(fieldJson.get(key).toString()))
+									resultMap.put(compare.getValue(), fieldJson.get(key));
+						}
+					}else{
+					resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+					}
+				}
+				resultList.add(resultMap);
+			}
+			}else{
+				for(int i =0;i< jsonArray.length();i++){
+					Map<String,Object> resultMap = new HashMap<String, Object>();
+				json = new JSONObject(jsonArray.get(i).toString());
+				json = new JSONObject(json.get(dataKey).toString());
+				 Iterator<String> keys =json.keys();
+				 while(keys.hasNext()){
+					 String key = keys.next();
+					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
+					if(fieldJsonArray.length() == 1){	 
+						if(comparekey.containsKey(key)){
+							Map<String,String> comparable = new HashMap<String, String>();
+							comparable = comparekey.get(key);
+							for(Map.Entry<String, String> compare : comparable.entrySet()){
+								
+								if(compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString()))
+										resultMap.put(compare.getValue(), fieldJsonArray.getString(0));
+							}
+						}else{
+						resultMap.put(apiFields(indices[0],key),fieldJsonArray.get(0));
+						}
+					}else{
+						if(comparekey.containsKey(key)){
+							Map<String,String> comparable = new HashMap<String, String>();
+							comparable = comparekey.get(key);
+							for(Map.Entry<String, String> compare : comparable.entrySet()){
+								
+								if(compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString()))
+										resultMap.put(compare.getValue(), fieldJsonArray);
+							}
+						}else{
+						resultMap.put(apiFields(indices[0],key),fieldJsonArray);
+						}
+					}
+				 }
+				 resultList.add(resultMap);
+			}
+			}
+			return resultList;
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return resultList;
+	}
 	public String esFields(String index,String fields){
 		System.out.println("index : "+index+" and fields : "+fields );
 		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
