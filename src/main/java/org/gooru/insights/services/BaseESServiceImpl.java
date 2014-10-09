@@ -82,6 +82,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(dataList.isEmpty())
 		return new JSONArray();			
 		filterMap = fetchFilters(indices[0], dataList);
+		System.out.println("filter Map: "+filterMap);
 		for(int i=1;i<indices.length;i++){
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size());
 			
@@ -281,25 +282,26 @@ System.out.println(" pagination status "+validatedData);
 	}
 	
 	public Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList){
-		
+		System.out.println("index:"+index);
 		Map<String,String> filterFields = new HashMap<String, String>();
 		Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
+		System.out.println("join cache :"+baseConnectionService.getFieldsJoinCache());
 		if(baseConnectionService.getFieldsJoinCache().containsKey(index)){
 			filterFields = baseConnectionService.getFieldsJoinCache().get(index);
 		}
 			for(Map<String,Object> dataMap : dataList){
 				Set<String> keySet = filterFields.keySet();
-				for(String key : keySet){
-					String esKey =esFields(index, key);
+				Object[] keyDatas = baseAPIService.convertSettoArray(keySet);
+				for(Object key : keyDatas){
 					if(dataMap.containsKey(key)){
-						if(!filters.isEmpty() && !filters.containsKey(esKey)){
-							Set<Object> filterValue = filters.get(esKey);
+						if(!filters.isEmpty() && !filters.containsKey(key)){
+							Set<Object> filterValue = filters.get(key);
 							filterValue.add(dataMap.get(key));
 							filters.put(index, filterValue);
 						}else{
 							Set<Object> filterValue = new HashSet<Object>();
 							filterValue.add(dataMap.get(key));
-							filters.put(esKey, filterValue);
+							filters.put(key.toString(), filterValue);
 						}
 					}
 				}

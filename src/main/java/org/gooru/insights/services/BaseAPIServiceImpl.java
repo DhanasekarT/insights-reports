@@ -144,7 +144,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		return data.split(",");
 	}
 	
-	public Object[] convertSettoArray(Set<Object> data){
+	public Object[] convertSettoArray(Set<?> data){
 		return data.toArray(new Object[data.size()]);
 	}
 	

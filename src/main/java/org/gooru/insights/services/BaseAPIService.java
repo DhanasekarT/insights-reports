@@ -25,7 +25,7 @@ public interface BaseAPIService {
 	
 	boolean checkNull(Integer parameter);
 	
-	Object[] convertSettoArray(Set<Object> set);
+	Object[] convertSettoArray(Set<?> set);
 	
 	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey);
 	
