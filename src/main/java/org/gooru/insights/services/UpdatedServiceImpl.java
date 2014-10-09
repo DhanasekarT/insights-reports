@@ -429,16 +429,20 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return filterBuilder;
 		}
 		
-		public BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap){
+		public BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap,Set<String> userFilter){
 		
 			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 			
 			Set<String> keys = filterMap.keySet();
 			Map<String,String> supportFilters = baseConnectionService.getFieldsJoinCache().get(index);
-			String supportKeys = supportFilters.get("common_fields");
+			Set<String> supportKeys = supportFilters.keySet();
+			String supportKey = "";
+			for(String key : supportKeys){
+				supportKey = key;
+			}
 			for(String key : keys){
 			
-				if(supportKeys.contains(key)){
+				if(supportKey.contains(key)){
 				Set<Object> data = filterMap.get(key);	
 			if(!data.isEmpty())
 				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));

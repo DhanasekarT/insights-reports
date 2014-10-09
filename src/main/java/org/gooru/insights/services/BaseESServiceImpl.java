@@ -83,10 +83,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		filterMap = fetchFilters(indices[0], dataList);
 		System.out.println("filter Map: "+filterMap);
 		for(int i=1;i<indices.length;i++){
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size());
+			Set<String> usedFilter = new HashSet<String>();
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			
-			dataList = leftJoin(dataList, resultList, filterMap.keySet());
+			System.out.println("result : "+resultList);
+			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
+		System.out.println("combined "+ dataList);
 		if(validatedData.get(hasdata.HAS_GROUPBY.check())){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
@@ -101,7 +104,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
-			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit) {
+			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit,Set<String> usedFilter) {
 		
 		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
@@ -125,7 +128,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 
 		if(!filterMap.isEmpty())
-		searchRequestBuilder.setPostFilter(updatedService.customFilter(indices[0],filterMap));
+		searchRequestBuilder.setPostFilter(updatedService.customFilter(indices[0],filterMap,usedFilter));
 
 
 		searchRequestBuilder.setPreference("_primaries");
@@ -147,6 +150,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		return resultList;
 	}
+	
 	public List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys){
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 		for (Map<String, Object> parentEntry : parent) {
