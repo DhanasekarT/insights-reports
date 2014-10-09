@@ -23,5 +23,5 @@ public interface UpdatedService {
 	
 	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 
-	BoolFilterBuilder customFilter(Map<String,Set<Object>> filterMap);
+	BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap);
 }

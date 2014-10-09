@@ -429,7 +429,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			return filterBuilder;
 		}
 		
-		public BoolFilterBuilder customFilter(Map<String,Set<Object>> filterMap){
+		public BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap){
 		
 			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 			
@@ -437,7 +437,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			for(String key : keys){
 			Set<Object> data = filterMap.get(key);	
 			if(!data.isEmpty())
-				boolFilter.must(FilterBuilders.inFilter(key, data));
+				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));
 			}
 			return boolFilter;
 		}

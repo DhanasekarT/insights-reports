@@ -216,6 +216,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		indexMap.put("rawdata", "event_logger_info");
 		indexMap.put("content", "content_catalog_info");
 		indexMap.put("userdata", "user_catalog");
+		indexMap.put("taxonomy", "taxonomy_catalog");
 		
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();

@@ -119,7 +119,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 
 		if(!filterMap.isEmpty())
-		searchRequestBuilder.setPostFilter(updatedService.customFilter(filterMap));
+		searchRequestBuilder.setPostFilter(updatedService.customFilter(indices[0],filterMap));
 
 
 		searchRequestBuilder.setPreference("_primaries");
@@ -127,7 +127,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		searchRequestBuilder.setSize(limit);
 		
 		try{
+			System.out.println("mutiget query "+searchRequestBuilder);
 		result =  searchRequestBuilder.execute().actionGet().toString();
+		System.out.println("mutiget data "+result);
 		}catch(Exception e){
 			e.printStackTrace();
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
@@ -285,25 +287,25 @@ System.out.println(" pagination status "+validatedData);
 		System.out.println("index:"+index);
 		Map<String,String> filterFields = new HashMap<String, String>();
 		Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
-		System.out.println("join cache :"+baseConnectionService.getFieldsJoinCache());
 		if(baseConnectionService.getFieldsJoinCache().containsKey(index)){
 			filterFields = baseConnectionService.getFieldsJoinCache().get(index);
 		}
 			for(Map<String,Object> dataMap : dataList){
-				Set<String> keySet = filterFields.keySet();
-				Object[] keyDatas = baseAPIService.convertSettoArray(keySet);
-				for(Object key : keyDatas){
+				Set<String> keySets = filterFields.keySet();
+				for(String keySet : keySets){
+				for(String key : keySet.split(",")){
 					if(dataMap.containsKey(key)){
-						if(!filters.isEmpty() && !filters.containsKey(key)){
+						if(!filters.isEmpty() && filters.containsKey(key)){
 							Set<Object> filterValue = filters.get(key);
 							filterValue.add(dataMap.get(key));
-							filters.put(index, filterValue);
+							filters.put(key, filterValue);
 						}else{
 							Set<Object> filterValue = new HashSet<Object>();
 							filterValue.add(dataMap.get(key));
-							filters.put(key.toString(), filterValue);
+							filters.put(key, filterValue);
 						}
 					}
+				}
 				}
 			}
 		
