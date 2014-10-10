@@ -443,6 +443,7 @@ public class UpdatedServiceImpl implements UpdatedService{
 			for(String key : keys){
 			
 				if(supportKey.contains(key)){
+					userFilter.add(key);
 				Set<Object> data = filterMap.get(key);	
 			if(!data.isEmpty())
 				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));
