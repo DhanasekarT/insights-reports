@@ -1,5 +1,6 @@
 package org.gooru.insights.services;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.client.Client;
@@ -21,4 +22,6 @@ public interface BaseConnectionService {
 	Map<String, Map<String, String>> getFieldsJoinCache();
 	
 	Map<String, String> getIndexMap();
+	
+	Map<String,Map<String,Map<String, String>>> getDependentFieldsCache();
 }

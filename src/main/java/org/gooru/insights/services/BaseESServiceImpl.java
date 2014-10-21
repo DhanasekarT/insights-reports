@@ -29,6 +29,7 @@ import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mortbay.servlet.jetty.IncludableGzipFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -69,7 +70,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return response.execute().actionGet().getCount();
 	}
 
-	public JSONArray itemSearch(RequestParamsDTO requestParamsDTO,
+	public List<Map<String,Object>> itemSearch(RequestParamsDTO requestParamsDTO,
 			String[] indices,
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
 		
@@ -79,7 +80,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
 		System.out.println(" result data : "+dataList);
 		if(dataList.isEmpty())
-		return new JSONArray();			
+		return new ArrayList<Map<String,Object>>();			
 		filterMap = fetchFilters(indices[0], dataList);
 		System.out.println("filter Map: "+filterMap);
 		for(int i=1;i<indices.length;i++){
@@ -90,7 +91,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
 		System.out.println("combined "+ dataList);
-		if(validatedData.get(hasdata.HAS_GROUPBY.check())){
+		if(validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_GRANULARITY.check())){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			dataList = formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
@@ -99,7 +100,31 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		dataList = aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData, dataMap);		
 		}
-	return convertJSONArray(dataList);
+	return dataList;
+	}
+	
+	public List<Map<String,Object>> getItem(RequestParamsDTO requestParamsDTO,
+			String[] indices,
+			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
+		
+		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
+		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
+		boolean multiGet = false; 
+		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
+		System.out.println(" result data : "+dataList);
+		if(dataList.isEmpty())
+		return new ArrayList<Map<String,Object>>();			
+		filterMap = fetchFilters(indices[0], dataList);
+		System.out.println("filter Map: "+filterMap);
+		for(int i=1;i<indices.length;i++){
+			Set<String> usedFilter = new HashSet<String>();
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
+			
+			System.out.println("result : "+resultList);
+			dataList = leftJoin(dataList, resultList,usedFilter);
+		}
+		
+	return dataList;
 	}
 	
 	public List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
@@ -126,7 +151,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				searchRequestBuilder.addField(field);
 			}
 		}
-
+		
 		if(!filterMap.isEmpty())
 		searchRequestBuilder.setPostFilter(updatedService.customFilter(indices[0],filterMap,usedFilter));
 
@@ -144,7 +169,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
 		}
 		
-		Map<String,Map<String,String>> compareMap = new HashMap<String, Map<String,String>>();
 		
 		resultList = getRecords(indices,result, errorRecord, dataKey);
 		
@@ -250,15 +274,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		
 		
-		/*we comment ES level sorting since it does not support metrics sort
-		 * if(validatedData.get(hasdata.HAS_SORTBY.check()) && !hasAggregate)
-		sortData(requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
-		*/
+		if(validatedData.get(hasdata.HAS_SORTBY.check()) && !hasAggregate)
+		sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
 		
 		 searchRequestBuilder.setPreference("_primaries");
 
 		 //currently its not working in current ES version 1.2.2,its shows record count is 1 * no of shades = total Records
-System.out.println(" pagination status "+validatedData);
+		 System.out.println(" pagination status "+validatedData);
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
@@ -595,8 +617,28 @@ System.out.println(" pagination status "+validatedData);
 				Iterator<String> keys = fieldJson.keys();
 				Map<String,Object> resultMap = new HashMap<String, Object>();
 				while(keys.hasNext()){
-					String key =keys.next(); 
-					resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+					String key =keys.next();
+					if(baseConnectionService.getDependentFieldsCache().containsKey(indices[0])){
+						Map<String,Map<String,String>> dependentKey = baseConnectionService.getDependentFieldsCache().get(indices[0]);	
+						if(dependentKey.containsKey(key)){
+							Map<String,String> dependentColumn = dependentKey.get(key);
+							Set<String> columnKeys = dependentColumn.keySet();
+							boolean include = true;
+							for(String columnKey : columnKeys){
+								if(!columnKey.equalsIgnoreCase("field_name") && !columnKey.equalsIgnoreCase("dependent_name")){
+									if(!dependentColumn.get(columnKey).equals(fieldJson.get(columnKey))){
+										include = false;
+									}
+								}
+							}
+							if(include){
+								
+								resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+							}
+						}
+					}else{
+						resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+					}
 				}
 				resultList.add(resultMap);
 			}

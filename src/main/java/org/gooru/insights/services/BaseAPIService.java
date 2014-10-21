@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 
@@ -40,4 +41,6 @@ public interface BaseAPIService {
 	JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException;
 
 	String convertTimeMstoISO(Object milliseconds);
+	
+	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
 }

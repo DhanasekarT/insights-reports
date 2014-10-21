@@ -21,6 +21,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,7 +45,15 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			throw new JSONException();
 		}
 	}
-	
+
+	public RequestParamsCoreDTO buildRequestParamsCoreDTO(String data){
+
+		try{
+		return data != null ? deserialize(data, RequestParamsCoreDTO.class) : null;
+		}catch(Exception e){
+			throw new JSONException();
+		}
+	}
 	public boolean checkNull(String parameter) {
 
 		if (parameter != null && parameter != "" && (!parameter.isEmpty())) {

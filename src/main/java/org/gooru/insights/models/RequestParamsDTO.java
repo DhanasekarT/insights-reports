@@ -29,6 +29,16 @@ public class RequestParamsDTO implements Serializable {
 	private String groupBy;
 
 	private List<RequestParamsFilterDetailDTO> filter;
+	
+	private String apiJoinKey;
+
+	public String getApiJoinKey() {
+		return apiJoinKey;
+	}
+
+	public void setApiJoinKey(String apiJoinKey) {
+		this.apiJoinKey = apiJoinKey;
+	}
 
 	public String getFields() {
 		return fields;
