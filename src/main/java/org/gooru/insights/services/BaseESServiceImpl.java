@@ -676,12 +676,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}else{
 						try{
 							JSONArray dataArray = new JSONArray(fieldJson.get(key).toString());
+							System.out.println("json array length"+dataArray.length());
 							if(dataArray.length() == 1){	 
 								resultMap.put(apiFields(indices[0],key),dataArray.get(0));
 							}else{
-								Set<Object> arrayData = new HashSet<Object>();
+								Object[] arrayData = new Object[dataArray.length()];
 								for(int j=0;j < dataArray.length();j++){
-									arrayData.add(dataArray.get(j));
+									arrayData[j]=dataArray.get(j);
 								}
 								resultMap.put(apiFields(indices[0],key),arrayData);
 							}
@@ -717,9 +718,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 												if(dataArray.length() == 1){	 
 													resultMap.put(dependentColumn.get(columnKey),dataArray.get(0));
 												}else{
-													Set<Object> arrayData = new HashSet<Object>();
+													Object[] arrayData = new Object[dataArray.length()];
 													for(int j=0;j < dataArray.length();j++){
-														arrayData.add(dataArray.get(j));
+														arrayData[j]=dataArray.get(j);
 													}
 													resultMap.put(dependentColumn.get(columnKey),arrayData);
 												}
