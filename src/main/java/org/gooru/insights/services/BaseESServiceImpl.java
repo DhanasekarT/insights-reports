@@ -86,8 +86,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		for(int i=1;i<indices.length;i++){
 			Set<String> usedFilter = new HashSet<String>();
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
-			
-			System.out.println("result : "+resultList);
+			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+			innerFilterMap = fetchFilters(indices[i], resultList);
+			filterMap.putAll(innerFilterMap);
+			System.out.println("filter Map: "+filterMap);
+			System.out.println("index "+indices[i]+" result : "+resultList);
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
 		System.out.println("combined "+ dataList);
@@ -117,9 +120,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		filterMap = fetchFilters(indices[0], dataList);
 		System.out.println("filter Map: "+filterMap);
 		for(int i=1;i<indices.length;i++){
+			
 			Set<String> usedFilter = new HashSet<String>();
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
-			
+			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+			innerFilterMap = fetchFilters(indices[i], resultList);
+			filterMap.putAll(innerFilterMap);
+			System.out.println("filter Map: "+filterMap);
 			System.out.println("result : "+resultList);
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
@@ -138,7 +145,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String result ="[{}]";
 		String dataKey=esSources.SOURCE.esSource();
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
-		
+		System.out.println("fields"+fields);
 		if(fields.contains("code_id") || fields.contains("label")){
 		fields = fields+",depth";	
 		}
@@ -152,8 +159,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		
-		if(!filterMap.isEmpty())
-		searchRequestBuilder.setPostFilter(updatedService.customFilter(indices[0],filterMap,usedFilter));
+		if(!filterMap.isEmpty()){
+			BoolFilterBuilder filterData = updatedService.customFilter(indices[0],filterMap,usedFilter);
+			if(filterData.hasClauses())
+			searchRequestBuilder.setPostFilter(filterData);
+		}
 
 
 		searchRequestBuilder.setPreference("_primaries");
@@ -200,9 +210,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						appended.putAll(parentEntry);
 						break;
 				}
+			}
 			if (!occured) {
 				appended.putAll(parentEntry);
-			}
 			}
 
 			resultList.add(appended);
@@ -331,11 +341,27 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					if(dataMap.containsKey(key)){
 						if(!filters.isEmpty() && filters.containsKey(key)){
 							Set<Object> filterValue = filters.get(key);
-							filterValue.add(dataMap.get(key));
+							try{
+								Object[] datas = (Object[]) dataMap.get(key);
+								for(Object data : datas){
+									filterValue.add(data);
+								}
+							}catch(Exception e){
+								System.out.println("object "+key);
+								filterValue.add(dataMap.get(key));
+							}						
 							filters.put(key, filterValue);
 						}else{
 							Set<Object> filterValue = new HashSet<Object>();
-							filterValue.add(dataMap.get(key));
+							try{
+								Object[] datas = (String[]) dataMap.get(key);
+								for(Object data : datas){
+									filterValue.add(data);
+								}
+							}catch(Exception e){
+								
+								filterValue.add(dataMap.get(key));
+							}
 							filters.put(key, filterValue);
 						}
 					}
@@ -623,21 +649,46 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						if(dependentKey.containsKey(key)){
 							Map<String,String> dependentColumn = dependentKey.get(key);
 							Set<String> columnKeys = dependentColumn.keySet();
-							boolean include = true;
+							System.out.println("dependent"+dependentColumn);
 							for(String columnKey : columnKeys){
 								if(!columnKey.equalsIgnoreCase("field_name") && !columnKey.equalsIgnoreCase("dependent_name")){
-									if(!dependentColumn.get(columnKey).equals(fieldJson.get(columnKey))){
-										include = false;
+									if(columnKey.equalsIgnoreCase(fieldJson.getString(dependentColumn.get("dependent_name")))){
+										try{
+											JSONArray dataArray = new JSONArray(json.get(key).toString());
+											if(dataArray.length() == 1){	 
+												resultMap.put(dependentColumn.get(columnKey),dataArray.get(0));
+											}else{
+												Set<Object> arrayData = new HashSet<Object>();
+												for(int j=0;j < dataArray.length();j++){
+													arrayData.add(dataArray.get(j));
+												}
+												resultMap.put(dependentColumn.get(columnKey),arrayData);
+											}
+										}catch(Exception e){
+											
+											resultMap.put(dependentColumn.get(columnKey), json.get(key));		
+										}
 									}
 								}
 							}
-							if(include){
-								
-								resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
-							}
+							
 						}
 					}else{
-						resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+						try{
+							JSONArray dataArray = new JSONArray(fieldJson.get(key).toString());
+							if(dataArray.length() == 1){	 
+								resultMap.put(apiFields(indices[0],key),dataArray.get(0));
+							}else{
+								Set<Object> arrayData = new HashSet<Object>();
+								for(int j=0;j < dataArray.length();j++){
+									arrayData.add(dataArray.get(j));
+								}
+								resultMap.put(apiFields(indices[0],key),arrayData);
+							}
+						}catch(Exception e){
+							
+							resultMap.put(apiFields(indices[0],key), fieldJson.get(key));
+						}
 					}
 				}
 				resultList.add(resultMap);
@@ -650,12 +701,49 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				 Iterator<String> keys =json.keys();
 				 while(keys.hasNext()){
 					 String key = keys.next();
+					 if(baseConnectionService.getDependentFieldsCache().containsKey(indices[0])){
+							Map<String,Map<String,String>> dependentKey = baseConnectionService.getDependentFieldsCache().get(indices[0]);	
+							
+							System.out.println("dependent"+dependentKey+" incoming key"+key);
+							if(dependentKey.containsKey(key)){
+								Map<String,String> dependentColumn = dependentKey.get(key);
+								Set<String> columnKeys = dependentColumn.keySet();
+								for(String columnKey : columnKeys){
+									if(!columnKey.equalsIgnoreCase("field_name") && !columnKey.equalsIgnoreCase("dependent_name")){
+									System.out.println("dependent key "+columnKey+" json key "+new JSONArray(json.getString(dependentColumn.get("dependent_name"))).getString(0));
+										if(columnKey.equalsIgnoreCase(new JSONArray(json.getString(dependentColumn.get("dependent_name"))).getString(0))){
+											try{
+												JSONArray dataArray = new JSONArray(json.get(key).toString());
+												if(dataArray.length() == 1){	 
+													resultMap.put(dependentColumn.get(columnKey),dataArray.get(0));
+												}else{
+													Set<Object> arrayData = new HashSet<Object>();
+													for(int j=0;j < dataArray.length();j++){
+														arrayData.add(dataArray.get(j));
+													}
+													resultMap.put(dependentColumn.get(columnKey),arrayData);
+												}
+											}catch(Exception e){
+												
+												resultMap.put(dependentColumn.get(columnKey), json.get(key));		
+											}
+										}
+									}
+								} 
+								
+							}
+						}else{
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
 						resultMap.put(apiFields(indices[0],key),fieldJsonArray.get(0));
 					}else{
-						resultMap.put(apiFields(indices[0],key),fieldJsonArray);
+						Set<Object> arrayData = new HashSet<Object>();
+						for(int j=0;j < fieldJsonArray.length();j++){
+							arrayData.add(fieldJsonArray.get(j));
+						}
+						resultMap.put(apiFields(indices[0],key),arrayData);
 					}
+				 }
 				 }
 				 resultList.add(resultMap);
 			}
@@ -778,5 +866,23 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		return esFields.toString();
+	}
+	
+	public static void main(String[] args){
+		Map<String,Object> data = new HashMap<String, Object>();
+		String[] array = new String[2];
+		array[0]="1234";
+		array[1]="2345";
+		data.put("key", "[12344,1344]");
+		data.put("wow", 2);
+		try{
+			System.out.println("data"+data);
+		List<Object> dataKey = (List<Object>) data.get("key");
+		for(Object day : dataKey){
+			System.out.println("data"+day);
+		}
+		}catch(Exception e){
+			System.out.println("exception ");
+		}
 	}
 }

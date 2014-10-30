@@ -264,16 +264,16 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		rows = operationalResult.getResult();
 		for(Row<String,String> row : rows){
 			Map<String,Map<String,String>> dataSet = new HashMap<String, Map<String,String>>();
-			if(row.getColumns().getColumnByName("fetch_fields") != null){
-			 String dependentKeys = row.getColumns().getColumnByName("fetch_fields").getStringValue();
+			if(row.getColumns().getColumnByName("dependent_fields") != null){
+			 String dependentKeys = row.getColumns().getColumnByName("dependent_fields").getStringValue();
 			 fetchFields = new HashSet<String>(); 
 				for(String dependentKey : dependentKeys.split(",")){
 					fetchFields.add(row.getKey()+"~"+dependentKey);
 				}
 				operationalResult =  baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(), fetchFields, new ArrayList<String>());
 				Rows<String,String> dependentrows = operationalResult.getResult();
-				Map<String,String> dependentMap = new HashMap<String, String>();
 				for(Row<String,String> dependentRow : dependentrows){
+					Map<String,String> dependentMap = new HashMap<String, String>();
 					for(Column<String> column : dependentRow.getColumns()){
 						dependentMap.put(column.getName(),column.getStringValue());
 					}
