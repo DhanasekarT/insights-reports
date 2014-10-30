@@ -733,6 +733,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 								
 							}
 						}else{
+							try{
 					 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
 					if(fieldJsonArray.length() == 1){	 
 						resultMap.put(apiFields(indices[0],key),fieldJsonArray.get(0));
@@ -743,6 +744,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						}
 						resultMap.put(apiFields(indices[0],key),arrayData);
 					}
+							}catch(Exception e){
+								resultMap.put(apiFields(indices[0],key), json.get(key));
+							}
 				 }
 				 }
 				 resultList.add(resultMap);
@@ -875,14 +879,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		array[1]="2345";
 		data.put("key", "[12344,1344]");
 		data.put("wow", 2);
-		try{
-			System.out.println("data"+data);
-		List<Object> dataKey = (List<Object>) data.get("key");
-		for(Object day : dataKey){
-			System.out.println("data"+day);
-		}
-		}catch(Exception e){
-			System.out.println("exception ");
+		if(data.get("key").equals("[12344,1344]")){
+			System.out.println(data.get("key"));
 		}
 	}
 }
