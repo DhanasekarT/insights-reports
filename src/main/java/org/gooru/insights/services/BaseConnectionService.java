@@ -24,4 +24,6 @@ public interface BaseConnectionService {
 	Map<String, String> getIndexMap();
 	
 	Map<String,Map<String,Map<String, String>>> getDependentFieldsCache();
+	
+	Map<String, Map<String, String>>  getFieldsCustomDataType();
 }

@@ -25,6 +25,7 @@ import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -37,6 +38,10 @@ import flexjson.JSONException;
 public class BaseAPIServiceImpl implements BaseAPIService{
 
 
+	@Autowired
+	private BaseConnectionService baseConnectionService;
+	
+	
 	public RequestParamsDTO buildRequestParameters(String data){
 
 		try{
@@ -253,6 +258,23 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 		return result.toString();
 	}
 	
+public static void main(String args[]){
+	BaseAPIServiceImpl baseAPIService = new BaseAPIServiceImpl();
+	double count =1;
+	String data [] = new String[]{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+	List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
+	for(int i=0;i<26;i++){
+		Map<String,Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("timespent", 1*count);
+		dataMap.put("views", i);
+		dataMap.put("title", data[i]);
+		count = count*100;
+		dataList.add(dataMap);
+	}
+	
+	baseAPIService.sortBy(dataList, "title", "DESC");
+}
+	
 	public List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder) {
 
 		if (checkNull(sortBy)) {
@@ -298,7 +320,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 					});
 				}
 				if (descending) {
-					System.out.println("result a"+requestData);
+					
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
 
@@ -306,18 +328,18 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 								if (m1.containsKey(name)) {
 									if (m1.get(name) instanceof String) {
 										if (m2.containsKey(name))
-											return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
+											return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
 									}  else if (m1.get(name) instanceof Integer) {
 										if (m2.containsKey(name))
 											try{
-											return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
+											return ((Integer) m2.get(name)).compareTo((Integer) m1.get(name));
 											}catch(Exception e){
 												System.out.println("exception 3");
 												try{
-												return ((Long.valueOf(m1.get(name).toString())).compareTo((Long.valueOf(m2.get(name).toString()))));
+												return ((Long.valueOf(m2.get(name).toString())).compareTo((Long.valueOf(m1.get(name).toString()))));
 											}catch(Exception e1){
 												System.out.println("exception 4");
-												return ((Double.valueOf(m1.get(name).toString())).compareTo((Double.valueOf(m2.get(name).toString()))));
+												return ((Double.valueOf(m2.get(name).toString())).compareTo((Double.valueOf(m1.get(name).toString()))));
 											}
 											}
 									}
@@ -334,6 +356,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 				}
 			}
 		}
+		System.out.println("result a"+requestData);
 		return requestData;
 	}
 	

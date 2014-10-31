@@ -312,6 +312,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		return fieldsConfigCache;
 	}
 	
+	public Map<String, Map<String, String>>  getFieldsCustomDataType() {
+	return fieldsCustomDataTypeCache;
+	}
+	
 	public Map<String, String> getIndexMap() {
 		return indexMap;
 	}

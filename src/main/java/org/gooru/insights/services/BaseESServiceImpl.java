@@ -77,23 +77,31 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
 		boolean multiGet = false; 
+
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
-		System.out.println(" result data : "+dataList);
+		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
+		
 		filterMap = fetchFilters(indices[0], dataList);
-		System.out.println("filter Map: "+filterMap);
+		
 		for(int i=1;i<indices.length;i++){
+		
 			Set<String> usedFilter = new HashSet<String>();
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
+			
 			innerFilterMap = fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
+			
 			System.out.println("filter Map: "+filterMap);
 			System.out.println("index "+indices[i]+" result : "+resultList);
 			System.out.println("user filter : "+usedFilter);
+			
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
+		
 		System.out.println("combined "+ dataList);
 		if(validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_GRANULARITY.check())){
 		try {
