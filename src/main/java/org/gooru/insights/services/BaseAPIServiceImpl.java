@@ -35,30 +35,29 @@ import flexjson.JSONDeserializer;
 import flexjson.JSONException;
 
 @Service
-public class BaseAPIServiceImpl implements BaseAPIService{
-
+public class BaseAPIServiceImpl implements BaseAPIService {
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
-	
-	
-	public RequestParamsDTO buildRequestParameters(String data){
 
-		try{
-		return data != null ? deserialize(data, RequestParamsDTO.class) : null;
-		}catch(Exception e){
+	public RequestParamsDTO buildRequestParameters(String data) {
+
+		try {
+			return data != null ? deserialize(data, RequestParamsDTO.class) : null;
+		} catch (Exception e) {
 			throw new JSONException();
 		}
 	}
 
-	public RequestParamsCoreDTO buildRequestParamsCoreDTO(String data){
+	public RequestParamsCoreDTO buildRequestParamsCoreDTO(String data) {
 
-		try{
-		return data != null ? deserialize(data, RequestParamsCoreDTO.class) : null;
-		}catch(Exception e){
+		try {
+			return data != null ? deserialize(data, RequestParamsCoreDTO.class) : null;
+		} catch (Exception e) {
 			throw new JSONException();
 		}
 	}
+
 	public boolean checkNull(String parameter) {
 
 		if (parameter != null && parameter != "" && (!parameter.isEmpty())) {
@@ -70,8 +69,8 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return false;
 		}
 	}
-	
-	public boolean checkNull(Object request){
+
+	public boolean checkNull(Object request) {
 		if (request != null) {
 
 			return true;
@@ -81,8 +80,8 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return false;
 		}
 	}
-	
-	public boolean checkNull(Map<?,?> request) {
+
+	public boolean checkNull(Map<?, ?> request) {
 
 		if (request != null && (!request.isEmpty())) {
 
@@ -93,7 +92,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return false;
 		}
 	}
-	
+
 	public boolean checkNull(Collection<?> request) {
 
 		if (request != null && (!request.isEmpty())) {
@@ -105,7 +104,7 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return false;
 		}
 	}
-	
+
 	public boolean checkNull(Integer parameter) {
 
 		if (parameter != null && parameter.SIZE > 0 && (!parameter.toString().isEmpty())) {
@@ -141,34 +140,36 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 			return null;
 		}
 	}
-	public <T>  T  deserialize(String json, Class<T> clazz) {
+
+	public <T> T deserialize(String json, Class<T> clazz) {
 		try {
 			return new JSONDeserializer<T>().use(null, clazz).deserialize(json);
 		} catch (Exception e) {
 			throw new JSONException();
 		}
 	}
-	
+
 	public <T> T deserializeTypeRef(String json, TypeReference<T> type) throws JsonParseException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
-			return mapper.readValue(json, type);
+		return mapper.readValue(json, type);
 	}
-	
-	public String[] convertStringtoArray(String data){
+
+	public String[] convertStringtoArray(String data) {
 		return data.split(",");
 	}
-	
-	public Object[] convertSettoArray(Set<?> data){
+
+	public Object[] convertSettoArray(Set<?> data) {
 		return data.toArray(new Object[data.size()]);
 	}
-	
-	public JSONArray convertListtoJsonArray(List<Map<String,Object>> result){
+
+	public JSONArray convertListtoJsonArray(List<Map<String, Object>> result) {
 		JSONArray jsonArray = new JSONArray();
-		for(Map<String,Object> entry : result){
-			jsonArray.put(entry);	
+		for (Map<String, Object> entry : result) {
+			jsonArray.put(entry);
 		}
 		return jsonArray;
 	}
+
 	public JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey) {
 		JSONArray jsonArray = new JSONArray();
 		if (!child.isEmpty() && !parent.isEmpty()) {
@@ -184,97 +185,100 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 						}
 					}
 				}
-				if(checkNull(appended)){
-				jsonArray.put(appended);
+				if (checkNull(appended)) {
+					jsonArray.put(appended);
 				}
 			}
 			return jsonArray;
 		}
 		return jsonArray;
 	}
-	
-	public 	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child){
+
+	public JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child) {
 		JSONArray jsonArray = new JSONArray();
 		if (!child.isEmpty() && !parent.isEmpty()) {
 			for (Map<String, Object> childEntry : child) {
 				Map<String, Object> appended = new HashMap<String, Object>();
-					Set<String> keys = childEntry.keySet();
+				Set<String> keys = childEntry.keySet();
 				for (Map<String, Object> parentEntry : parent) {
 					boolean valid = true;
-					for(String key : keys){
-					if(parentEntry.containsKey(key) && childEntry.containsKey(key) && (!parentEntry.get(key).equals(childEntry.get(key)))){
-						valid = false;
+					for (String key : keys) {
+						if (parentEntry.containsKey(key) && childEntry.containsKey(key) && (!parentEntry.get(key).equals(childEntry.get(key)))) {
+							valid = false;
+						}
 					}
-					}
-					if(valid){
-					appended.putAll(parentEntry);
-					appended.putAll(childEntry);
-					break;
+					if (valid) {
+						appended.putAll(parentEntry);
+						appended.putAll(childEntry);
+						break;
 					}
 				}
-				if(checkNull(appended)){
-				jsonArray.put(appended);
-				}
+				if (checkNull(appended)) {
+					jsonArray.put(appended);
 				}
 			}
-			return jsonArray;
 		}
+		return jsonArray;
+	}
 
-	public List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child){
-		List<Map<String, Object>> resultData = new ArrayList<Map<String,Object>>();
+	public List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child) {
+		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
 		if (!child.isEmpty() && !parent.isEmpty()) {
 			for (Map<String, Object> childEntry : child) {
 				Map<String, Object> appended = new HashMap<String, Object>();
-					Set<String> keys = childEntry.keySet();
+				Set<String> keys = childEntry.keySet();
 				for (Map<String, Object> parentEntry : parent) {
 					boolean valid = true;
-					for(String key : keys){
-					if(parentEntry.containsKey(key) && childEntry.containsKey(key) && (!parentEntry.get(key).equals(childEntry.get(key)))){
-						valid = false;
+					for (String key : keys) {
+						if (parentEntry.containsKey(key) && childEntry.containsKey(key) && (!parentEntry.get(key).equals(childEntry.get(key)))) {
+							valid = false;
+						}
 					}
-					}
-					if(valid){
-					appended.putAll(parentEntry);
-					appended.putAll(childEntry);
-					break;
+					if (valid) {
+						appended.putAll(parentEntry);
+						appended.putAll(childEntry);
+						break;
 					}
 				}
-				if(checkNull(appended)){
+				if (checkNull(appended)) {
 					resultData.add(appended);
 				}
-				}
 			}
-			return resultData;
+		}
+		return resultData;
 	}
+
 	@Override
 	public String convertArraytoString(String[] datas) {
 		StringBuffer result = new StringBuffer();
-		for(String data : datas){
-			if(result.length() > 0){
-			result.append(",");
+		for (String data : datas) {
+			if (result.length() > 0) {
+				result.append(",");
 			}
 			result.append(data);
 		}
 		return result.toString();
 	}
-	
-public static void main(String args[]){
-	BaseAPIServiceImpl baseAPIService = new BaseAPIServiceImpl();
-	double count =1;
-	String data [] = new String[]{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
-	List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
-	for(int i=0;i<26;i++){
-		Map<String,Object> dataMap = new HashMap<String, Object>();
-		dataMap.put("timespent", 1*count);
-		dataMap.put("views", i);
-		dataMap.put("title", data[i]);
-		count = count*100;
-		dataList.add(dataMap);
+
+	public static void main(String args[]) {
+		BaseAPIServiceImpl baseAPIService = new BaseAPIServiceImpl();
+		double count = 1;
+		String data[] = new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+		for (int i = 0; i < 26; i++) {
+			Map<String, Object> dataMap = new HashMap<String, Object>();
+			if (!(i == 2 || i == 4)) {
+				dataMap.put("timespent", 1 * count);
+			}
+			dataMap.put("views", i);
+			dataMap.put("title", data[i]);
+			count = count * 100;
+			dataList.add(dataMap);
+		}
+
+		baseAPIService.sortBy(dataList, "timespent", "asc");
 	}
-	
-	baseAPIService.sortBy(dataList, "title", "DESC");
-}
-	
+
 	public List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder) {
 
 		if (checkNull(sortBy)) {
@@ -295,24 +299,19 @@ public static void main(String args[]){
 				if (ascending) {
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
-							System.out.println(" m1 type "+m1.get(name).getClass().getName()+" me2 type "+m2.get(name).getClass().getName()+" m1 name "+m1.get(name)+" m2 name"+m2.get(name)+" name"+name);
 							if (m1.containsKey(name) && m2.containsKey(name)) {
-								if (m1.get(name) instanceof String) {
-									if (m2.containsKey(name))
-										return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
-								}  else if (m1.get(name) instanceof Integer) {
-									if (m2.containsKey(name))
-										try{
+								try {
+									return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
+								} catch (Exception e3) {
+									try {
 										return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
-										}catch(Exception e){
-											System.out.println("exception 1");
-											try{
+									} catch (Exception e) {
+										try {
 											return ((Long.valueOf(m1.get(name).toString())).compareTo((Long.valueOf(m2.get(name).toString()))));
-										}catch(Exception e1){
-											System.out.println("exception 2");
+										} catch (Exception e1) {
 											return ((Double.valueOf(m1.get(name).toString())).compareTo((Double.valueOf(m2.get(name).toString()))));
 										}
-										}
+									}
 								}
 							}
 							return 1;
@@ -320,28 +319,28 @@ public static void main(String args[]){
 					});
 				}
 				if (descending) {
-					
+
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
 
 							if (m2.containsKey(name)) {
 								if (m1.containsKey(name)) {
-									if (m1.get(name) instanceof String) {
-										if (m2.containsKey(name))
-											return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
-									}  else if (m1.get(name) instanceof Integer) {
-										if (m2.containsKey(name))
-											try{
+									try {
+										return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
+									} catch (Exception e) {
+										try {
+
 											return ((Integer) m2.get(name)).compareTo((Integer) m1.get(name));
-											}catch(Exception e){
-												System.out.println("exception 3");
-												try{
+										} catch (Exception e3) {
+											try {
 												return ((Long.valueOf(m2.get(name).toString())).compareTo((Long.valueOf(m1.get(name).toString()))));
-											}catch(Exception e1){
-												System.out.println("exception 4");
-												return ((Double.valueOf(m2.get(name).toString())).compareTo((Double.valueOf(m1.get(name).toString()))));
+											} catch (Exception e1) {
+												try {
+													return ((Double.valueOf(m2.get(name).toString())).compareTo((Double.valueOf(m1.get(name).toString()))));
+												} catch (Exception e2) {
+												}
 											}
-											}
+										}
 									}
 								} else {
 									return 1;
@@ -356,39 +355,39 @@ public static void main(String args[]){
 				}
 			}
 		}
-		System.out.println("result a"+requestData);
+		System.out.println("result a" + requestData);
 		return requestData;
 	}
-	
-	public JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException{
-	
+
+	public JSONArray formatKeyValueJson(List<Map<String, Object>> dataMap, String key) throws org.json.JSONException {
+
 		JSONArray jsonArray = new JSONArray();
 		JSONObject json = new JSONObject();
-		Map<String,String> resultMap = new HashMap<String, String>();
+		Map<String, String> resultMap = new HashMap<String, String>();
 		Gson gson = new Gson();
-		for(Map<String,Object> map : dataMap){
-			if(map.containsKey(key)){
+		for (Map<String, Object> map : dataMap) {
+			if (map.containsKey(key)) {
 				String jsonKey = map.get(key).toString();
 				map.remove(key);
-					json.accumulate(jsonKey, map);
+				json.accumulate(jsonKey, map);
 			}
 		}
-		resultMap = gson.fromJson(json.toString(),resultMap.getClass());
-		Map<String,Object> Treedata = new TreeMap<String, Object>(resultMap);
-		for(Map.Entry<String, Object> entry : Treedata.entrySet()){
+		resultMap = gson.fromJson(json.toString(), resultMap.getClass());
+		Map<String, Object> Treedata = new TreeMap<String, Object>(resultMap);
+		for (Map.Entry<String, Object> entry : Treedata.entrySet()) {
 			JSONObject resultJson = new JSONObject();
 			resultJson.put(entry.getKey(), entry.getValue());
 			jsonArray.put(resultJson);
 		}
 		return jsonArray;
 	}
-	
-	public String convertTimeMstoISO(Object milliseconds){
-		
+
+	public String convertTimeMstoISO(Object milliseconds) {
+
 		DateFormat ISO_8601_DATE_TIME = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");
 		ISO_8601_DATE_TIME.setTimeZone(TimeZone.getTimeZone("UTC"));
 		Date date = new Date(Long.valueOf(milliseconds.toString()));
 		return ISO_8601_DATE_TIME.format(date);
 	}
-	
+
 }
