@@ -273,21 +273,24 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 				if (ascending) {
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
+							System.out.println(" m1 type "+m1.get(name).getClass().getName()+" me2 type "+m2.get(name).getClass().getName()+" m1 name "+m1.get(name)+" m2 name"+m2.get(name)+" name"+name);
 							if (m1.containsKey(name) && m2.containsKey(name)) {
 								if (m1.get(name) instanceof String) {
 									if (m2.containsKey(name))
 										return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
-								} else if (m1.get(name) instanceof Long) {
+								}  else if (m1.get(name) instanceof Integer) {
 									if (m2.containsKey(name))
-										return ((Long) m1.get(name)).compareTo((Long) m2.get(name));
-
-								} else if (m1.get(name) instanceof Integer) {
-									if (m2.containsKey(name))
+										try{
 										return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
-
-								} else if (m1.get(name) instanceof Double) {
-									if (m2.containsKey(name))
-										return ((Double) m1.get(name)).compareTo((Double) m2.get(name));
+										}catch(Exception e){
+											System.out.println("exception 1");
+											try{
+											return ((Long.valueOf(m1.get(name).toString())).compareTo((Long.valueOf(m2.get(name).toString()))));
+										}catch(Exception e1){
+											System.out.println("exception 2");
+											return ((Double.valueOf(m1.get(name).toString())).compareTo((Double.valueOf(m2.get(name).toString()))));
+										}
+										}
 								}
 							}
 							return 1;
@@ -295,26 +298,28 @@ public class BaseAPIServiceImpl implements BaseAPIService{
 					});
 				}
 				if (descending) {
+					System.out.println("result a"+requestData);
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
 
 							if (m2.containsKey(name)) {
 								if (m1.containsKey(name)) {
-									if (m2.get(name) instanceof String) {
+									if (m1.get(name) instanceof String) {
 										if (m2.containsKey(name))
-											return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
-
-									} else if (m2.get(name) instanceof Long) {
+											return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
+									}  else if (m1.get(name) instanceof Integer) {
 										if (m2.containsKey(name))
-											return ((Long) m2.get(name)).compareTo((Long) m1.get(name));
-
-									} else if (m2.get(name) instanceof Integer) {
-										if (m2.containsKey(name))
-											return ((Integer) m2.get(name)).compareTo((Integer) m1.get(name));
-
-									} else if (m2.get(name) instanceof Double) {
-										if (m2.containsKey(name))
-											return ((Double) m2.get(name)).compareTo((Double) m1.get(name));
+											try{
+											return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
+											}catch(Exception e){
+												System.out.println("exception 3");
+												try{
+												return ((Long.valueOf(m1.get(name).toString())).compareTo((Long.valueOf(m2.get(name).toString()))));
+											}catch(Exception e1){
+												System.out.println("exception 4");
+												return ((Double.valueOf(m1.get(name).toString())).compareTo((Double.valueOf(m2.get(name).toString()))));
+											}
+											}
 									}
 								} else {
 									return 1;

@@ -91,6 +91,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			filterMap.putAll(innerFilterMap);
 			System.out.println("filter Map: "+filterMap);
 			System.out.println("index "+indices[i]+" result : "+resultList);
+			System.out.println("user filter : "+usedFilter);
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
 		System.out.println("combined "+ dataList);
@@ -127,7 +128,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			innerFilterMap = fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
 			System.out.println("filter Map: "+filterMap);
-			System.out.println("result : "+resultList);
+			System.out.println("user filter : "+usedFilter);
 			dataList = leftJoin(dataList, resultList,usedFilter);
 		}
 		
@@ -146,6 +147,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String dataKey=esSources.SOURCE.esSource();
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		System.out.println("fields"+fields);
+		
 		if(fields.contains("code_id") || fields.contains("label")){
 		fields = fields+",depth";	
 		}
@@ -195,7 +197,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				for(String key : keys){
 					
 				if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
-					if (childEntry.get(key).equals(parentEntry.get(key))) {
+					if (childEntry.get(key).toString().equals(parentEntry.get(key).toString())) {
 					}else{
 						
 						validated = true;

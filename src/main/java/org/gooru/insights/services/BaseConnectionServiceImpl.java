@@ -62,6 +62,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,String> fieldsDataTypeCache;
 	
+	private static Map<String,Map<String,String>>  fieldsCustomDataTypeCache;
+	
 	private static Map<String,Map<String,String>> fieldsConfigCache;
 	
 	private static Map<String,Map<String,String>> fieldsCache;
@@ -224,7 +226,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		fieldsConfigCache = new HashMap<String, Map<String,String>>();
 		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
 		indexMap = new HashMap<String,String>();
-
+		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
+		
 		indexMap.put("rawdata", "event_logger_info");
 		indexMap.put("content", "content_catalog_info");
 		indexMap.put("userdata", "user_catalog");
@@ -250,12 +253,19 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		for(Row<String,String> row : rows){
 			Map<String,String> configMap = new HashMap<String, String>();
 			Map<String,String> fieldsMap = new HashMap<String, String>();
+			Map<String,String> fieldsDataTypeMap = new HashMap<String, String>();
 			if(row.getColumns().getColumnByName("common_fields") != null && row.getColumns().getColumnByName("fetch_fields") != null){
 			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields").getStringValue());
 			}
 			for(Column<String> column : row.getColumns()){
 				fieldsMap.put(column.getName(),column.getStringValue());
 			}
+			OperationResult<ColumnList<String>> result = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),row.getKey()+"~datatype",new ArrayList<String>());
+			
+			for(Column<String> column : result.getResult()){
+				fieldsDataTypeMap.put(column.getName(),column.getStringValue());
+			}
+			fieldsCustomDataTypeCache.put(row.getKey(), fieldsDataTypeMap);
 			fieldsCache.put(row.getKey(),fieldsMap);
 			fieldsConfigCache.put(row.getKey(), configMap);
 		}
