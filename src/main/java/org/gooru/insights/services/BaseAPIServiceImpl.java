@@ -270,13 +270,15 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			if (!(i == 2 || i == 4)) {
 				dataMap.put("timespent", 1 * count);
 			}
+			if (!(i == 2 || i == 4)) {
 			dataMap.put("views", i);
+			}
 			dataMap.put("title", data[i]);
 			count = count * 100;
 			dataList.add(dataMap);
 		}
 
-		baseAPIService.sortBy(dataList, "timespent", "asc");
+		baseAPIService.sortBy(dataList, "views", "asc");
 	}
 
 	public List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder) {
@@ -299,22 +301,23 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				if (ascending) {
 					Collections.sort(requestData, new Comparator<Map<String, Object>>() {
 						public int compare(final Map<String, Object> m1, final Map<String, Object> m2) {
-							if (m1.containsKey(name) && m2.containsKey(name)) {
-								try {
-									return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
-								} catch (Exception e3) {
+							if (m1.containsKey(name) && m2.containsKey(name) ) {
+								
 									try {
 										return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
 									} catch (Exception e) {
 										try {
 											return ((Long.valueOf(m1.get(name).toString())).compareTo((Long.valueOf(m2.get(name).toString()))));
 										} catch (Exception e1) {
+											try {
 											return ((Double.valueOf(m1.get(name).toString())).compareTo((Double.valueOf(m2.get(name).toString()))));
+											} catch (Exception e3) {
+												return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
 										}
 									}
 								}
 							}
-							return 1;
+							return -1;
 						}
 					});
 				}
@@ -325,30 +328,26 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 
 							if (m2.containsKey(name)) {
 								if (m1.containsKey(name)) {
-									try {
-										return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
-									} catch (Exception e) {
+									
 										try {
-
 											return ((Integer) m2.get(name)).compareTo((Integer) m1.get(name));
 										} catch (Exception e3) {
 											try {
 												return ((Long.valueOf(m2.get(name).toString())).compareTo((Long.valueOf(m1.get(name).toString()))));
 											} catch (Exception e1) {
-												try {
-													return ((Double.valueOf(m2.get(name).toString())).compareTo((Double.valueOf(m1.get(name).toString()))));
-												} catch (Exception e2) {
-												}
+													try {
+														return ((Double.valueOf(m2.get(name).toString())).compareTo((Double.valueOf(m1.get(name).toString()))));
+													} catch (Exception e) {												
+														return ((String) m2.get(name).toString().toLowerCase()).compareTo((String) m1.get(name).toString().toLowerCase());
+											}
 											}
 										}
-									}
 								} else {
 									return 1;
 								}
 							} else {
 								return -1;
 							}
-							return 0;
 						}
 					});
 
