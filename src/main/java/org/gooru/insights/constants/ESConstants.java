@@ -33,7 +33,7 @@ public interface ESConstants {
 		}
 	}
 	
-	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog"};
+	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog","activity_catalog","content_catalog_info","user_catalog_info"};
 	
 	public static Map<String,String> indexTypes = new HashMap<String,String>(){
 		
@@ -45,6 +45,8 @@ public interface ESConstants {
 		@Override
 		public String put(String arg0, String arg1) {
 			super.put("event_logger", "event_detail");
+			super.put("activity_catalog", "event_detail");
+			super.put("content_catalog_info", "dim_resource");
 			return super.put("content_catalog", "dim_resource");
 		}
 	};

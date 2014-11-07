@@ -272,6 +272,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		
 		indexMap.put("rawdata", "event_logger_info");
 		indexMap.put("content", "content_catalog_info");
+		indexMap.put("activity", "activity_catalog");
+		indexMap.put("resource", "content_catalog");
+		indexMap.put("user", "user_catalog_info");
 		indexMap.put("userdata", "user_catalog");
 		indexMap.put("taxonomy", "taxonomy_catalog");
 		
