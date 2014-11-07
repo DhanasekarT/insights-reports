@@ -233,7 +233,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			prodClient  = initNodeClient(clusterName);
 		}
 		}
-		if(devClient == null){
+		if(prodClient == null){
 			prodClient = initTransportClient(hostName,portNo,clusterName);
 		}
 	}

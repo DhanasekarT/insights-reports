@@ -264,6 +264,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
 
+		System.out.print("indices :" + indices);
+		
 		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 
