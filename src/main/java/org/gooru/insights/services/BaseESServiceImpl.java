@@ -633,12 +633,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return resultList;
 	}
 	public Client getClient(String indexSource) {
-		if(indexSource.equalsIgnoreCase("dev")){
+		if(indexSource != null && indexSource.equalsIgnoreCase("dev")){
 			return baseConnectionService.getDevClient();
-		}else if(indexSource.equalsIgnoreCase("prod")){
+		}else if(indexSource != null && indexSource.equalsIgnoreCase("prod")){
+			return baseConnectionService.getProdClient();
+		}else{			
 			return baseConnectionService.getProdClient();
 		}
-		return baseConnectionService.getProdClient();
 	}
 	
 	
