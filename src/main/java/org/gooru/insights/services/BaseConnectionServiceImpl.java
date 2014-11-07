@@ -52,7 +52,9 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 @Component
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
 
-	private static Client client;
+	private static Client devClient;
+	
+	private static Client prodClient;
 	
 	private static Keyspace insightsKeyspace;
 	
@@ -98,15 +100,23 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		}
 		}
 		
-		if(client == null ){
-		initESConnection();
+		if(devClient == null ){
+			initDevESConnection();
 		}
 		
+		if(prodClient == null ){
+			initProdESConnection();
+		}
 	}
 	
-	public Client getClient(){
+	public Client getDevClient(){
 	
-		return this.client;
+		return this.devClient;
+	}
+	
+	public Client getProdClient(){
+		
+		return this.prodClient;
 	}
 	
 	public void initCassandraConnection(){
@@ -166,7 +176,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		return connectionPoolConfig;
 	}
 	
-	public void initESConnection(){
+	public void initDevESConnection(){
 //		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 //		ColumnList<String> columnList = rowResult.getResult();
 //		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
@@ -189,20 +199,52 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		String hostName = "107.170.199.76";
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
-			client  = initNodeClient(clusterName);
+			devClient  = initNodeClient(clusterName);
 		}
 		}
-		if(client == null){
-			client = initTransportClient(hostName,portNo,clusterName,indexName);
+		if(devClient == null){
+			devClient = initTransportClient(hostName,portNo,clusterName);
 		}
 	}
+
+	public void initProdESConnection(){
+//		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+//		ColumnList<String> columnList = rowResult.getResult();
+//		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
+//		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
+//		System.out.println(" cluster "+clusterName);
+//
+//		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
+//		System.out.println(" hostname "+hostName);
+//
+//		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
+//		System.out.println(" portNo "+portNo);
+//
+//		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+//		System.out.println(" nodeType "+nodeType);
+
+		String indexName = "event_logger_insights";
+		String clusterName = "" ;
+		String nodeType ="transportClient";
+		String portNo ="9300";
+		String hostName = "54.177.68.49";
+		if(nodeType != null && !nodeType.isEmpty()){
+		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
+			prodClient  = initNodeClient(clusterName);
+		}
+		}
+		if(devClient == null){
+			prodClient = initTransportClient(hostName,portNo,clusterName);
+		}
+	}
+	
 	
 	public Client initNodeClient(String clusterName){
 		 Settings settings = ImmutableSettings.settingsBuilder().put(esConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : "").put("client.transport.sniff", true).build();
 		 return new NodeBuilder().settings(settings).node().client();   	
 	}
 	
-	public Client initTransportClient(String hostName,String portNo,String clusterName,String indexName){
+	public Client initTransportClient(String hostName,String portNo,String clusterName){
 		 Settings settings = ImmutableSettings.settingsBuilder().put(esConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : "").put("client.transport.sniff", true).build();
          TransportClient transportClient = new TransportClient(settings);
          transportClient.addTransportAddress(new InetSocketTransportAddress(hostName, Integer.valueOf(portNo)));

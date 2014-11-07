@@ -16,6 +16,8 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String dataSource;
 	
+	private String sourceIndex;
+	
 	private String granularity;
 	
 	RequestParamsPaginationDTO pagination;
@@ -118,6 +120,14 @@ public class RequestParamsDTO implements Serializable {
 
 	public void setGranularity(String granularity) {
 		this.granularity = granularity;
+	}
+
+	public void setSourceIndex(String sourceIndex) {
+		this.sourceIndex = sourceIndex;
+	}
+
+	public String getSourceIndex() {
+		return sourceIndex;
 	}
 	
 	

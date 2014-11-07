@@ -13,7 +13,9 @@ public interface BaseConnectionService {
 	
 	Keyspace connectSearch();
 	
-	Client getClient();
+	Client getDevClient();
+	
+	Client getProdClient();
 	
 	Map<String,Map<String,String>> getFields();
 	

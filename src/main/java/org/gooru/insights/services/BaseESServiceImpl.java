@@ -53,14 +53,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 	RequestParamsFilterDetailDTO requestParamsFiltersDetailDTO;
 
-	public Map<String, Object> record(String index, String type, String id) {
-		GetResponse response = getClient().prepareGet(index, type, id)
+	public Map<String, Object> record(String sourceIndex,String index, String type, String id) {
+		GetResponse response = getClient(sourceIndex).prepareGet(index, type, id)
 				.execute().actionGet();
 		return response.getSource();
 	}
-	public long recordCount(String[] indices, String[] types,
+	public long recordCount(String sourceIndex,String[] indices, String[] types,
 			QueryBuilder query, String id) {
-		CountRequestBuilder response = getClient().prepareCount(indices);
+		CountRequestBuilder response = getClient(sourceIndex).prepareCount(indices);
 		if (query != null) {
 			response.setQuery(query);
 		}
@@ -147,7 +147,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			String[] indices, String[] types,
 			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit,Set<String> usedFilter) {
 		
-		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
+		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
@@ -264,7 +264,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
 
-		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
+		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 
 
@@ -517,7 +517,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 	
 	public List<Map<String,Object>> subSearch(RequestParamsDTO requestParamsDTOs,String[] indices,String fields,Map<String,Set<Object>> filtersData){
-		SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(
+		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTOs.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
 		
 		if(baseAPIService.checkNull(fields)){
@@ -632,8 +632,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		return resultList;
 	}
-	public Client getClient() {
-		return baseConnectionService.getClient();
+	public Client getClient(String indexSource) {
+		if(indexSource.equalsIgnoreCase("dev")){
+			return baseConnectionService.getDevClient();
+		}else if(indexSource.equalsIgnoreCase("prod")){
+			return baseConnectionService.getProdClient();
+		}
+		return baseConnectionService.getProdClient();
 	}
 	
 	
