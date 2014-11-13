@@ -645,7 +645,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}else if(indexSource != null && indexSource.equalsIgnoreCase("prod")){
 			return baseConnectionService.getProdClient();
 		}else{			
-			return baseConnectionService.getProdClient();
+			return baseConnectionService.getDevClient();
 		}
 	}
 	
