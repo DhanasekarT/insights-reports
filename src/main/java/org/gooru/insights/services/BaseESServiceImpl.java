@@ -76,9 +76,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
-		boolean multiGet = false; 
 
-		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
+		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
 		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
@@ -121,20 +120,25 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
-		boolean multiGet = false; 
-		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,multiGet,filterMap);
+		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
 		System.out.println(" result data : "+dataList);
+		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
+		
 		filterMap = fetchFilters(indices[0], dataList);
 		System.out.println("filter Map: "+filterMap);
+		
 		for(int i=1;i<indices.length;i++){
 			
 			Set<String> usedFilter = new HashSet<String>();
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+			
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
+			
 			innerFilterMap = fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
+			
 			System.out.println("filter Map: "+filterMap);
 			System.out.println("user filter : "+usedFilter);
 			dataList = leftJoin(dataList, resultList,usedFilter);
@@ -256,7 +260,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
-			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Boolean multiGet,Map<String,Set<Object>> filterMap) {
+			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Map<String,Set<Object>> filterMap) {
 		
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean hasAggregate = false;
@@ -279,7 +283,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		
-		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
+	/*	if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			updatedService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 			} 
@@ -287,21 +291,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
 			updatedService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
-		}
+		}*/
+		
+		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			updatedService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			hasAggregate = true;
+			} 
+		
 		
 		if(!hasAggregate){
+			
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
 				searchRequestBuilder.setPostFilter(updatedService.includeFilter(indices[0],requestParamsDTO.getFilter()));
+
+				if(validatedData.get(hasdata.HAS_SORTBY.check()))
+					sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
 		}
-		
-		
-		if(validatedData.get(hasdata.HAS_SORTBY.check()) && !hasAggregate)
-		sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
-		
+
+		//Include only source file to avoid miss functionality of data during aggregation on ES version 1.2.2 
 		 searchRequestBuilder.setPreference("_primaries");
 
-		 //currently its not working in current ES version 1.2.2,its shows record count is 1 * no of shades = total Records
+		 //currently its not working in ES version 1.2.2,its shows record count is 1 * no of shades = total Records
 		 System.out.println(" pagination status "+validatedData);
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
@@ -319,10 +330,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			List<Map<String,Object>> data = updatedService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-//			data = customPaginate(requestParamsDTO.getPagination(), data, validatedData,dataMap);
 			data = aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
-//			data = formatAggregateKeyValueJson(data, groupBy[groupBy.length-1]);
-//			data = aggregatePaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 			return data;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -332,9 +340,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> data = getRecords(indices,result,errorRecord,dataKey);
 		data = customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 		
-		if(multiGet){
-			
-		}
 		return data;
 
 	}

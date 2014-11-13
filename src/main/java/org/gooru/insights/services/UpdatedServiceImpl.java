@@ -140,7 +140,6 @@ public class UpdatedServiceImpl implements UpdatedService{
 						isFirstDateHistogram =false;
 					}
 				
-				System.out.println("i"+i+"groupBy  :"+(groupBy.length-1));
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					if(termBuilder != null ){
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
@@ -153,26 +152,31 @@ public class UpdatedServiceImpl implements UpdatedService{
 					}
 					}
 			}
+			
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
 				FilterAggregationBuilder filterBuilder = null;
 			if(filterBuilder == null){
 				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
-//				filterBuilder = addFilters(requestParamsDTO.getFilter());
 			}
+
 			if(isFirstDateHistogram){
 				filterBuilder.subAggregation(dateHistogram);
 			}else{
 				filterBuilder.subAggregation(termBuilder);	
 			}
+			
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
+			
 			return true;
 	}catch(Exception e){
+		
 		e.printStackTrace();
 		return false;
 	}
+		
 	}
 	
 	public void includeAggregation(String index,RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder,Map<String,String> metricsName){
