@@ -354,7 +354,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 			}
 		}
-		System.out.println("result a" + requestData);
 		return requestData;
 	}
 
@@ -381,6 +380,73 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		return jsonArray;
 	}
 
+
+	public Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO){
+		Map<String,Boolean> processedData = new HashMap<String,Boolean>();
+		processedData.put("hasFields", false);
+		processedData.put("hasDataSource",false);
+		processedData.put("hasGroupBy",false);
+		processedData.put("hasIntervals",false);
+		processedData.put("hasFilter",false);
+		processedData.put("hasAggregate",false);
+		processedData.put("hasLimit",false);
+		processedData.put("hasOffset",false);
+		processedData.put("hasSortBy",false);
+		processedData.put("hasSortOrder",false);
+		processedData.put("hasGranularity",false);
+		processedData.put("hasPagination",false);
+		if(checkNull(requestParamsDTO.getFields())){
+			processedData.put("hasFields", true);
+		}
+		if(checkNull(requestParamsDTO.getDataSource())){
+			System.out.println("has dataSource"+requestParamsDTO.getDataSource());
+			processedData.put("hasDataSource",true);
+		}
+		if(checkNull(requestParamsDTO.getGroupBy())){
+			processedData.put("hasGroupBy",true);
+		}
+		if(checkNull(requestParamsDTO.getIntervals())){
+			processedData.put("hasIntervals",true);
+		}
+		if(checkNull(requestParamsDTO.getGranularity())){
+			processedData.put("hasGranularity",true);
+		}
+		if(checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0)) && checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix()) && checkNull(requestParamsDTO.getFilter().get(0).getFields()) && checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))){
+			processedData.put("hasFilter",true);
+		}
+		if(checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")){
+			processedData.put("hasAggregate",true);	
+		}
+		if(checkNull(requestParamsDTO.getPagination())){
+				processedData.put("hasPagination",true);
+			if(checkNull(requestParamsDTO.getPagination().getLimit())){
+				processedData.put("hasLimit",true);
+			}
+			if(checkNull(requestParamsDTO.getPagination().getOffset())){
+				processedData.put("hasOffset",true);
+			}
+			if(checkNull(requestParamsDTO.getPagination().getOrder())){
+				if(checkNull(requestParamsDTO.getPagination().getOrder().get(0)))
+					if(checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortBy())){
+						processedData.put("hasSortBy",true);
+					}
+					if(checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortOrder())){
+					processedData.put("hasSortOrder",true);
+					}
+			}
+		}
+		return processedData;
+	}
+	
+	public String[] getIndices(String names){
+		String[] indices = new String[names.split(",").length];
+		String[] requestNames = names.split(",");
+		for(int i =0;i<indices.length;i++){
+			if(baseConnectionService.getIndexMap().containsKey(requestNames[i]))
+				indices[i] = baseConnectionService.getIndexMap().get(requestNames[i]);
+		}
+		return indices;
+	}
 	public String convertTimeMstoISO(Object milliseconds) {
 
 		DateFormat ISO_8601_DATE_TIME = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");

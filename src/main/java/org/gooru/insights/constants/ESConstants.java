@@ -10,7 +10,7 @@ import org.apache.lucene.codecs.sep.IntIndexInput.Index;
 public interface ESConstants {
 
 	public enum esConfigs{
-		ROWKEY("es~connection"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("node_type"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
+		ROWKEY("es~connection"),DEV_ROWKEY("es~connection~dev"),ES_INDICES("es~indices"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("node_type"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
 		
 		private String property;
 		esConfigs(String name){

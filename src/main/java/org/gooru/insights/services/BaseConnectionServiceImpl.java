@@ -1,10 +1,8 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -19,39 +17,32 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
 import org.gooru.insights.constants.CassandraConstants;
-import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
-import org.hibernate.criterion.InExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
 
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.NodeDiscoveryType;
 import com.netflix.astyanax.connectionpool.OperationResult;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolConfigurationImpl;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolType;
 import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor;
 import com.netflix.astyanax.connectionpool.impl.Slf4jConnectionPoolMonitorImpl;
-import com.netflix.astyanax.connectionpool.impl.SmaLatencyScoreStrategyImpl;
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.Column;
-import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.model.ColumnList;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.model.Row;
 import com.netflix.astyanax.model.Rows;
-import com.netflix.astyanax.query.AllRowsQuery;
-import com.netflix.astyanax.query.RowQuery;
-import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
 @Component
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
 
+	Logger loggerFactory = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
 	private static Client devClient;
 	
 	private static Client prodClient;
@@ -59,8 +50,6 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	private static Keyspace insightsKeyspace;
 	
 	private static Keyspace searchKeyspace;
-	
-//	private static Map<String,String> fieldsCache;
 	
 	private static Map<String,String> fieldsDataTypeCache;
 	
@@ -95,11 +84,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		if(insightsKeyspace == null || searchKeyspace == null){
 		initCassandraConnection();
 		
-		if( fieldsCache == null ){
-			eventFields();
 		}
-		}
-		
+
 		if(devClient == null ){
 			initDevESConnection();
 		}
@@ -107,16 +93,41 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		if(prodClient == null ){
 			initProdESConnection();
 		}
+
+		if(indexMap == null ){
+			indexList();
+		}
+
+		if(dependentFieldsCache == null ){
+			dependentFields();
+		}
+		
+		if(fieldsDataTypeCache == null ){
+			fieldDataType();
+		}
+		
+		if(fieldsConfigCache == null || fieldsCache == null ||  fieldsCustomDataTypeCache == null){
+			fieldsConfig();
+		}
+		
 	}
 	
 	public Client getDevClient(){
 	
-		return this.devClient;
+		if(devClient == null){
+			initProdESConnection();
+		}
+		
+		return devClient;
 	}
 	
 	public Client getProdClient(){
 		
-		return this.prodClient;
+		if(prodClient == null){
+			initProdESConnection();
+		}
+		
+		return prodClient;
 	}
 	
 	public void initCassandraConnection(){
@@ -153,6 +164,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		System.out.println("insights keyspace "+ insightsKeyspace +" and search keyspace "+searchKeyspace);
 		
 	}
+	
 	public ConnectionPoolConfigurationImpl connectionConfig(String seeds,Integer port){
 		StringBuffer seedConfigured = new StringBuffer();
 		for(String seed : seeds.split(",")){
@@ -177,26 +189,20 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public void initDevESConnection(){
-//		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
-//		ColumnList<String> columnList = rowResult.getResult();
-//		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
-//		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
-//		System.out.println(" cluster "+clusterName);
-//
-//		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
-//		System.out.println(" hostname "+hostName);
-//
-//		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
-//		System.out.println(" portNo "+portNo);
-//
-//		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
-//		System.out.println(" nodeType "+nodeType);
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.DEV_ROWKEY.esConfig(), new ArrayList<String>());
+		ColumnList<String> columnList = rowResult.getResult();
+		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
+		System.out.println(" cluster "+clusterName);
 
-		String indexName = "event_logger_insights";
-		String clusterName = "" ;
-		String nodeType ="transportClient";
-		String portNo ="9300";
-		String hostName = "107.170.199.76";
+		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
+		System.out.println(" hostname "+hostName);
+
+		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
+		System.out.println(" portNo "+portNo);
+
+		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+		System.out.println(" nodeType "+nodeType);
+
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
 			devClient  = initNodeClient(clusterName);
@@ -208,26 +214,20 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 
 	public void initProdESConnection(){
-//		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
-//		ColumnList<String> columnList = rowResult.getResult();
-//		String indexName = columnList.getColumnByName(esConfigs.INDEX.esConfig()).getStringValue();
-//		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
-//		System.out.println(" cluster "+clusterName);
-//
-//		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
-//		System.out.println(" hostname "+hostName);
-//
-//		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
-//		System.out.println(" portNo "+portNo);
-//
-//		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
-//		System.out.println(" nodeType "+nodeType);
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+		ColumnList<String> columnList = rowResult.getResult();
+		String clusterName = columnList.getStringValue(esConfigs.CLUSTER.esConfig(),"") ;
+		System.out.println(" cluster "+clusterName);
 
-		String indexName = "event_logger_insights";
-		String clusterName = "" ;
-		String nodeType ="transportClient";
-		String portNo ="9300";
-		String hostName = "54.177.68.49";
+		String hostName = columnList.getColumnByName(esConfigs.HOSTS.esConfig()).getStringValue();
+		System.out.println(" hostname "+hostName);
+
+		String portNo = columnList.getColumnByName(esConfigs.PORTNO.esConfig()).getStringValue();
+		System.out.println(" portNo "+portNo);
+
+		String nodeType = columnList.getColumnByName(esConfigs.NODE.esConfig()).getStringValue();
+		System.out.println(" nodeType "+nodeType);
+
 		if(nodeType != null && !nodeType.isEmpty()){
 		if(esConfigs.NODE_CLIENT.esConfig().equalsIgnoreCase(nodeType)){
 			prodClient  = initNodeClient(clusterName);
@@ -252,48 +252,53 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public Keyspace connectInsights(){
+		
+		if(insightsKeyspace == null){
+			initCassandraConnection();
+		}
 		return insightsKeyspace;
 	}
 	
 	public Keyspace connectSearch(){
+		
+		if(searchKeyspace == null){
+			initCassandraConnection();
+		}
 		return searchKeyspace;
 	}
-
-
-	public void eventFields(){
+	
+	public void fieldDataType(){
 		
-		
-		fieldsCache = new HashMap<String,Map<String,String>>();
 		fieldsDataTypeCache = new HashMap<String, String>();
-		fieldsConfigCache = new HashMap<String, Map<String,String>>();
-		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
-		indexMap = new HashMap<String,String>();
-		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
-		
-		indexMap.put("rawdata", "event_logger_info");
-		indexMap.put("content", "content_catalog_info");
-		indexMap.put("activity", "activity_catalog_07112014");
-		indexMap.put("resource", "content_catalog_07112014");
-		indexMap.put("user", "user_catalog_info");
-		indexMap.put("userdata", "user_catalog");
-		indexMap.put("taxonomy", "taxonomy_catalog");
-		
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
 		
 		for(Row<String, String> row : rows){
-//			fieldsCache.put(row.getKey(),row.getColumns().getStringValue("be_column",row.getKey())) ; 
 			fieldsDataTypeCache.put(row.getKey(),row.getColumns().getStringValue("description",row.getKey()));
 		}
-		System.out.println("key set"+ indexMap.keySet());
-		Set<String> indexKeys = indexMap.keySet();
+	}
+	
+	public Set<String> indexList(){
+		indexMap = new HashMap<String,String>();
 		Set<String> fetchFields = new HashSet<String>(); 
-		for(String indexKey : indexKeys){
-			fetchFields.add(indexMap.get(indexKey));
-			
+
+		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),esConfigs.ES_INDICES.esConfig(), new ArrayList<String>());
+		for(Column<String> column :  rowResult.getResult()){
+			indexMap.put(column.getName(), column.getStringValue());
+			fetchFields.add(column.getStringValue());
 		}
-		operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),fetchFields,new ArrayList<String>());
-		rows = operationalResult.getResult();
+		System.out.println("key set"+ indexMap);
+		return fetchFields;
+	}
+	
+	public void fieldsConfig(){
+
+		fieldsConfigCache = new HashMap<String, Map<String,String>>();
+		fieldsCache = new HashMap<String,Map<String,String>>();
+		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
+
+		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),indexList(),new ArrayList<String>());
+		Rows<String, String> rows = operationalResult.getResult();
 		
 		for(Row<String,String> row : rows){
 			Map<String,String> configMap = new HashMap<String, String>();
@@ -314,14 +319,18 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			fieldsCache.put(row.getKey(),fieldsMap);
 			fieldsConfigCache.put(row.getKey(), configMap);
 		}
+	}
+
+	public void dependentFields(){
 		
-		operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),fetchFields,new ArrayList<String>());
-		rows = operationalResult.getResult();
+		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
+		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),indexList(),new ArrayList<String>());
+		Rows<String, String> rows = operationalResult.getResult();
 		for(Row<String,String> row : rows){
 			Map<String,Map<String,String>> dataSet = new HashMap<String, Map<String,String>>();
 			if(row.getColumns().getColumnByName("dependent_fields") != null){
 			 String dependentKeys = row.getColumns().getColumnByName("dependent_fields").getStringValue();
-			 fetchFields = new HashSet<String>(); 
+			 Set<String> fetchFields = new HashSet<String>(); 
 				for(String dependentKey : dependentKeys.split(",")){
 					fetchFields.add(row.getKey()+"~"+dependentKey);
 				}
@@ -342,27 +351,67 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public Map<String,Map<String,Map<String, String>>> getDependentFieldsCache() {
+		
+		if(dependentFieldsCache == null ){
+			dependentFields();
+		}
 		return dependentFieldsCache;
 	}
 
 	public Map<String,Map<String,String>> getFields() {
+		
+		if(fieldsCache == null){
+			fieldsConfig();
+		}
 		return fieldsCache;
 	}
 	
 	public Map<String, String> getFieldsDataType() {
+		
+		if(fieldsDataTypeCache == null){
+			fieldDataType();
+		}
 		return fieldsDataTypeCache;
 	}
 
 	public Map<String, Map<String, String>> getFieldsJoinCache() {
+		
+		if(fieldsConfigCache == null){
+			fieldsConfig();
+		}
 		return fieldsConfigCache;
 	}
 	
 	public Map<String, Map<String, String>>  getFieldsCustomDataType() {
-	return fieldsCustomDataTypeCache;
+		
+		if(fieldsCustomDataTypeCache == null){
+			fieldsConfig();
+		}
+		return fieldsCustomDataTypeCache;
 	}
 	
 	public Map<String, String> getIndexMap() {
+	
+		if(indexMap == null ){
+			indexList();
+		}
 		return indexMap;
+	}
+	
+	public void clearDataCache(){
+		fieldsDataTypeCache = new HashMap<String, String>();
+		indexMap = new HashMap<String,String>();
+		fieldsConfigCache = new HashMap<String, Map<String,String>>();
+		fieldsCache = new HashMap<String,Map<String,String>>();
+		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
+		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
+	}
+	
+	public void clearConnectionCache(){
+		insightsKeyspace = null;
+		searchKeyspace = null;
+		devClient = null;
+		prodClient = null;
 	}
 }
 

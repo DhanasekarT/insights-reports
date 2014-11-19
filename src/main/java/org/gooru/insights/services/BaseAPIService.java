@@ -22,6 +22,10 @@ public interface BaseAPIService {
 	
 	String convertArraytoString(String[] data);
 	
+	Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO);
+	
+	String[] getIndices(String names);
+	
 	boolean checkNull(Map<?,?> request);
 	
 	boolean checkNull(Integer parameter);
