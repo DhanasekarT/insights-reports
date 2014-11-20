@@ -16,13 +16,22 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ESConstants;
+import org.gooru.insights.constants.ESConstants.esConfigs;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
@@ -183,7 +192,25 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return resultList;
 	}
 	
-	
+	public static void main(String[] args){
+		 Client client = null;
+		 Settings settings = ImmutableSettings.settingsBuilder().put(esConfigs.ES_CLUSTER.esConfig(),"").put("client.transport.sniff", true).build();
+         TransportClient transportClient = new TransportClient(settings);
+         transportClient.addTransportAddress(new InetSocketTransportAddress("localhost",9300));
+         client = transportClient;
+         String search[] = new String[1];
+         search[0] = "sort_test";
+		SearchRequestBuilder searchRequestBuilder =client.prepareSearch(search).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);	
+
+		searchRequestBuilder.setFrom(1);
+		searchRequestBuilder.setSize(1);
+		TermsBuilder termBuilder  = AggregationBuilders.terms("name").field("name");
+		termBuilder.subAggregation(AggregationBuilders.sum("score").field("score")).order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation("score",false));
+		searchRequestBuilder.addAggregation(termBuilder);
+		System.out.println("query"+searchRequestBuilder);
+		System.out.println(searchRequestBuilder.execute().actionGet());
+		
+	}
 	
 	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
@@ -196,10 +223,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String dataKey=esSources.SOURCE.esSource();
 
 		System.out.print("indices :" + indices);
+		SearchRequestBuilder searchRequestBuilder =  null;
 		
-		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
+		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
-
+		}else{
+			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
+					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+		}
 
 		if(validatedData.get(hasdata.HAS_FEILDS.check()))
 			dataKey=esSources.FIELDS.esSource();

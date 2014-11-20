@@ -35,6 +35,7 @@ import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuil
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
+import org.elasticsearch.search.aggregations.bucket.histogram.HistogramBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.gooru.insights.constants.APIConstants.hasdata;
@@ -119,7 +120,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 						dateHistogram.subAggregation(termBuilder);
 						termBuilder = null;
 						}
-					includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram);
+					includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram,metricsName);
 					}else{
 						
 						if(termBuilder != null){
@@ -140,7 +141,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							termBuilder.subAggregation(dateHistogram);
 							dateHistogram = null;
 						}
-						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null);
+						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null,metricsName);
 						termBuilder.size(500);
 						isFirstDateHistogram =false;
 					}
@@ -182,6 +183,28 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		return false;
 	}
 		
+	}
+	
+	
+	public void sortAggregatedValue(TermsBuilder termsBuilder,DateHistogramBuilder histogramBuilder,RequestParamsDTO requestParamsDTO,RequestParamsSortDTO orderData,Map<String,String> metricsName){
+		if(termsBuilder != null){	
+		if(metricsName.containsKey(orderData.getSortBy())){
+				if(orderData.getSortOrder().equalsIgnoreCase("DESC")){
+				termsBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation(metricsName.get(orderData.getSortBy()),false));
+				}else{
+					termsBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation(metricsName.get(orderData.getSortBy()),true));
+				}
+			}
+		}
+		if(histogramBuilder != null){
+			if(metricsName.containsKey(orderData.getSortBy())){
+				if(orderData.getSortOrder().equalsIgnoreCase("DESC")){
+					histogramBuilder.order(Order.KEY_DESC);
+				}else{
+					histogramBuilder.order(Order.KEY_ASC);
+				}
+			}	
+		}
 	}
 	
 	public void includeAggregation(String index,RequestParamsDTO requestParamsDTO,TermsBuilder termBuilder,Map<String,String> metricsName){
@@ -1052,7 +1075,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return dataMap;
 		}
 		
-		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder){
+		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder,Map<String,String> metricsName){
 			
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				RequestParamsPaginationDTO pagination = requestParamsDTO.getPagination();
@@ -1067,6 +1090,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 								termsBuilder.order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.term(true));	
 							}
 						}
+						//sort the aggregate data
+						sortAggregatedValue(termsBuilder,null, requestParamsDTO, orderData,metricsName);
 					}else if(dateHistogramBuilder != null){
 						if(fieldName.equalsIgnoreCase(orderData.getSortBy())){
 							if(orderData.getSortOrder().equalsIgnoreCase("DESC")){
@@ -1077,6 +1102,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							}
 						}
 					}
+					sortAggregatedValue(null,dateHistogramBuilder, requestParamsDTO, orderData,metricsName);
 				}
 			}
 		}

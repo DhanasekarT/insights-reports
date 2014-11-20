@@ -115,7 +115,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public Client getDevClient(){
 	
 		if(devClient == null){
-			initProdESConnection();
+			initDevESConnection();
 		}
 		
 		return devClient;
