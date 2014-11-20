@@ -120,7 +120,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 						dateHistogram.subAggregation(termBuilder);
 						termBuilder = null;
 						}
-					includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram,metricsName);
 					}else{
 						
 						if(termBuilder != null){
@@ -141,7 +140,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							termBuilder.subAggregation(dateHistogram);
 							dateHistogram = null;
 						}
-						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null,metricsName);
 						termBuilder.size(500);
 						isFirstDateHistogram =false;
 					}
@@ -149,12 +147,14 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				if( i == groupBy.length-1 && !isFirstDateHistogram){
 					if(termBuilder != null ){
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
+					includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null,metricsName);
 					}
 					}
 				
 				if( i == groupBy.length-1 && isFirstDateHistogram){
 					if(dateHistogram != null ){
 					includeAggregation(index,requestParamsDTO, dateHistogram,metricsName);
+					includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram,metricsName);
 					}
 					}
 			}
@@ -1102,8 +1102,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 								dateHistogramBuilder.order(Order.KEY_ASC);	
 							}
 						}
+						sortAggregatedValue(null,dateHistogramBuilder, requestParamsDTO, orderData,metricsName);
 					}
-					sortAggregatedValue(null,dateHistogramBuilder, requestParamsDTO, orderData,metricsName);
 				}
 			}
 		}

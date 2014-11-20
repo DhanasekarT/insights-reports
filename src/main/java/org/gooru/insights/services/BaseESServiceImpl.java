@@ -104,6 +104,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData, dataMap);		
 		}
+		
+		if(!dataMap.containsKey("totalRows")){
+			dataMap.put("totalRows", dataList.size());
+		}
 	return dataList;
 	}
 	
@@ -354,7 +358,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 	public void paginate(SearchRequestBuilder searchRequestBuilder,RequestParamsPaginationDTO requestParamsPaginationDTO,Map<String,Boolean> validatedData) {
 		searchRequestBuilder.setFrom(validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset().intValue() == 0 ? 0 : requestParamsPaginationDTO.getOffset().intValue() -1  : 0);
-		searchRequestBuilder.setSize(validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit().intValue() == 0 ? 0 : requestParamsPaginationDTO.getLimit().intValue()+1 : 10);
+		searchRequestBuilder.setSize(validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit().intValue() == 0 ? 0 : requestParamsPaginationDTO.getLimit().intValue() : 10);
 	}
 	
 	public Map<String, Object> record(String sourceIndex,String index, String type, String id) {
