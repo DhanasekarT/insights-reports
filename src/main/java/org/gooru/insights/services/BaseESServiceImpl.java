@@ -251,9 +251,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			updatedService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 		}*/
-		
 		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			int recordSize = 500;
+			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+				recordSize = requestParamsDTO.getPagination().getLimit();
+			}
+			searchRequestBuilder.setNoFields();
+			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
 			hasAggregate = true;
 			} 
 		
@@ -289,7 +293,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
+			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+			
+			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()))
+				data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+			
 			return data;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -297,7 +305,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		
 		List<Map<String,Object>> data = businessLogicService.getRecords(indices,result,errorRecord,dataKey);
-		data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+		
+//		data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 		
 		return data;
 
@@ -344,8 +353,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	}
 
 	public void paginate(SearchRequestBuilder searchRequestBuilder,RequestParamsPaginationDTO requestParamsPaginationDTO,Map<String,Boolean> validatedData) {
-		searchRequestBuilder.setFrom(validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset().intValue() : 0);
-		searchRequestBuilder.setSize(validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit().intValue() : 10);
+		searchRequestBuilder.setFrom(validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset().intValue() == 0 ? 0 : requestParamsPaginationDTO.getOffset().intValue() -1  : 0);
+		searchRequestBuilder.setSize(validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit().intValue() == 0 ? 0 : requestParamsPaginationDTO.getLimit().intValue()+1 : 10);
 	}
 	
 	public Map<String, Object> record(String sourceIndex,String index, String type, String id) {

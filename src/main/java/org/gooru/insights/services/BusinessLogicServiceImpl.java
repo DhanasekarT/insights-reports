@@ -103,7 +103,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 	}
 	}
 	
-	public boolean granularityAggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+	public boolean granularityAggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData,Integer recordSize) {
 		try{
 			TermsBuilder termBuilder = null;
 			DateHistogramBuilder dateHistogram = null;
@@ -168,11 +168,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			if(isFirstDateHistogram){
 				filterBuilder.subAggregation(dateHistogram);
 			}else{
+				termBuilder.size(recordSize);
 				filterBuilder.subAggregation(termBuilder);	
 			}
-			
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
+				termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			
@@ -1262,8 +1263,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 						baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
 					}
 				}
-				int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() : 0; 
-				int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10; 
+				int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() == 0 ? 0 : requestParamsPaginationDTO.getOffset() -1 : 0; 
+				int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() == 0 ? 1 : requestParamsPaginationDTO.getLimit() : 10; 
 				
 				if(limit < dataSize && offset < dataSize){
 					customizedData = data.subList(offset, limit);
@@ -1304,8 +1305,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return customizedData;
 		}
 		
-		public List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData){
-			List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
+		public List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
 			if(baseAPIService.checkNull(requestParamsPaginationDTO)){
 				if(validatedData.get(hasdata.HAS_SORTBY.check())){
 					List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
@@ -1315,9 +1315,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				}
 				
 			}	
-			customizedData = data;
-			
-			return customizedData;
+//			aggregatePaginate(requestParamsPaginationDTO, data, validatedData, returnMap);
+			return data;
 		}
 		
 		
