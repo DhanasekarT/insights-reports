@@ -64,7 +64,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 	BaseAPIService baseAPIService;
 	
 	
-	public boolean aggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData) {
+	public boolean aggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData,Integer recordSize) {
 		try{
 			TermsBuilder termBuilder = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(",");
@@ -89,11 +89,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
 			}
 			if(termBuilder != null){
-				
+				termBuilder.size(recordSize);
 				filterBuilder.subAggregation(termBuilder);
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
+				termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			return true;
@@ -471,6 +472,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			Set<String> supportKeys = supportFilters.keySet();
 			String supportKey = "";
 			for(String key : supportKeys){
+				if(baseAPIService.checkNull(supportKey)){
+					supportKey+=",";	
+				}
 				supportKey = key;
 			}
 			for(String key : keys){
@@ -1055,7 +1059,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							}
 						}
 						tempMap.put(fields[counter], key);
-						System.out.println("tempMap "+tempMap);
 						dataMap.put(i, tempMap);
 						hasSubAggregate = true;
 					}
@@ -1167,7 +1170,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		}
 		
 		public Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList){
-			System.out.println("index:"+index);
 			Map<String,String> filterFields = new HashMap<String, String>();
 			Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
 			if(baseConnectionService.getFieldsJoinCache().containsKey(index)){
@@ -1186,7 +1188,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 										filterValue.add(data);
 									}
 								}catch(Exception e){
-									System.out.println("object "+key);
 									filterValue.add(dataMap.get(key));
 								}						
 								filters.put(key, filterValue);
@@ -1513,7 +1514,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							}else{
 								try{
 						 JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
-						 System.out.println("json array length"+fieldJsonArray.length());
 						if(fieldJsonArray.length() == 1){	 
 							resultMap.put(apiFields(indices[0],key),fieldJsonArray.get(0));
 						}else{
@@ -1530,7 +1530,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 								
 								resultMap.put(apiFields(indices[0],key),arrayData);
 							}
-							 System.out.println("arrayData"+arrayData);
 						}
 								}catch(Exception e){
 									resultMap.put(apiFields(indices[0],key), json.get(key));

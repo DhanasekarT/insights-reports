@@ -184,7 +184,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		try{
 			System.out.println("mutiget query "+searchRequestBuilder);
 		result =  searchRequestBuilder.execute().actionGet().toString();
-		System.out.println("mutiget data "+result);
 		}catch(Exception e){
 			e.printStackTrace();
 			errorRecord.put(500, "please contact the developer team for knowing about the error details.");
