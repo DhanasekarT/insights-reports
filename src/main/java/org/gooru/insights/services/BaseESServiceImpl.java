@@ -246,16 +246,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		
-	/*	if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
-			updatedService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			hasAggregate = true;
-			} 
-		
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			updatedService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
-			hasAggregate = true;
-		}*/
-		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			int recordSize = 500;
 			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
@@ -265,6 +256,24 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			hasAggregate = true;
 			} 
 		
+		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			int recordSize = 500;
+			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+				recordSize = requestParamsDTO.getPagination().getLimit();
+			}
+			searchRequestBuilder.setNoFields();
+			businessLogicService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
+			hasAggregate = true;
+		}
+/*		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+			int recordSize = 500;
+			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+				recordSize = requestParamsDTO.getPagination().getLimit();
+			}
+			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
+			hasAggregate = true;
+			} 
+*/		
 		
 		if(!hasAggregate){
 
