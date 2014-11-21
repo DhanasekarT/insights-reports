@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-@RequestMapping(value ="/items")
+@RequestMapping(value ="/query")
 @Controller
 public class ItemController extends BaseController{
 	
@@ -40,7 +40,7 @@ public class ItemController extends BaseController{
 		return model;
 	}
 
-	@RequestMapping(value="/search",method ={RequestMethod.GET,RequestMethod.POST})
+	@RequestMapping(method ={RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
@@ -52,7 +52,7 @@ public class ItemController extends BaseController{
 		return getModel(jsonArray, getMessage());
 	}
 	
-	@RequestMapping(value="/combine/search",method ={RequestMethod.GET,RequestMethod.POST})
+	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		JSONArray jsonArray = itemService.processApi(data, getMessage(), errorMap);
