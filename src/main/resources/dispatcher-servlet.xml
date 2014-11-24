@@ -26,6 +26,20 @@
 		<aop:include name="methodAuthorizationAspect" />
 	</aop:aspectj-autoproxy>
 	
+		<mvc:interceptors>
+		<bean id="localeChangeInterceptor"
+			class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<property name="paramName" value="lang" />
+		</bean>
+	</mvc:interceptors>
+
+	<!-- Allow Exceptions to be handled in annotated methods if desired. Otherwise 
+		fallback to the 'restExceptionResolver' below: -->
+	<bean id="annotationMethodHandlerExceptionResolver"
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerExceptionResolver">
+		<property name="order" value="0" />
+	</bean>
+	
 		<bean
 		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
 		<property name="order" value="1" />

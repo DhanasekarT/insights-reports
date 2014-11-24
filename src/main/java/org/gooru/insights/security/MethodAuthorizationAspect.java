@@ -56,8 +56,8 @@ import com.netflix.astyanax.model.ColumnList;
 @Aspect
 public class MethodAuthorizationAspect extends OperationAuthorizer {
 
-	@Resource(name = "gooruConstants")
-	private Properties gooruConstants;
+//	@Resource(name = "gooruConstants")
+//	private Properties gooruConstants;
 
 //	@Autowired
 //	CassandraService cassandraService;
@@ -102,7 +102,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 		session = request.getSession(true);
 		}
-		
+		System.out.println("Token : ====>>>>" + session.getAttribute("token"));
 		if(session.getAttribute("token") != null && !session.getAttribute("token").toString().isEmpty()){
 			if(request.getParameter("sessionToken") != null){
 				sessionToken = (String) session.getAttribute("token");
