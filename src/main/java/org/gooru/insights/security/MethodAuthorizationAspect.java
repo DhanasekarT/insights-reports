@@ -113,6 +113,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 						if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
 							sessionToken = request.getParameter("sessionToken");					
 							String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
+							System.out.println("API : ====>>>>" + address);
 							ClientResource client = new ClientResource(address);
 							if (client.getStatus().isSuccess()) {
 								try{
