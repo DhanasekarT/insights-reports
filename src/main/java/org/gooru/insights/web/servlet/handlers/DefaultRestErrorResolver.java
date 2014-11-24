@@ -92,7 +92,7 @@ public class DefaultRestErrorResolver implements RestErrorResolver, MessageSourc
         applyDef(m, MissingServletRequestParameterException.class, HttpStatus.BAD_REQUEST);
         applyDef(m, TypeMismatchException.class, HttpStatus.BAD_REQUEST);
         applyDef(m, "javax.validation.ValidationException", HttpStatus.BAD_REQUEST);
-        applyDef(m, "org.gooru.insights.api.exception.handlers.BadRequestException", HttpStatus.BAD_REQUEST);
+        applyDef(m, "org.gooru.insights.exception.handlers.BadRequestException", HttpStatus.BAD_REQUEST);
 
         // 404
         applyDef(m, NoSuchRequestHandlingMethodException.class, HttpStatus.NOT_FOUND);
