@@ -73,8 +73,6 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	public void init(){
 		 endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
 		 entityOperationsRole = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"entity_role_opertaions", new ArrayList<String>()).getResult();
-//		 endPoint = cassandraService.getDashBoardKeys("gooru.api.rest.endpoint");
-//		 entityOperationsRole = cassandraService.getDashBoardKeys("entity_role_opertaions");
 	}
 	@Around("accessCheckPointcut() && @annotation(authorizeOperations) && @annotation(requestMapping)")
 	public Object operationsAuthorization(ProceedingJoinPoint pjp, AuthorizeOperations authorizeOperations, RequestMapping requestMapping) throws Throwable {
@@ -88,7 +86,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		}
 	}
 
-	@Pointcut("execution(* org.gooru.insights.api.controllers.*.*(..))")
+	@Pointcut("execution(* org.gooru.insights.controllers.*.*(..))")
 	public void accessCheckPointcut() {
 	}
 	
@@ -102,7 +100,6 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 		session = request.getSession(true);
 		}
-		System.out.println("Token : ====>>>>" + session.getAttribute("token"));
 		if(session.getAttribute("token") != null && !session.getAttribute("token").toString().isEmpty()){
 			if(request.getParameter("sessionToken") != null){
 				sessionToken = (String) session.getAttribute("token");
@@ -113,7 +110,6 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 						if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
 							sessionToken = request.getParameter("sessionToken");					
 							String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
-							System.out.println("API : ====>>>>" + address);
 							ClientResource client = new ClientResource(address);
 							if (client.getStatus().isSuccess()) {
 								try{
@@ -126,7 +122,6 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 									user.setLastName(jsonObj.getString("lastName"));
 									user.setEmailId(jsonObj.getString("emailId"));
 									user.setGooruUId(jsonObj.getString("gooruUId"));
-									System.out.println("SessionToken ====>>>>" + sessionToken);
 									if(hasGooruAdminAuthority(authorizeOperations, jsonObj)){
 										session.setAttribute("token", sessionToken);
 										 return true;
