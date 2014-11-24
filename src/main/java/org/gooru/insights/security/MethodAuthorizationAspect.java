@@ -125,6 +125,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 									user.setLastName(jsonObj.getString("lastName"));
 									user.setEmailId(jsonObj.getString("emailId"));
 									user.setGooruUId(jsonObj.getString("gooruUId"));
+									System.out.println("SessionToken ====>>>>" + sessionToken);
 									if(hasGooruAdminAuthority(authorizeOperations, jsonObj)){
 										session.setAttribute("token", sessionToken);
 										 return true;

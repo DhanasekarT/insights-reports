@@ -26,8 +26,8 @@ package org.gooru.insights.security;
 
 import java.util.List;
 
-import org.gooru.insights.api.constants.InsightsOperationConstants;
-import org.gooru.insights.api.models.RoleEntityOperation;
+import org.gooru.insights.constants.InsightsOperationConstants;
+import org.gooru.insights.models.RoleEntityOperation;
 import org.gooru.insights.models.User;
 import org.gooru.insights.models.UserRoleAssoc;
 import org.slf4j.Logger;
