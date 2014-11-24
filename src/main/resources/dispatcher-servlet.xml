@@ -18,6 +18,14 @@
 	<context:component-scan base-package="org.gooru.insights" />
 	<context:annotation-config />
 	
+	<!-- - Enables the AspectJ support -->
+	<bean id="methodAuthorizationAspect"
+		class="org.gooru.insights.security.MethodAuthorizationAspect" />
+
+	<aop:aspectj-autoproxy proxy-target-class="true">
+		<aop:include name="methodAuthorizationAspect" />
+	</aop:aspectj-autoproxy>
+	
 		<bean
 		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
 		<property name="order" value="1" />
