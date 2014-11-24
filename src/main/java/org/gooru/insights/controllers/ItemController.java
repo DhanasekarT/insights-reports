@@ -8,6 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections.map.HashedMap;
+import org.gooru.insights.constants.InsightsOperationConstants;
+import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +43,7 @@ public class ItemController extends BaseController{
 	}
 
 	@RequestMapping(value="/search",method ={RequestMethod.GET,RequestMethod.POST})
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_CLASS_RESOURCE_VIEW)
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
