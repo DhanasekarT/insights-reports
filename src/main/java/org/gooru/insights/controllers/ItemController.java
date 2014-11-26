@@ -41,6 +41,19 @@ public class ItemController extends BaseController{
 		return model;
 	}
 
+	@RequestMapping(method ={RequestMethod.GET,RequestMethod.POST})
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
+	    Map<Integer,String> errorMap = new HashMap<Integer,String>();
+	    JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
+	     
+	    if(!errorMap.isEmpty()){
+	    	sendError(response,errorMap);
+	    	return null;
+	    }
+	    return getModel(jsonArray, getMessage());
+	}
+	 
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
