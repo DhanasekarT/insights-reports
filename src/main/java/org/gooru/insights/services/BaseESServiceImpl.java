@@ -247,7 +247,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			int recordSize = 500;
-			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
 			searchRequestBuilder.setNoFields();
@@ -257,7 +257,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
 			int recordSize = 500;
-			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
 			searchRequestBuilder.setNoFields();
@@ -353,7 +353,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}else if(indexSource != null && indexSource.equalsIgnoreCase("prod")){
 			return baseConnectionService.getProdClient();
 		}else{			
-			return baseConnectionService.getDevClient();
+			return baseConnectionService.getProdClient();
 		}
 	}
 

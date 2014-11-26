@@ -89,12 +89,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
 			}
 			if(termBuilder != null){
-				termBuilder.size(recordSize);
+				//termBuilder.size(recordSize);
 				filterBuilder.subAggregation(termBuilder);
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
-				termBuilder.size(recordSize);
+				//termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			return true;
@@ -1081,7 +1081,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		
 		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder,Map<String,String> metricsName){
 			
-			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
+			if(validatedData.get(hasdata.HAS_SORTBY.check())){
 				RequestParamsPaginationDTO pagination = requestParamsDTO.getPagination();
 				List<RequestParamsSortDTO> orderDatas = pagination.getOrder();
 				for(RequestParamsSortDTO orderData : orderDatas){
