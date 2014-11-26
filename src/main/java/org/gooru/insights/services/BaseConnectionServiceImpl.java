@@ -398,13 +398,18 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		return indexMap;
 	}
 	
-	public void clearDataCache(){
+	public boolean clearDataCache(){
+		try{
 		fieldsDataTypeCache = new HashMap<String, String>();
 		indexMap = new HashMap<String,String>();
 		fieldsConfigCache = new HashMap<String, Map<String,String>>();
 		fieldsCache = new HashMap<String,Map<String,String>>();
 		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
 		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
+		return true;
+		}catch(Exception e){
+			return false;
+	}
 	}
 	
 	public void clearConnectionCache(){

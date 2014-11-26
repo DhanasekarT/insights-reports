@@ -13,4 +13,7 @@ public interface ItemService {
 	
 	JSONArray processApi(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 	
+	boolean clearDataCache();
+	
+	void clearConnectionCache();
 }

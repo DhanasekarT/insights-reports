@@ -211,7 +211,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		termBuilder.subAggregation(AggregationBuilders.sum("score").field("score")).order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation("score",false));
 		searchRequestBuilder.addAggregation(termBuilder);
 		System.out.println("query"+searchRequestBuilder);
-		System.out.println(searchRequestBuilder.execute().actionGet());
 		
 	}
 	
@@ -247,7 +246,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			int recordSize = 500;
-			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
 			searchRequestBuilder.setNoFields();
@@ -257,7 +256,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
 			int recordSize = 500;
-			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
 			searchRequestBuilder.setNoFields();
@@ -353,7 +352,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}else if(indexSource != null && indexSource.equalsIgnoreCase("prod")){
 			return baseConnectionService.getProdClient();
 		}else{			
-			return baseConnectionService.getDevClient();
+			return baseConnectionService.getProdClient();
 		}
 	}
 

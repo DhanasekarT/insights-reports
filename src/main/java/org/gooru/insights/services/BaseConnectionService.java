@@ -28,4 +28,8 @@ public interface BaseConnectionService {
 	Map<String,Map<String,Map<String, String>>> getDependentFieldsCache();
 	
 	Map<String, Map<String, String>>  getFieldsCustomDataType();
+	
+	boolean clearDataCache();
+	
+	void clearConnectionCache();
 }

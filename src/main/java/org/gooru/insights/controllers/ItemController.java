@@ -24,6 +24,7 @@ public class ItemController extends BaseController{
 	@Autowired
 	ItemService itemService;
 	
+	
 	@RequestMapping(value="/classpage/collections",method = {RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView getClasspageCollectionDetail(HttpServletRequest request,@RequestParam(value="data", required = true) String data,@RequestParam(value="sessionToken",required = false) String sessionToken,HttpServletResponse response){
 		ModelAndView model = new ModelAndView();
@@ -51,6 +52,18 @@ public class ItemController extends BaseController{
 		}
 		return getModel(jsonArray, getMessage());
 	}
+
+	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
+	public ModelAndView clearDataCache(){
+		Map<String,String> dataMap = new HashMap<String,String>();
+		
+		if(itemService.clearDataCache()){
+		dataMap.put("status", "data cache cleared");	
+		}else{
+		dataMap.put("status", "problem while clear the data cache cleared");	
+		}
+		return getModel(dataMap);
+	}
 	
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
@@ -63,4 +76,13 @@ public class ItemController extends BaseController{
 		}
 		return getModel(jsonArray, getMessage());
 	}
+	
+	@RequestMapping(value="/clear/connection",method =RequestMethod.GET)
+	public ModelAndView clearConnectionCache(){
+		Map<String,String> dataMap = new HashMap<String,String>();
+		itemService.clearConnectionCache();
+		dataMap.put("status", "connection cache cleared");
+		return getModel(dataMap);
+	}
+
 }

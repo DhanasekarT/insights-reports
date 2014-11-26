@@ -120,4 +120,12 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		
 	}
 
+	public boolean clearDataCache(){
+		return baseConnectionService.clearDataCache();
+	}
+	
+	public void clearConnectionCache(){
+		baseConnectionService.clearConnectionCache();
+	}
+	
 }

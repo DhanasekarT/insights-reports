@@ -25,7 +25,9 @@ public class BaseController {
 		return  this.resultSet(data,messageData);
 	}
 
-	
+	public ModelAndView getModel(Map<String,String> data){
+		return  this.resultSet(data);
+	}
 	
 	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
 		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){ 
@@ -67,6 +69,20 @@ public class BaseController {
 			}
 			model.addObject("content", resultMap);
 			clearMessage();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+			return model;
+		}
+	
+	public ModelAndView resultSet(Map<String,String> messageData){
+		ModelAndView model = new ModelAndView("content");
+		try {
+			JSONObject resultMap = new JSONObject();
+				resultMap.put("content",new ArrayList<Map<String,String>>() );
+				resultMap.put("paginate", new HashMap<String, String>());
+			resultMap.put("message",messageData );
+			model.addObject("content", resultMap);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
