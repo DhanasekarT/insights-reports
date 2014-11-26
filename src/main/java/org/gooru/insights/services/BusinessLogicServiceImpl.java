@@ -79,7 +79,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				}
 				termBuilder.size(500);
 				if( i == groupBy.length-1){
-					System.out.println("expected");
+					/*System.out.println("expected");*/
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
 				}
 			}
@@ -292,7 +292,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 	
 	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			System.out.println("included aggregate");
+			/*System.out.println("included aggregate");*/
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
@@ -910,10 +910,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				counter++;
 				}
 			} catch (JSONException e) {
-				System.out.println("some logical problem in filter aggregate json ");
+				/*System.out.println("some logical problem in filter aggregate json ");*/
 				e.printStackTrace();
 			}
-			System.out.println("data "+data);
+			/*System.out.println("data "+data);*/
 			
 			return data;
 		}
@@ -990,7 +990,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		           counter++;
 		           }
 		       } catch (JSONException e) {
-		           System.out.println("some logical problem in filter aggregate json ");
+		           /*System.out.println("some logical problem in filter aggregate json ");*/
 		           e.printStackTrace();
 		       }
 		       return dataList;
@@ -1072,11 +1072,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				counter++;
 				}
 			} catch (JSONException e) {
-				System.out.println("some logical problem in filter aggregate json ");
+				/*System.out.println("some logical problem in filter aggregate json ");*/
 				e.printStackTrace();
 			}
-			System.out.println("dataMap "+dataMap);
-			return dataMap;
+/*			System.out.println("dataMap "+dataMap);
+*/			return dataMap;
 		}
 		
 		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder,Map<String,String> metricsName){
@@ -1348,7 +1348,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			resultList.add(resultMap);
 			}
 			}catch(Exception e){
-				System.out.println(" get Data method failed");
+				/*System.out.println(" get Data method failed");*/
 				e.printStackTrace();
 			}
 			return resultList;

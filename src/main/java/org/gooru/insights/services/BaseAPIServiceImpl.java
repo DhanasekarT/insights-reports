@@ -399,7 +399,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			processedData.put("hasFields", true);
 		}
 		if(checkNull(requestParamsDTO.getDataSource())){
-			System.out.println("has dataSource"+requestParamsDTO.getDataSource());
+//			System.out.println("has dataSource"+requestParamsDTO.getDataSource());
 			processedData.put("hasDataSource",true);
 		}
 		if(checkNull(requestParamsDTO.getGroupBy())){
