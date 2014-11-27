@@ -87,14 +87,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
 			
-			System.out.println("filter Map: "+filterMap);
+			/*System.out.println("filter Map: "+filterMap);
 			System.out.println("index "+indices[i]+" result : "+resultList);
-			System.out.println("user filter : "+usedFilter);
+			System.out.println("user filter : "+usedFilter);*/
 			
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
 		}
 		
-		System.out.println("combined "+ dataList);
+		/*System.out.println("combined "+ dataList);*/
 		if(validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_GRANULARITY.check())){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
@@ -118,13 +118,13 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
-		System.out.println(" result data : "+dataList);
+		/*System.out.println(" result data : "+dataList);*/
 		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
 		
 		filterMap = businessLogicService.fetchFilters(indices[0], dataList);
-		System.out.println("filter Map: "+filterMap);
+		/*System.out.println("filter Map: "+filterMap);*/
 		
 		for(int i=1;i<indices.length;i++){
 			
@@ -136,8 +136,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
 			
-			System.out.println("filter Map: "+filterMap);
-			System.out.println("user filter : "+usedFilter);
+			/*System.out.println("filter Map: "+filterMap);
+			System.out.println("user filter : "+usedFilter);*/
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
 		}
 		
@@ -155,7 +155,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String result ="[{}]";
 		String dataKey=esSources.SOURCE.esSource();
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
-		System.out.println("fields"+fields);
+		/*System.out.println("fields"+fields);*/
 		
 		if(fields.contains("code_id") || fields.contains("label")){
 		fields = fields+",depth";	
@@ -182,7 +182,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		searchRequestBuilder.setSize(limit);
 		
 		try{
-			System.out.println("mutiget query "+searchRequestBuilder);
+			/*System.out.println("mutiget query "+searchRequestBuilder);*/
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -210,8 +210,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		TermsBuilder termBuilder  = AggregationBuilders.terms("name").field("name");
 		termBuilder.subAggregation(AggregationBuilders.sum("score").field("score")).order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation("score",false));
 		searchRequestBuilder.addAggregation(termBuilder);
-		System.out.println("query"+searchRequestBuilder);
-		
+		/*System.out.println("query"+searchRequestBuilder);*/
+		/*System.out.println(searchRequestBuilder.execute().actionGet());*/
 	}
 	
 	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
@@ -224,7 +224,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
 
-		System.out.print("indices :" + indices);
+		/*System.out.print("indices :" + indices);*/
 		SearchRequestBuilder searchRequestBuilder =  null;
 		
 		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
@@ -287,11 +287,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		 searchRequestBuilder.setPreference("_primaries");
 
 		 //currently its not working in ES version 1.2.2,its shows record count is 1 * no of shades = total Records
-		 System.out.println(" pagination status "+validatedData);
+		 /*System.out.println(" pagination status "+validatedData);*/
 		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
 		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
-		System.out.println("query \n"+searchRequestBuilder);
+		/*System.out.println("query \n"+searchRequestBuilder);*/
 		
 		try{
 		result =  searchRequestBuilder.execute().actionGet().toString();
@@ -339,7 +339,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		businessLogicService.includeFilter(indices[0],requestParamsDTOs.getFilter());
 		searchRequestBuilder.setPostFilter(boolFilter);
-	System.out.println(" sub query \n"+searchRequestBuilder);
+	/*System.out.println(" sub query \n"+searchRequestBuilder);*/
 	
 		String resultSet = searchRequestBuilder.execute().actionGet().toString();
 		return businessLogicService.getData(fields, resultSet);

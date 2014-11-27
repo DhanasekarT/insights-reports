@@ -18,6 +18,28 @@
 	<context:component-scan base-package="org.gooru.insights" />
 	<context:annotation-config />
 	
+	<!-- - Enables the AspectJ support -->
+	<bean id="methodAuthorizationAspect"
+		class="org.gooru.insights.security.MethodAuthorizationAspect" />
+
+	<aop:aspectj-autoproxy proxy-target-class="true">
+		<aop:include name="methodAuthorizationAspect" />
+	</aop:aspectj-autoproxy>
+	
+		<mvc:interceptors>
+		<bean id="localeChangeInterceptor"
+			class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<property name="paramName" value="lang" />
+		</bean>
+	</mvc:interceptors>
+
+	<!-- Allow Exceptions to be handled in annotated methods if desired. Otherwise 
+		fallback to the 'restExceptionResolver' below: -->
+	<bean id="annotationMethodHandlerExceptionResolver"
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerExceptionResolver">
+		<property name="order" value="0" />
+	</bean>
+	
 		<bean
 		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
 		<property name="order" value="1" />
@@ -54,6 +76,37 @@
 				<prop key="cassandra.keyspace.insights">${cassandra.keyspace.insights}</prop>
                                 <prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
 			</props>
+		</property>
+	</bean>
+	
+	<bean id="localeResolver"
+		class="org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver" />
+ 	<bean id="restExceptionResolver"
+		class="org.gooru.insights.web.servlet.handlers.RestExceptionHandler">
+		<property name="order" value="100" />
+		<property name="errorResolver">
+			<bean
+				class="org.gooru.insights.web.servlet.handlers.DefaultRestErrorResolver">
+				<property name="localeResolver" ref="localeResolver" />
+				<property name="defaultMoreInfoUrl" value="mailto:support@mycompany.com" />
+				<property name="exceptionMappingDefinitions">
+					<map>
+<!-- 						404 -->
+					<!-- 	<entry
+							key="org.gooru.insights.api.exception.handlers.UnknownResourceException"
+							value="404, _exmsg" /> -->
+						
+						<!-- 403 Access Denied Exception -->
+						<entry key="org.springframework.security.access.AccessDeniedException" value="403" />
+						
+						<!--  400 Bad Request Exception -->
+						<!-- <entry key="org.gooru.insights.api.exception.handlers.BadRequestException" value="400" /> -->
+												
+						<!-- 500 (catch all): -->
+						<entry key="Throwable" value="500" />
+					</map>
+				</property>
+			</bean>
 		</property>
 	</bean>
 	</beans>

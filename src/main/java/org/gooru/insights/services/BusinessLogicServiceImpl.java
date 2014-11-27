@@ -1,7 +1,6 @@
 package org.gooru.insights.services;
 
 import java.lang.reflect.Type;
-import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,32 +10,24 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
-
-import javax.activation.DataHandler;
+import java.util.Set;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllFilterBuilder;
-import org.elasticsearch.index.query.NestedFilterBuilder;
-import org.elasticsearch.index.query.NestedFilterParser;
 import org.elasticsearch.index.query.NotFilterBuilder;
 import org.elasticsearch.index.query.OrFilterBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
-import org.elasticsearch.search.aggregations.bucket.histogram.HistogramBuilder;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregator;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.gooru.insights.constants.APIConstants.hasdata;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -79,7 +70,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				}
 				termBuilder.size(500);
 				if( i == groupBy.length-1){
-					System.out.println("expected");
+					/*System.out.println("expected");*/
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
 				}
 			}
@@ -89,12 +80,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				filterBuilder = includeFilterAggregate(index,requestParamsDTO.getFilter());
 			}
 			if(termBuilder != null){
-//				termBuilder.size(recordSize);
+				//termBuilder.size(recordSize);
 				filterBuilder.subAggregation(termBuilder);
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
-//				termBuilder.size(recordSize);
+				//termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			return true;
@@ -292,7 +283,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 	
 	public void performAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
-			System.out.println("included aggregate");
+			/*System.out.println("included aggregate");*/
 			if("SUM".equalsIgnoreCase(aggregateType)){
 			mainFilter
 			.subAggregation(AggregationBuilders
@@ -910,10 +901,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				counter++;
 				}
 			} catch (JSONException e) {
-				System.out.println("some logical problem in filter aggregate json ");
+				/*System.out.println("some logical problem in filter aggregate json ");*/
 				e.printStackTrace();
 			}
-			System.out.println("data "+data);
+			/*System.out.println("data "+data);*/
 			
 			return data;
 		}
@@ -990,7 +981,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		           counter++;
 		           }
 		       } catch (JSONException e) {
-		           System.out.println("some logical problem in filter aggregate json ");
+		           /*System.out.println("some logical problem in filter aggregate json ");*/
 		           e.printStackTrace();
 		       }
 		       return dataList;
@@ -1072,11 +1063,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				counter++;
 				}
 			} catch (JSONException e) {
-				System.out.println("some logical problem in filter aggregate json ");
+				/*System.out.println("some logical problem in filter aggregate json ");*/
 				e.printStackTrace();
 			}
-			System.out.println("dataMap "+dataMap);
-			return dataMap;
+/*			System.out.println("dataMap "+dataMap);
+*/			return dataMap;
 		}
 		
 		public void includeOrder(RequestParamsDTO requestParamsDTO,Map<String,Boolean> validatedData,String fieldName,TermsBuilder termsBuilder,DateHistogramBuilder dateHistogramBuilder,Map<String,String> metricsName){
@@ -1348,7 +1339,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			resultList.add(resultMap);
 			}
 			}catch(Exception e){
-				System.out.println(" get Data method failed");
+				/*System.out.println(" get Data method failed");*/
 				e.printStackTrace();
 			}
 			return resultList;
