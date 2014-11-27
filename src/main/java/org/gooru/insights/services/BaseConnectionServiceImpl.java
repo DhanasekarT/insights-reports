@@ -81,32 +81,32 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	@PostConstruct
 	public void initConnect(){
 		
-		if(baseAPIService.checkNull(insightsKeyspace) || baseAPIService.checkNull(searchKeyspace)){
+		if(!baseAPIService.checkNull(insightsKeyspace) || !baseAPIService.checkNull(searchKeyspace)){
 		initCassandraConnection();
 		
 		}
 
-		if(baseAPIService.checkNull(devClient)){
+		if(!baseAPIService.checkNull(devClient)){
 			initDevESConnection();
 		}
 		
-		if(baseAPIService.checkNull(prodClient)){
+		if(!baseAPIService.checkNull(prodClient)){
 			initProdESConnection();
 		}
 
-		if(baseAPIService.checkNull(indexMap)){
+		if(!baseAPIService.checkNull(indexMap)){
 			indexList();
 		}
 
-		if(baseAPIService.checkNull(dependentFieldsCache)){
+		if(!baseAPIService.checkNull(dependentFieldsCache)){
 			dependentFields();
 		}
 		
-		if(baseAPIService.checkNull(fieldsDataTypeCache)){
+		if(!baseAPIService.checkNull(fieldsDataTypeCache)){
 			fieldDataType();
 		}
 		
-		if(baseAPIService.checkNull(fieldsConfigCache) || baseAPIService.checkNull(fieldsCache) ||  baseAPIService.checkNull(fieldsCustomDataTypeCache)){
+		if(!baseAPIService.checkNull(fieldsConfigCache) || !baseAPIService.checkNull(fieldsCache) ||  !baseAPIService.checkNull(fieldsCustomDataTypeCache)){
 			fieldsConfig();
 		}
 		
@@ -114,7 +114,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Client getDevClient(){
 	
-		if(baseAPIService.checkNull(devClient)){
+		if(!baseAPIService.checkNull(devClient)){
 			initDevESConnection();
 		}
 		
@@ -123,7 +123,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Client getProdClient(){
 		
-		if(baseAPIService.checkNull(prodClient)){
+		if(!baseAPIService.checkNull(prodClient)){
 			initProdESConnection();
 		}
 		
@@ -208,7 +208,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			devClient  = initNodeClient(clusterName);
 		}
 		}
-		if(baseAPIService.checkNull(devClient)){
+		if(!baseAPIService.checkNull(devClient)){
 			devClient = initTransportClient(hostName,portNo,clusterName);
 		}
 	}
@@ -233,7 +233,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			prodClient  = initNodeClient(clusterName);
 		}
 		}
-		if(baseAPIService.checkNull(prodClient)){
+		if(!baseAPIService.checkNull(prodClient)){
 			prodClient = initTransportClient(hostName,portNo,clusterName);
 		}
 	}
@@ -253,7 +253,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Keyspace connectInsights(){
 		
-		if(baseAPIService.checkNull(insightsKeyspace)){
+		if(!baseAPIService.checkNull(insightsKeyspace)){
 			initCassandraConnection();
 		}
 		return insightsKeyspace;
@@ -261,7 +261,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Keyspace connectSearch(){
 		
-		if(baseAPIService.checkNull(searchKeyspace)){
+		if(!baseAPIService.checkNull(searchKeyspace)){
 			initCassandraConnection();
 		}
 		return searchKeyspace;
@@ -352,7 +352,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Map<String,Map<String,Map<String, String>>> getDependentFieldsCache() {
 		
-		if(baseAPIService.checkNull(dependentFieldsCache)){
+		if(!baseAPIService.checkNull(dependentFieldsCache)){
 			dependentFields();
 		}
 		return dependentFieldsCache;
@@ -360,7 +360,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 
 	public Map<String,Map<String,String>> getFields() {
 		
-		if(baseAPIService.checkNull(fieldsCache)){
+		if(!baseAPIService.checkNull(fieldsCache)){
 			fieldsConfig();
 		}
 		return fieldsCache;
@@ -368,7 +368,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Map<String, String> getFieldsDataType() {
 		
-		if(baseAPIService.checkNull(fieldsDataTypeCache)){
+		if(!baseAPIService.checkNull(fieldsDataTypeCache)){
 			fieldDataType();
 		}
 		return fieldsDataTypeCache;
@@ -376,7 +376,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 
 	public Map<String, Map<String, String>> getFieldsJoinCache() {
 		
-		if(baseAPIService.checkNull(fieldsConfigCache)){
+		if(!baseAPIService.checkNull(fieldsConfigCache)){
 			fieldsConfig();
 		}
 		return fieldsConfigCache;
@@ -384,7 +384,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Map<String, Map<String, String>>  getFieldsCustomDataType() {
 		
-		if(baseAPIService.checkNull(fieldsCustomDataTypeCache)){
+		if(!baseAPIService.checkNull(fieldsCustomDataTypeCache)){
 			fieldsConfig();
 		}
 		return fieldsCustomDataTypeCache;
@@ -392,7 +392,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Map<String, String> getIndexMap() {
 	
-		if(baseAPIService.checkNull(indexMap)){
+		if(!baseAPIService.checkNull(indexMap)){
 		
 			indexList();
 		}
