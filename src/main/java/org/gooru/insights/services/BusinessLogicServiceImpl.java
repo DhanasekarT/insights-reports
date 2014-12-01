@@ -909,16 +909,19 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return data;
 		}
 
-		public List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter){
+		public List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap){
 
 			List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		       try {
 		    		int counter=0;
 					JSONObject json = new JSONObject(resultData);
+					int totalRows =0;
 					json = new JSONObject(json.get("aggregations").toString());
 					if(hasFilter){
 						json = new JSONObject(json.get("filters").toString());
 					}
+					totalRows = json.getInt("doc_count");
+					dataMap.put("totalRows", totalRows);
 		           while(counter < groupBy.length){
 		        	   if(json.length() > 0){
 		               JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
@@ -1245,7 +1248,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return new JSONArray(resultArray);
 		}
 		
-		public List<Map<String,Object>> customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+		public List<Map<String,Object>> customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData){
 			int dataSize = data.size();
 			List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
 			if(baseAPIService.checkNull(requestParamsPaginationDTO)){
@@ -1270,11 +1273,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			}else{
 				customizedData = data;
 			}
-			returnMap.put("totalRows",customizedData.size());
 			return customizedData;
 		}
 		
-		public List<Map<String,Object>> aggregatePaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+		public List<Map<String,Object>> aggregatePaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData){
 			int dataSize = data.size();
 			List<Map<String,Object>> customizedData = new ArrayList<Map<String,Object>>();
 			if(baseAPIService.checkNull(requestParamsPaginationDTO)){
@@ -1293,11 +1295,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			}else{
 				customizedData = data;
 			}
-			returnMap.put("totalRows",customizedData.size());
 			return customizedData;
 		}
 		
-		public List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData,Map<String,Object> returnMap){
+		public List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData){
 			if(baseAPIService.checkNull(requestParamsPaginationDTO)){
 				if(validatedData.get(hasdata.HAS_SORTBY.check())){
 					List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
@@ -1400,13 +1401,19 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		}
 		
 
-		public List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey){
+		public List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey,Map<String,Object> dataMap){
 			JSONObject json;
 			JSONArray jsonArray = new JSONArray();
 			List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 			try {
 				json = new JSONObject(data);
 				json = new JSONObject(json.get("hits").toString());
+				int totalRows = json.getInt("total");
+				
+				if(dataMap != null){
+				dataMap.put("totalRows", totalRows);
+				}
+				
 				jsonArray = new JSONArray(json.get("hits").toString());
 				if(!dataKey.equalsIgnoreCase("fields")){
 				for(int i =0;i< jsonArray.length();i++){

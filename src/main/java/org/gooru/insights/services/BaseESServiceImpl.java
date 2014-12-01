@@ -102,12 +102,9 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData, dataMap);		
+		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData);		
 		}
 		
-		if(!dataMap.containsKey("totalRows")){
-			dataMap.put("totalRows", dataList.size());
-		}
 	return dataList;
 	}
 	
@@ -190,7 +187,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		
 		
-		resultList = businessLogicService.getRecords(indices,result, errorRecord, dataKey);
+		resultList = businessLogicService.getRecords(indices,result, errorRecord, dataKey,null);
 		
 		return resultList;
 	}
@@ -303,11 +300,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(hasAggregate){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()));
-			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData,dataMap);
+			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap);
+			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
 			
 			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()))
-				data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
+				data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData);
 			
 			return data;
 		} catch (Exception e) {
@@ -315,7 +312,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		}
 		
-		List<Map<String,Object>> data = businessLogicService.getRecords(indices,result,errorRecord,dataKey);
+		List<Map<String,Object>> data = businessLogicService.getRecords(indices,result,errorRecord,dataKey,dataMap);
 		
 //		data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
 		

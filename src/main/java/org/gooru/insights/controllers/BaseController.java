@@ -19,8 +19,6 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class BaseController {
 
-	Map<String,Object> errorData = new HashMap<String,Object>();
-	
 	protected ModelAndView getModel(JSONArray data,Map<String,Object> messageData){
 		return  this.resultSet(data,messageData);
 	}
@@ -54,7 +52,6 @@ public class BaseController {
 		model.addObject("message", messageData);
 		
 		}
-		clearMessage();
 		return model;
 	}
 	
@@ -68,7 +65,6 @@ public class BaseController {
 			resultMap.put("message",messageData );
 			}
 			model.addObject("content", resultMap);
-			clearMessage();
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -137,12 +133,5 @@ public class BaseController {
 	}
 	}
 	
-	public Map<String,Object> getMessage(){
-	return this.errorData;
-	}
-	
-	public void clearMessage(){
-		this.errorData = new HashMap<String,Object>();
-	}
 	
 }

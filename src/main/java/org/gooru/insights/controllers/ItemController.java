@@ -46,13 +46,14 @@ public class ItemController extends BaseController{
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 	    Map<Integer,String> errorMap = new HashMap<Integer,String>();
-	    JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),errorMap);
+	    Map<String,Object> dataMap = new HashMap<String,Object>();
+	    JSONArray jsonArray = itemService.getEventDetail(data,dataMap,errorMap);
 	     
 	    if(!errorMap.isEmpty()){
 	    	sendError(response,errorMap);
 	    	return null;
 	    }
-	    return getModel(jsonArray, getMessage());
+	    return getModel(jsonArray, dataMap);
 	}
 
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
@@ -71,13 +72,14 @@ public class ItemController extends BaseController{
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,HttpServletResponse response) throws IOException{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
-		JSONArray jsonArray = itemService.processApi(data, getMessage(), errorMap);
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+		JSONArray jsonArray = itemService.processApi(data,dataMap, errorMap);
 		
 		if(!errorMap.isEmpty()){
 		sendError(response,errorMap);
 		return null;
 		}
-		return getModel(jsonArray, getMessage());
+		return getModel(jsonArray,dataMap);
 	}
 	
 	@RequestMapping(value="/clear/connection",method =RequestMethod.GET)
