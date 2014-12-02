@@ -68,7 +68,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				}else{
 					termBuilder = AggregationBuilders.terms("field"+i).field(esFields(index,groupBy[i]));
 				}
-				termBuilder.size(500);
+//				termBuilder.size(500);
 				if( i == groupBy.length-1){
 					/*System.out.println("expected");*/
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
@@ -132,7 +132,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							termBuilder.subAggregation(dateHistogram);
 							dateHistogram = null;
 						}
-						termBuilder.size(500);
+//						termBuilder.size(500);
 						isFirstDateHistogram =false;
 					}
 				
@@ -160,12 +160,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			if(isFirstDateHistogram){
 				filterBuilder.subAggregation(dateHistogram);
 			}else{
-				termBuilder.size(recordSize);
+//				termBuilder.size(recordSize);
 				filterBuilder.subAggregation(termBuilder);	
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
-				termBuilder.size(recordSize);
+//				termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			
@@ -1266,13 +1266,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() == 0 ? 0 : requestParamsPaginationDTO.getOffset() -1 : 0; 
 				int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() == 0 ? 1 : requestParamsPaginationDTO.getLimit() : 10; 
 				
-				if(limit < dataSize && offset < dataSize){
-					customizedData = data.subList(offset, limit);
-				}else if(limit >= dataSize &&  offset < dataSize){
+				if((limit+offset) < dataSize && offset < dataSize){
+					customizedData = data.subList(offset, offset+limit);
+				}else if((limit+offset) >= dataSize &&  offset < dataSize){
 					customizedData = data.subList(offset, dataSize);
-				}else if(limit < dataSize &&  offset >= dataSize){
+				}else if((limit+offset) < dataSize &&  offset >= dataSize){
 					customizedData = data.subList(0,limit);
-				}else if(limit >= dataSize &&  offset >= dataSize){
+				}else if((limit+offset) >= dataSize &&  offset >= dataSize){
 					customizedData = data.subList(0,dataSize);
 				}
 			}else{
@@ -1288,13 +1288,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				int offset = validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() : 0; 
 				int limit = validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10; 
 				
-				if(limit < dataSize && offset < dataSize){
-					customizedData = data.subList(offset, limit);
-				}else if(limit >= dataSize &&  offset < dataSize){
+				if((limit+offset) < dataSize && offset < dataSize){
+					customizedData = data.subList(offset, offset+limit);
+				}else if((limit+offset) >= dataSize &&  offset < dataSize){
 					customizedData = data.subList(offset, dataSize);
-				}else if(limit < dataSize &&  offset >= dataSize){
+				}else if((limit+offset) < dataSize &&  offset >= dataSize){
 					customizedData = data.subList(0,limit);
-				}else if(limit >= dataSize &&  offset >= dataSize){
+				}else if((limit+offset) >= dataSize &&  offset >= dataSize){
 					customizedData = data.subList(0,dataSize);
 				}
 			}else{
