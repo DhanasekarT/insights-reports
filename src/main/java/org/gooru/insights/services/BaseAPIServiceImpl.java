@@ -21,8 +21,11 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.elasticsearch.index.query.FilterBuilder;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.RequestParamsFilterDetailDTO;
+import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -458,10 +461,22 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	@Override
 	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		String userRole = userMap.containsKey("userRoleSetString") ? userMap.get("userRoleSetString").toString() : null;
+		String gooruUId = userMap.containsKey("gooruUId") ? userMap.get("gooruUId").toString() : null;
+		
 		if(userRole != null && (userRole.contains("ROLE_GOORU_ADMIN") || userRole.contains("superadmin") || userRole.contains("Organization_Admin") || userRole.contains("Content_Admin"))){
 			System.out.print("Do Nothing..");
 		}else{
-			if(requestParamsDTO.getGroupBy().contains("gooruUId") || requestParamsDTO.getFields().contains("gooruUId")){
+			for (RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
+				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
+					if(fieldsDetails.getFieldName() != null && fieldsDetails.getFieldName().equalsIgnoreCase("gooruUId") || fieldsDetails.getFieldName().equalsIgnoreCase("creatorUid")){
+						if(fieldsDetails.getValue().equalsIgnoreCase(gooruUId)){
+							errorMap.put(403, "Sorry! You don't have access to see PII info.");
+						}
+					}
+				}
+			}
+			
+			if((requestParamsDTO.getGroupBy() != null &&(requestParamsDTO.getGroupBy().contains("creatorUid") || requestParamsDTO.getGroupBy().contains("gooruUId"))) || (requestParamsDTO.getFields() != null && (requestParamsDTO.getFields().contains("userName") || requestParamsDTO.getFields().contains("gooruUId") || requestParamsDTO.getFields().contains("creatorUid")))){
 				errorMap.put(403, "Sorry! You don't have access to see PII info.");
 			}
 		}
