@@ -47,16 +47,17 @@ public class ItemController extends BaseController{
 	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
 		
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		Map<String,Object> dataMap = new HashMap<String,Object>();
 	    
 	    Map<String,Object> userMap = itemService.getUserObject(sessionToken, errorMap); 
 	    
-	    JSONArray jsonArray = itemService.getEventDetail(data,getMessage(),userMap,errorMap);
+	    JSONArray jsonArray = itemService.getEventDetail(data,dataMap,userMap,errorMap);
 	     
 	    if(!errorMap.isEmpty()){
 	    	sendError(response,errorMap);
 	    	return null;
 	    }
-	    return getModel(jsonArray, getMessage());	}
+	    return getModel(jsonArray, dataMap);	}
 
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
 	public ModelAndView clearDataCache(){
