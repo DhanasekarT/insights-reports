@@ -24,6 +24,8 @@ public interface BaseAPIService {
 	
 	Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO);
 	
+	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	
 	String[] getIndices(String names);
 	
 	boolean checkNull(Map<?,?> request);

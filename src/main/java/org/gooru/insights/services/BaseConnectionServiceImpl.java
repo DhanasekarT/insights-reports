@@ -3,6 +3,7 @@ package org.gooru.insights.services;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -17,7 +18,13 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
 import org.gooru.insights.constants.CassandraConstants;
+import org.gooru.insights.constants.CassandraConstants.columnFamilies;
+import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
+import org.json.JSONObject;
+import org.restlet.ext.json.JsonRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.resource.ClientResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +69,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	private static Map<String,Map<String,Map<String, String>>> dependentFieldsCache;
 	
 	private static Map<String,String> indexMap;
-		
+	
+	private static Map<String,Object> userMap;
+
+	private ColumnList<String> endPoint = null;
+	
 	protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
 	 
 	@Autowired
@@ -419,5 +430,38 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		devClient = null;
 		prodClient = null;
 	}
+	
+	public Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){
+
+		//endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
+		
+		userMap = new LinkedHashMap<String, Object>();
+		
+		//String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
+		String address = "http://www.goorulearning.org/gooruapi/rest/v2/user/token/"+sessionToken + "?sessionToken="+sessionToken;
+		ClientResource client = new ClientResource(address);
+		
+		if (client.getStatus().isSuccess()) {
+			try{
+				Representation representation = client.get();
+				JsonRepresentation jsonRepresentation = new JsonRepresentation(
+						representation);
+				JSONObject jsonObj = jsonRepresentation.getJsonObject();
+				userMap.put("firstName",jsonObj.getString("firstName"));
+				userMap.put("lastName",jsonObj.getString("lastName"));
+				userMap.put("emailId",jsonObj.getString("emailId"));
+				userMap.put("gooruUId",jsonObj.getString("gooruUId"));
+				userMap.put("userRoleSetString",jsonObj.getString("userRoleSetString"));
+			}catch(Exception e){
+				errorMap.put(500, e.toString());
+			}
+		}else{
+			errorMap.put(500, "We're unable to get User information");
+		}
+		
+		return userMap;
+		
+	}
+	
 }
 
