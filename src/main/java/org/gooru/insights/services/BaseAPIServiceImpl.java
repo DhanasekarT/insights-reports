@@ -455,4 +455,18 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		return ISO_8601_DATE_TIME.format(date);
 	}
 
+	@Override
+	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String, Object> userMap, Map<Integer, String> errorMap) {
+		String userRole = userMap.containsKey("userRoleSetString") ? userMap.get("userRoleSetString").toString() : null;
+		if(userRole != null && (userRole.contains("ROLE_GOORU_ADMIN") || userRole.contains("superadmin") || userRole.contains("Organization_Admin") || userRole.contains("Content_Admin"))){
+			System.out.print("Do Nothing..");
+		}else{
+			if(requestParamsDTO.getGroupBy().contains("gooruUId") || requestParamsDTO.getFields().contains("gooruUId")){
+				errorMap.put(403, "Sorry! You don't have access to see PII info.");
+			}
+		}
+		
+		return requestParamsDTO;
+	}
+
 }

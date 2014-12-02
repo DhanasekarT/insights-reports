@@ -32,4 +32,6 @@ public interface BaseConnectionService {
 	boolean clearDataCache();
 	
 	void clearConnectionCache();
+	
+	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
 }

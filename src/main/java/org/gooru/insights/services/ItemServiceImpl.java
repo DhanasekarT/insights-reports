@@ -90,7 +90,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		return resultList;
 	}
 	
-	public JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap){
+	public JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<String,Object> userMap, Map<Integer,String> errorMap){
 		RequestParamsDTO requestParamsDTO = null;
 		
 		try{
@@ -103,11 +103,18 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		
 		Map<String,Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
+		
 		if(!validatedData.get(hasdata.HAS_DATASOURCE.check())){
 			errorMap.put(400, "should provide the data source to be fetched");
 			return new JSONArray();
 		}
 
+		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap, errorMap);
+
+		if(!errorMap.isEmpty()){
+			return new JSONArray();
+	    }
+		
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		List<Map<String,Object>> resultList =  esService.itemSearch(requestParamsDTO,indices,validatedData,dataMap,errorMap);
 		
@@ -126,6 +133,10 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	
 	public void clearConnectionCache(){
 		baseConnectionService.clearConnectionCache();
+	}
+	
+	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){	
+		return baseConnectionService.getUserObject(sessionToken, errorMap);
 	}
 	
 }
