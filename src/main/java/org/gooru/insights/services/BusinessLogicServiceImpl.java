@@ -919,13 +919,18 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					json = new JSONObject(json.get("aggregations").toString());
 					if(hasFilter){
 						json = new JSONObject(json.get("filters").toString());
+						totalRows = json.getInt("doc_count");
+						dataMap.put("totalRows", totalRows);
 					}
-					totalRows = json.getInt("doc_count");
-					dataMap.put("totalRows", totalRows);
 		           while(counter < groupBy.length){
 		        	   if(json.length() > 0){
 		               JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
 		           JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
+		           
+		           if(counter == 0 && !hasFilter){
+		        	   totalRows = jsonArray.length();
+						dataMap.put("totalRows", totalRows); 
+		           }
 		           JSONArray subJsonArray = new JSONArray();
 		           Set<Object> keys = new HashSet<Object>();
 		           boolean hasSubAggregate = false;
