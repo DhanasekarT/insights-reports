@@ -433,12 +433,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	public Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){
 
-		//endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
-		
-		userMap = new LinkedHashMap<String, Object>();
-		
-		//String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
-		String address = "http://www.goorulearning.org/gooruapi/rest/v2/user/token/"+sessionToken + "?sessionToken="+sessionToken;
+		endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
+		userMap = new LinkedHashMap<String, Object>();		
+		String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
 		ClientResource client = new ClientResource(address);
 		
 		if (client.getStatus().isSuccess()) {
