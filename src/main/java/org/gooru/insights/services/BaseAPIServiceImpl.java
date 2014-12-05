@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -42,6 +43,9 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
+	
+	@Autowired
+	private RedisService redisService;
 
 	public RequestParamsDTO buildRequestParameters(String data) {
 
@@ -483,5 +487,41 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		
 		return requestParamsDTO;
 	}
+	
+	public boolean clearQuery(String id){
+		
+		try{
+		for(String requestId : id.split(",")){
+		if(redisService.hasRedisKey(requestId)){
+			String queryId = redisService.getRedisValue(requestId);
+			redisService.removeRedisKey(requestId);
+			if(redisService.hasRedisKey(queryId)){
+			redisService.removeRedisKey(queryId);
+			System.out.println(" requestId "+requestId +" queryid "+queryId);
+			}
+		}
+	}
+		return true;
+		}catch(Exception e){
+			return false;
+		}
+	}
 
+	public boolean clearQuerys(String[] id){
+
+		return	redisService.removeRedisKeys(id);
+	}
+	
+public String putRedisCache(String query,JSONArray jsonArray){
+	UUID queryId =UUID.randomUUID();
+	String existingId = redisService.putRedisStringValue(queryId.toString(), query.trim());
+	if(existingId == null){
+		
+		redisService.putRedisStringValue(query.trim(), jsonArray.toString());
+		System.out.println("new Id created "+queryId);
+		return queryId.toString();
+	}
+	System.out.println("already has this id "+existingId);
+	return existingId;
+}
 }

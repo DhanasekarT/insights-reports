@@ -18,4 +18,6 @@ public interface ItemService {
 	void clearConnectionCache();
 	
 	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
+	
+	Boolean clearQuery(String id);
 }

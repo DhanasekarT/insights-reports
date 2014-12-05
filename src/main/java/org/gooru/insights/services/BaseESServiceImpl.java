@@ -274,7 +274,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
-				searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()));
+				searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
 
 				if(validatedData.get(hasdata.HAS_SORTBY.check()))
 					sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
@@ -291,6 +291,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		/*System.out.println("query \n"+searchRequestBuilder);*/
 		
 		try{
+			
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			e.printStackTrace();

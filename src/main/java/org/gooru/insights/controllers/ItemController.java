@@ -57,7 +57,20 @@ public class ItemController extends BaseController{
 	    	sendError(response,errorMap);
 	    	return null;
 	    }
-	    return getModel(jsonArray, dataMap);	}
+	    return getModel(jsonArray, dataMap);	
+	
+	}
+	
+	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
+	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response){
+		Map<String,String> dataMap = new HashMap<String,String>();
+		if(itemService.clearQuery(queryId)){
+			dataMap.put("status","query has been removed");
+			return getModel(dataMap);
+		}
+		dataMap.put("status","unable to delete the query");
+		return getModel(dataMap);
+	}
 
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
 	public ModelAndView clearDataCache(){

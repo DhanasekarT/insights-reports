@@ -110,16 +110,23 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		}
 
 		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap, errorMap);
-
+		
 		if(!errorMap.isEmpty()){
 			return new JSONArray();
 	    }
+		
 		
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		List<Map<String,Object>> resultList =  esService.itemSearch(requestParamsDTO,indices,validatedData,dataMap,errorMap);
 		
 		try {
-			return businessLogicService.buildAggregateJSON(resultList);
+			JSONArray jsonArray = businessLogicService.buildAggregateJSON(resultList);
+			
+			if(requestParamsDTO.isSaveQuery()){
+				String queryId = baseAPIService.putRedisCache(data, jsonArray);
+				dataMap.put("queryId", queryId);
+			}
+			return jsonArray;
 		} catch (JSONException e) {
 			e.printStackTrace();
 			return new JSONArray();
@@ -127,6 +134,9 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		
 	}
 
+	public Boolean clearQuery(String id){
+		return baseAPIService.clearQuery(id);
+	}
 	public boolean clearDataCache(){
 		return baseConnectionService.clearDataCache();
 	}

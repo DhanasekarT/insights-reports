@@ -49,4 +49,10 @@ public interface BaseAPIService {
 	String convertTimeMstoISO(Object milliseconds);
 	
 	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
+
+	String putRedisCache(String query,JSONArray jsonArray);
+	
+	boolean clearQuery(String id);
+	
+	boolean clearQuerys(String[] id);
 }

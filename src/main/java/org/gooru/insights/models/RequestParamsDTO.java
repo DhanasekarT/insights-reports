@@ -20,6 +20,8 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String granularity;
 	
+	private Boolean saveQuery;
+	
 	RequestParamsPaginationDTO pagination;
 	
 	RequestParamsFiltersDTO filters;
@@ -128,6 +130,14 @@ public class RequestParamsDTO implements Serializable {
 
 	public String getSourceIndex() {
 		return sourceIndex;
+	}
+
+	public Boolean isSaveQuery() {
+		return saveQuery;
+	}
+
+	public void setSaveQuery(Boolean saveQuery) {
+		this.saveQuery = saveQuery;
 	}
 	
 	

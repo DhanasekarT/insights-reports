@@ -36,5 +36,13 @@
 	</bean>
 
 
-	
+	<bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+<property name="connectionFactory" ref="redisConnectionFactory" />
+
+
+<bean id="redisConnectionFactory"
+class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+<property name="port" value="6379" />
+<property name="hostName" value="${redis.server.host}" />
+</bean>
 </beans>

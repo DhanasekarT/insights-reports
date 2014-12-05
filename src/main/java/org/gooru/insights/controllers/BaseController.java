@@ -98,19 +98,21 @@ public class BaseController {
 	}
 	
 	public void addFilterData(JSONObject data,Map<String,Object> messageData) throws JSONException{
+		Map<String,Long> paginateData = new HashMap<String, Long>();
 		if(messageData != null){
-			Long totalRows;
+			Long totalRows ;
 				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows").toString()) : 0L );				
-				if(totalRows != null){
+				
+				if(messageData.containsKey("totalRows")){
 					messageData.remove("totalRows");
 				}
-			Map<String,Long> paginateData = new HashMap<String, Long>();
+				
 			if(totalRows != null){
 			paginateData.put("totalRows",totalRows);
 					
 			}
-			data.put("paginate", paginateData);
 	}
+		data.put("paginate", paginateData);
 	}
 	
 	public void sendError(HttpServletResponse response,Map<Integer,String> errorMap){
