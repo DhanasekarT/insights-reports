@@ -40,7 +40,7 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	
 	public void setRedisStringSerializerTemplate(){
 		redisStringTemplate.setKeySerializer(STRING_SERIALIZER);
-		redisStringTemplate.setValueSerializer(LONG_SERIALIZER);
+		redisStringTemplate.setValueSerializer(STRING_SERIALIZER);
 	}
 	
 	public ValueOperations<String, Long> redisLongOperation(){

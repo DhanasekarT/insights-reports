@@ -514,10 +514,10 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	
 public String putRedisCache(String query,JSONArray jsonArray){
 	UUID queryId =UUID.randomUUID();
-	String existingId = redisService.putRedisStringValue(queryId.toString(), query.trim());
+	String existingId = redisService.putRedisStringValue(query.toString(),jsonArray.toString());
 	if(existingId == null){
 		
-		redisService.putRedisStringValue(query.trim(), jsonArray.toString());
+		redisService.putRedisStringValue(queryId.toString(), query.trim());
 		System.out.println("new Id created "+queryId);
 		return queryId.toString();
 	}
