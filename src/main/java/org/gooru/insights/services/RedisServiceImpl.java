@@ -2,6 +2,8 @@ package org.gooru.insights.services;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.gooru.insights.constants.APIConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -20,12 +22,12 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	final LongSerializer LONG_SERIALIZER  = LongSerializer.INSTANCE;
 	
 	@Autowired(required = false)
-	public static RedisTemplate<String, Long> redisLongTemplate;
+	private RedisTemplate<String, Long> redisLongTemplate = new RedisTemplate() ;
 	
 	@Autowired(required = false)
-	public static RedisTemplate<String, String> redisStringTemplate;
+	private  RedisTemplate<String, String> redisStringTemplate;
 	
-	
+	@PostConstruct
 	void init(){
 		
 		setRedisStringSerializerTemplate();
@@ -34,7 +36,6 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	public void setRedisLongSerializerTemplate(){
 		redisLongTemplate.setKeySerializer(STRING_SERIALIZER);
 		redisLongTemplate.setValueSerializer(LONG_SERIALIZER);
-		
 	}
 	
 	public void setRedisStringSerializerTemplate(){
@@ -51,12 +52,12 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public void putRedisLongValue(String key,Long value){
-		redisLongOperation().set(key, value);
+		redisLongOperation().set(CACHE_PREFIX+SEPARATOR+key, value);
 	}
 	
 	public String putRedisStringValue(String key,String value){
-		if(!redisStringOperation().setIfAbsent(key, value)){
-			return redisStringOperation().get(key);
+		if(!redisStringOperation().setIfAbsent(CACHE_PREFIX+SEPARATOR+key, value)){
+			return redisStringOperation().get(CACHE_PREFIX+SEPARATOR+key);
 		}
 		return null;
 	}

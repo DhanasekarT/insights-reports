@@ -122,9 +122,11 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 		try {
 			JSONArray jsonArray = businessLogicService.buildAggregateJSON(resultList);
 			
+			if(requestParamsDTO.isSaveQuery() != null){
 			if(requestParamsDTO.isSaveQuery()){
 				String queryId = baseAPIService.putRedisCache(data, jsonArray);
 				dataMap.put("queryId", queryId);
+			}
 			}
 			return jsonArray;
 		} catch (JSONException e) {
