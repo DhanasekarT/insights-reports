@@ -71,11 +71,11 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public String getRedisValue(String key){
-		if(redisStringOperation() != null ){
 			return redisStringOperation().get(CACHE_PREFIX+SEPARATOR+key);
-		}else{
-			return null;
-		}
+	}
+	
+	public String getRedisKeyValue(String key){
+		return redisStringOperation().get(key);
 	}
 	
 	

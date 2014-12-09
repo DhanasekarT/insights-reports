@@ -520,6 +520,8 @@ public String putRedisCache(String query,JSONArray jsonArray){
 		redisService.putRedisStringValue(queryId.toString(), query.trim());
 		System.out.println("new Id created "+queryId);
 		return queryId.toString();
+	}else{
+		existingId = redisService.getRedisKeyValue(existingId);
 	}
 	System.out.println("already has this id "+existingId);
 	return existingId;
