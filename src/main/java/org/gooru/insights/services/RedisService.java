@@ -10,6 +10,8 @@ public interface RedisService {
 	
 	boolean removeRedisKey(String key);
 	
+	boolean removeRedisKeys();
+	
 	boolean removeRedisKeys(String[] key);
 	
 	String putRedisStringValue(String key,String value);

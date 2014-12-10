@@ -20,4 +20,8 @@ public interface ItemService {
 	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
 	
 	Boolean clearQuery(String id);
+	
+	JSONArray getQuery(String id);
+	
+	JSONArray getCacheData(String id);
 }

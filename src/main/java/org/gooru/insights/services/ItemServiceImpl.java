@@ -139,6 +139,36 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 	public Boolean clearQuery(String id){
 		return baseAPIService.clearQuery(id);
 	}
+	
+	public JSONArray getQuery(String id){
+		String result  = baseAPIService.getQuery(id);
+		try{
+			return new JSONArray(result);
+		}catch(Exception e){
+			return new JSONArray();
+		}
+	}
+	
+	public JSONArray getCacheData(String id){
+
+		JSONArray resultArray = new JSONArray();
+		try{
+		for(String requestId : id.split(",")){
+			JSONArray jsonArray = new JSONArray();
+			do{
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
+			requestId = baseAPIService.getKey(requestId);
+			jsonArray.put(jsonObject);
+			}while(baseAPIService.hasKey(requestId));
+			resultArray.put(jsonArray);
+		}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return resultArray;
+	}
+	
 	public boolean clearDataCache(){
 		return baseConnectionService.clearDataCache();
 	}

@@ -1,5 +1,7 @@
 package org.gooru.insights.services;
 
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
@@ -80,6 +82,20 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 		redisStringTemplate.delete(CACHE_PREFIX+SEPARATOR+key);
 		return true;
 		}catch(Exception e){
+			return false;
+		}
+	}
+	
+	public boolean removeRedisKeys(){
+		try{
+			Set<String> keys = redisStringTemplate.keys(CACHE_PREFIX+SEPARATOR+WILD_CARD);
+			Iterator<String> itr = keys.iterator();
+			while(itr.hasNext()){
+		redisStringTemplate.delete(itr.next());
+			}
+		return true;
+		}catch(Exception e){
+			System.out.println("failed on remove ");
 			return false;
 		}
 	}

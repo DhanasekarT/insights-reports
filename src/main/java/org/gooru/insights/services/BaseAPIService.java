@@ -54,5 +54,11 @@ public interface BaseAPIService {
 	
 	boolean clearQuery(String id);
 	
+	String getQuery(String id);
+	
 	boolean clearQuerys(String[] id);
+	
+	boolean hasKey(String id);
+	
+	String getKey(String id);
 }

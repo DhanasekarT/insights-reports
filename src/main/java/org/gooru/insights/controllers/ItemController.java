@@ -13,6 +13,7 @@ import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -62,16 +63,33 @@ public class ItemController extends BaseController{
 	}
 	
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
-	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response){
+	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response){
 		Map<String,String> dataMap = new HashMap<String,String>();
 		if(itemService.clearQuery(queryId)){
+			if(!queryId.isEmpty() && queryId != null){
 			dataMap.put("status","query has been removed");
+			}else{
+				dataMap.put("status","All the querys has been removed");
+			}
 			return getModel(dataMap);
 		}
 		dataMap.put("status","unable to delete the query");
 		return getModel(dataMap);
 	}
+	
+	@RequestMapping(value="/{id}",method =RequestMethod.GET)
+	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+		return getModel(itemService.getQuery(queryId),dataMap);
+	}
 
+	
+	@RequestMapping(value="/list",method =RequestMethod.GET)
+	public ModelAndView getRedisCacheList(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+		return getModel(itemService.getCacheData(queryId),dataMap);
+	}
+	
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
 	public ModelAndView clearDataCache(){
 		Map<String,String> dataMap = new HashMap<String,String>();
