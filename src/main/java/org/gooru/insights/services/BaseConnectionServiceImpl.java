@@ -478,6 +478,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			userMap = new LinkedHashMap<String, Object>();		
 			try{
 				JSONObject jsonObject = new JSONObject(result);
+				jsonObject = new JSONObject(jsonObject.getString("userToken"));
+				jsonObject = new JSONObject(jsonObject.getString("user"));
 				userMap.put("firstName",jsonObject.getString("firstName"));
 				userMap.put("lastName",jsonObject.getString("lastName"));
 				userMap.put("emailId",jsonObject.getString("emailId"));
