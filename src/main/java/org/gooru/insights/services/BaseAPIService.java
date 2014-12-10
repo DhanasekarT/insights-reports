@@ -61,4 +61,6 @@ public interface BaseAPIService {
 	boolean hasKey(String id);
 	
 	String getKey(String id);
+	
+	Set<String> getKeys();
 }

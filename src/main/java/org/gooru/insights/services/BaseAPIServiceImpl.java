@@ -493,8 +493,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 	}
 
 	public boolean clearQuery(String id) {
-
-		try {
+		boolean status = false;
 			if(id != null && !id.isEmpty()){
 			for (String requestId : id.split(",")) {
 				if (redisService.hasRedisKey(requestId)) {
@@ -502,18 +501,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 					redisService.removeRedisKey(requestId);
 					if (redisService.hasRedisKey(queryId)) {
 						redisService.removeRedisKey(CACHE_PREFIX_ID + SEPARATOR + queryId);
-						redisService.removeRedisKey(queryId);
+						status = redisService.removeRedisKey(queryId);
 						System.out.println(" requestId " + requestId + " queryid " + queryId);
 					}
 				}
 			}
 			}else{
-				redisService.removeRedisKeys();
+				status = redisService.removeRedisKeys();
 			}
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
+			return status;
 	}
 
 	public String getQuery(String id){
@@ -547,6 +543,11 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 	public String getKey(String id){
 		return redisService.getRedisValue(id);
 	}
+	
+	public Set<String> getKeys(){
+		return redisService.getKeys();
+	}
+	
 	public String putRedisCache(String query, JSONArray jsonArray) {
 
 		UUID queryId = UUID.randomUUID();

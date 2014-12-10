@@ -1,5 +1,7 @@
 package org.gooru.insights.services;
 
+import java.util.Set;
+
 public interface RedisService {
 	
 	boolean hasRedisKey(String key);
@@ -15,5 +17,7 @@ public interface RedisService {
 	boolean removeRedisKeys(String[] key);
 	
 	String putRedisStringValue(String key,String value);
+	
+	Set<String> getKeys();
 	
 }

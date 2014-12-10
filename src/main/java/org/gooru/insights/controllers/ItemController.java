@@ -66,7 +66,7 @@ public class ItemController extends BaseController{
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response){
 		Map<String,String> dataMap = new HashMap<String,String>();
 		if(itemService.clearQuery(queryId)){
-			if(!queryId.isEmpty() && queryId != null){
+			if(queryId != null && !queryId.isEmpty()){
 			dataMap.put("status","query has been removed");
 			}else{
 				dataMap.put("status","All the querys has been removed");
@@ -85,7 +85,7 @@ public class ItemController extends BaseController{
 
 	
 	@RequestMapping(value="/list",method =RequestMethod.GET)
-	public ModelAndView getRedisCacheList(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
+	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId ,HttpServletResponse response){
 		Map<String,Object> dataMap = new HashMap<String,Object>();
 		return getModel(itemService.getCacheData(queryId),dataMap);
 	}

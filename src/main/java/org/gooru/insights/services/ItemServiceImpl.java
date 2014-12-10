@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
@@ -153,6 +154,7 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 
 		JSONArray resultArray = new JSONArray();
 		try{
+			if(id != null && !id.isEmpty()){
 		for(String requestId : id.split(",")){
 			JSONArray jsonArray = new JSONArray();
 			do{
@@ -160,9 +162,24 @@ public class ItemServiceImpl implements ItemService,APIConstants {
 			jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
 			requestId = baseAPIService.getKey(requestId);
 			jsonArray.put(jsonObject);
+			System.out.println("jsonArray "+jsonArray);
 			}while(baseAPIService.hasKey(requestId));
 			resultArray.put(jsonArray);
 		}
+			}else{
+				Set<String> ids = baseAPIService.getKeys();
+				for(String requestId : ids){
+					JSONArray jsonArray = new JSONArray();
+					do{
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
+					requestId = baseAPIService.getKey(requestId);
+					jsonArray.put(jsonObject);
+					System.out.println("jsonArray "+jsonArray);
+					}while(baseAPIService.hasKey(requestId));
+					resultArray.put(jsonArray);
+				}		
+			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}

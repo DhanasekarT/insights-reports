@@ -100,6 +100,9 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 		}
 	}
 	
+	public Set<String> getKeys(){
+		return redisStringTemplate.keys(CACHE_PREFIX+SEPARATOR+WILD_CARD);
+	}
 	public boolean removeRedisKeys(String[] key){
 		try{
 		redisStringTemplate.delete(CACHE_PREFIX+SEPARATOR+key);
