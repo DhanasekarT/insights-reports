@@ -63,4 +63,6 @@ public interface BaseAPIService {
 	String getKey(String id);
 	
 	Set<String> getKeys();
+	
+	String getRedisRawValue(String key);
 }

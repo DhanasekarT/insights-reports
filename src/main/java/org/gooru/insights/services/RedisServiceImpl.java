@@ -76,6 +76,10 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 			return redisStringOperation().get(CACHE_PREFIX+SEPARATOR+key);
 	}
 	
+	public String getRedisRawValue(String key){
+		return redisStringOperation().get(key);
+	}
+	
 	
 	public boolean removeRedisKey(String key){
 		try{

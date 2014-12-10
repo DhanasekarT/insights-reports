@@ -20,4 +20,6 @@ public interface RedisService {
 	
 	Set<String> getKeys();
 	
+	String getRedisRawValue(String key);
+	
 }

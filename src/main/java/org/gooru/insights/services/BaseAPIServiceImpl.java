@@ -544,6 +544,10 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return redisService.getRedisValue(id);
 	}
 	
+	public String getRedisRawValue(String key){
+		return redisService.getRedisRawValue(key);
+	}
+	
 	public Set<String> getKeys(){
 		return redisService.getKeys();
 	}
