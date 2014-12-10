@@ -10,17 +10,23 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
+import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
+import org.gooru.insights.models.User;
+import org.gooru.insights.security.AuthorizeOperations;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
@@ -28,7 +34,10 @@ import org.restlet.resource.ClientResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -47,7 +56,7 @@ import com.netflix.astyanax.model.Rows;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
 @Component
-public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants {
+public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants,APIConstants {
 
 	Logger loggerFactory = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
 	private static Client devClient;
@@ -84,6 +93,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	@Resource(name="cassandra")
 	Properties cassandra;
+	
+	@Autowired
+	RedisService redisService;
 	
 	public Properties getCassandraProperties() {
 		return cassandra;
@@ -460,5 +472,22 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		
 	}
 	
+	public Map<String,Object> getUserObjectData(String sessionToken ,Map<Integer,String> errorMap){	
+
+			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
+			userMap = new LinkedHashMap<String, Object>();		
+			try{
+				JSONObject jsonObject = new JSONObject(result);
+				userMap.put("firstName",jsonObject.getString("firstName"));
+				userMap.put("lastName",jsonObject.getString("lastName"));
+				userMap.put("emailId",jsonObject.getString("emailId"));
+				userMap.put("gooruUId",jsonObject.getString("partyUid"));
+				userMap.put("userRoleSetString",jsonObject.getString("userRoleSetString"));
+			}catch(Exception e){
+				errorMap.put(500, e.toString());
+			}
+		return userMap;
+	
+	}
 }
 

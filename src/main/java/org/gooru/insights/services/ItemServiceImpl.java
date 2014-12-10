@@ -203,4 +203,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return baseConnectionService.getUserObject(sessionToken, errorMap);
 	}
 
+	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
+		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
+	}
 }

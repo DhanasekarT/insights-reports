@@ -6,6 +6,8 @@ public interface APIConstants {
 	
 	public static String CACHE_PREFIX_ID ="key";
 	
+	public static String GOORU_PREFIX = "authenticate_";
+	
 	public static String SEPARATOR="~";
 	
 	public static String WILD_CARD="*";

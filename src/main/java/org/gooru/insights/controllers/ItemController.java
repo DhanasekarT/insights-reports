@@ -51,7 +51,9 @@ public class ItemController extends BaseController{
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		Map<String,Object> dataMap = new HashMap<String,Object>();
 	    
-	    Map<String,Object> userMap = itemService.getUserObject(sessionToken, errorMap); 
+//	    Map<String,Object> userMap = itemService.getUserObject(sessionToken, errorMap); 
+	   
+	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
 	    
 	    JSONArray jsonArray = itemService.getEventDetail(data,dataMap,userMap,errorMap);
 	     

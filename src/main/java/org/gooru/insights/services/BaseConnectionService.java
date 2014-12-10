@@ -34,4 +34,6 @@ public interface BaseConnectionService {
 	void clearConnectionCache();
 	
 	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
+	
+	Map<String,Object> getUserObjectData(String sessionToken ,Map<Integer,String> errorMap);
 }

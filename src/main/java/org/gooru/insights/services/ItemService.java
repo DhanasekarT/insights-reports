@@ -26,4 +26,6 @@ public interface ItemService {
 	JSONArray getCacheData(String id);
 	
 	boolean insertKey(String data);
+	
+	Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap);
 }
