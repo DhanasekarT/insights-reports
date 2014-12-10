@@ -62,6 +62,13 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 		return null;
 	}
 	
+	public String putRedisKeyValue(String key,String value){
+		if(!redisStringOperation().setIfAbsent(key, value)){
+			return redisStringOperation().get(key);
+		}
+		return null;
+	}
+	
 	public boolean hasRedisKey(String key){
 		if(redisStringTemplate.hasKey(CACHE_PREFIX+SEPARATOR+key)){
 			return true;
@@ -82,6 +89,15 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	public boolean removeRedisKey(String key){
 		try{
 		redisStringTemplate.delete(CACHE_PREFIX+SEPARATOR+key);
+		return true;
+		}catch(Exception e){
+			return false;
+		}
+	}
+	
+	public boolean removeKey(String key){
+		try{
+		redisStringTemplate.delete(key);
 		return true;
 		}catch(Exception e){
 			return false;

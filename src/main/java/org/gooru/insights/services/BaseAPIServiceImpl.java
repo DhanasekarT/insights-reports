@@ -23,6 +23,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.elasticsearch.index.query.FilterBuilder;
+import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
@@ -39,7 +40,7 @@ import flexjson.JSONDeserializer;
 import flexjson.JSONException;
 
 @Service
-public class BaseAPIServiceImpl implements BaseAPIService {
+public class BaseAPIServiceImpl implements BaseAPIService,APIConstants {
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -496,7 +497,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			String queryId = redisService.getRedisValue(requestId);
 			redisService.removeRedisKey(requestId);
 			if(redisService.hasRedisKey(queryId)){
-			redisService.removeRedisKey(queryId);
+				redisService.removeRedisKey(CACHE_PREFIX_ID+SEPARATOR+queryId);
+			redisService.removeKey(queryId);
 			System.out.println(" requestId "+requestId +" queryid "+queryId);
 			}
 		}
@@ -513,13 +515,23 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	}
 	
 public String putRedisCache(String query,JSONArray jsonArray){
+	
 	UUID queryId =UUID.randomUUID();
+	
+	if(redisService.hasRedisKey(CACHE_PREFIX_ID+SEPARATOR+query.trim())){
+		return redisService.getRedisValue(query);
+	}
+	
 	String existingId = redisService.putRedisStringValue(queryId.toString(),query.trim());
+	System.out.println("existing id"+existingId);
+	
 	if(existingId == null){
 		redisService.putRedisStringValue(query.trim(), jsonArray.toString());
+		redisService.putRedisStringValue(CACHE_PREFIX_ID+SEPARATOR+query.trim(),queryId.toString());
 		System.out.println("new Id created "+queryId);
 		return queryId.toString();
 	}
+	
 	System.out.println("already has this id "+queryId.toString());
 	return existingId;
 }

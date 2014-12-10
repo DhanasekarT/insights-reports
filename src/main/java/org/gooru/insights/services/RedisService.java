@@ -15,4 +15,8 @@ public interface RedisService {
 	String putRedisStringValue(String key,String value);
 	
 	String getRedisKeyValue(String key);
+	
+	String putRedisKeyValue(String key,String value);
+	
+	boolean removeKey(String key);
 }
