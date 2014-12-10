@@ -39,6 +39,7 @@ import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.models.User;
 import org.gooru.insights.services.BaseCassandraService;
+import org.gooru.insights.services.RedisService;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
@@ -64,7 +65,11 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	
 	private ColumnList<String> endPoint = null;
 	
+	private static String GOORU_PREFIX = "authenticate_";
 	private ColumnList<String> entityOperationsRole = null;
+	
+	@Autowired
+	RedisService redisService;
 	
 	@Autowired
 	private BaseCassandraService baseCassandraService;
@@ -78,7 +83,8 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	public Object operationsAuthorization(ProceedingJoinPoint pjp, AuthorizeOperations authorizeOperations, RequestMapping requestMapping) throws Throwable {
 
 		// Check method access
-		boolean permitted = hasOperationsAuthority(authorizeOperations, pjp);
+		//boolean permitted = hasOperationsAuthority(authorizeOperations, pjp);
+		boolean permitted = hasOperations(authorizeOperations, pjp);
 		if (permitted) {
 			return pjp.proceed();
 		} else {
@@ -86,6 +92,47 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		}
 	}
 
+	public boolean hasOperations(AuthorizeOperations authorizeOperations, ProceedingJoinPoint pjp) {
+	
+		HttpServletRequest request = null;
+		HttpSession session = null;
+		String sessionToken = null;
+		
+		if (RequestContextHolder.getRequestAttributes() != null) {
+		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		session = request.getSession(true);
+		}
+		if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
+			sessionToken = request.getParameter("sessionToken");					
+
+			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
+			try{
+				JSONObject jsonObject = new JSONObject(result);
+				jsonObject = new JSONObject(jsonObject.getString("userToken"));
+				jsonObject = new JSONObject(jsonObject.getString("user"));
+				User user = new User();
+				user.setFirstName(jsonObject.getString("firstName"));
+				user.setLastName(jsonObject.getString("lastName"));
+				user.setEmailId(jsonObject.getString("emailId"));
+				user.setGooruUId(jsonObject.getString("partyUid"));
+				if(hasGooruAdminAuthority(authorizeOperations, jsonObject)){
+					session.setAttribute("sessionToken", sessionToken);
+					 return true;
+				}
+				 if(hasAuthority(authorizeOperations, jsonObject)){
+					 session.setAttribute("sessionToken", sessionToken);
+					 return true;
+				 }else{
+					 return false;
+				 }
+			}catch(Exception e){
+				throw new AccessDeniedException("Invalid sessionToken!");
+			}
+	}else{
+		throw new AccessDeniedException("sessionToken can not be NULL!");
+	}
+	}
+	
 	@Pointcut("execution(* org.gooru.insights.controllers.*.*(..))")
 	public void accessCheckPointcut() {
 	}

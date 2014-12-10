@@ -154,36 +154,31 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		JSONArray resultArray = new JSONArray();
 		try {
 			if (id != null && !id.isEmpty()) {
-				for (String requestId : id.split("||")) {
+				for (String requestId : id.split(",")) {
 					JSONArray jsonArray = new JSONArray();
 					do {
 						JSONObject jsonObject = new JSONObject();
 						jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
 						requestId = baseAPIService.getKey(requestId);
 						jsonArray.put(jsonObject);
-						System.out.println("jsonArray " + jsonArray);
 					} while (baseAPIService.hasKey(requestId));
 					resultArray.put(jsonArray);
 				}
 			} else {
 				Set<String> keyIds = baseAPIService.getKeys();
-				Set<String> customizedKey = baseAPIService.getKeys();
+				Set<String> customizedKey = new HashSet<String>();
 				for (String keyId : keyIds) {
-					if (keyId.startsWith(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID)) {
+					if (keyId.contains(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID)) {
 						customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID + SEPARATOR, ""));
-					}
+					}else{
 					customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR, ""));
+					}
 				}
 				for (String requestId : customizedKey) {
-					JSONArray jsonArray = new JSONArray();
-					do {
 						JSONObject jsonObject = new JSONObject();
 						jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
 						requestId = baseAPIService.getKey(requestId);
-						jsonArray.put(jsonObject);
-						System.out.println("jsonArray " + jsonArray);
-					} while (baseAPIService.hasKey(requestId));
-					resultArray.put(jsonArray);
+						resultArray.put(jsonObject);
 				}
 			}
 		} catch (Exception e) {
