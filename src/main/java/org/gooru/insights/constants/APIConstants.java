@@ -4,7 +4,7 @@ public interface APIConstants {
 
 	public static String CACHE_PREFIX ="insights";
 	
-	public static String CACHE_PREFIX_ID ="insights~key";
+	public static String CACHE_PREFIX_ID ="key";
 	
 	public static String SEPARATOR="~";
 	
