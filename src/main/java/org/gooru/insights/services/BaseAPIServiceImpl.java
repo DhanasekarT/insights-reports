@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,27 +269,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return result.toString();
 	}
 
-	public static void main(String args[]) {
-		BaseAPIServiceImpl baseAPIService = new BaseAPIServiceImpl();
-		double count = 1;
-		String data[] = new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
-		for (int i = 0; i < 26; i++) {
-			Map<String, Object> dataMap = new HashMap<String, Object>();
-			if (!(i == 2 || i == 4)) {
-				dataMap.put("timespent", 1 * count);
-			}
-			if (!(i == 2 || i == 4)) {
-				dataMap.put("views", i);
-			}
-			dataMap.put("title", data[i]);
-			count = count * 100;
-			dataList.add(dataMap);
-		}
-
-		baseAPIService.sortBy(dataList, "views", "asc");
-	}
-
 	public List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder) {
 
 		if (checkNull(sortBy)) {
@@ -520,7 +500,13 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 		return null;
 	}
-	
+	public static void main(String args[]) throws org.json.JSONException{
+	String data ="{\"userCredential\":{\"isAdminAccessContent\":false,\"key\":\"user-credential:824d77a4-35dc-4d41-973b-665c413952dd\",\"operationAuthorities\":[\"QuestionBoard___Search\",\"Quiz___Search\",\"Collection___Read\",\"Note___Read\",\"NoteBook___Share\",\"QuestionBoard___Index\",\"Quiz___Index\",\"User___Check\",\"Collection___Index\",\"Badge___Read\",\"Invite___Add\",\"Question___Index\",\"Invite___List\",\"Taxonomy___Suggest\",\"Resource___Check\",\"Any___Update\",\"Quiz___List\",\"Activity___Read\",\"Resource___Index\",\"Quote___Read\",\"Note___Search\",\"Resource___Read\",\"Activity___Update\",\"User___Index\",\"Subscription___Read\",\"Rating___Read\",\"Collection___Play\",\"Collection___Search\",\"Quote___Add\",\"Comment___Read\",\"Question___Read\",\"Collection___List\",\"Note___List\",\"User___ConfirmMail\",\"User___Add\",\"User___Suggest\",\"NoteBook___List\",\"Response___Read\",\"AnonymousUser___Update\",\"Session___Read\",\"Quiz___AttemptUpdate\",\"User___Read\",\"Resource___Suggest\",\"Resource___List\",\"Content___Read\",\"Taxonomy___Index\",\"StudyShelf___Read\",\"Quiz___AttemptRead\",\"Task___Read\",\"Log___Update\",\"Question___List\",\"Taxonomy___Read\",\"Network___Search\",\"Resource___UpdateView\",\"User___UpdatePassword\",\"Subscription___List\",\"Resource___SearchAny\",\"NoteBook___Read\",\"Content___List\",\"User___SignIn\",\"Portal___Add\",\"Quiz___Read\",\"Quiz___AttemptList\",\"Activity___List\",\"Comment___List\",\"Log___Read\"],\"orgPermits\":[\"PARTHI_ANONYMOUS\",\"e43db7d2-4f61-11e2-9aeb-b870f448148e\"],\"orgPermitsAsString\":\"'PARTHI_ANONYMOUS','e43db7d2-4f61-11e2-9aeb-b870f448148e'\",\"organizationNfsInternalPath\":\"/var/www/repository/\",\"organizationNfsRealPath\":\"http://gooru.goorulearning.com/repository/\",\"organizationUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"partyOperations\":[],\"partyPermits\":[\"PARTHI_ANONYMOUS\",\"e43db7d2-4f61-11e2-9aeb-b870f448148e\"],\"partyPermitsAsString\":\"'PARTHI_ANONYMOUS','e43db7d2-4f61-11e2-9aeb-b870f448148e'\",\"primaryOrganizatoinUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"profileAssetURI\":\"null/null\",\"storedSecretKey\":\"397ce569-6222-11e3-9a26-2089846e95e0\",\"subOrganizationUids\":[],\"subOrganizationUidsString\":\"''\",\"taxonomyPreference\":\"10000\",\"token\":\"824d77a4-35dc-4d41-973b-665c413952dd\",\"userUid\":\"PARTHI_ANONYMOUS\"},\"userToken\":{\"createdOn\":1356790471000,\"firstLogin\":false,\"scope\":\"session\",\"sessionId\":\"AEE0E457DE9B2059B2597CDAF7AAAD72\",\"token\":\"824d77a4-35dc-4d41-973b-665c413952dd\",\"user\":{\"addedBySystem\":0,\"confirmStatus\":1,\"createdOn\":1356529531000,\"customFields\":[],\"emailId\":\"\",\"entryId\":\"PARTHI_ANONYMOUS\",\"firstName\":\"Guest\",\"gooruUId\":\"PARTHI_ANONYMOUS\",\"id\":\"PARTHI_ANONYMOUS\",\"identities\":[],\"indexId\":\"PARTHI_ANONYMOUS\",\"indexType\":\"user\",\"isDeleted\":false,\"lastName\":\"\",\"organization\":{\"entryId\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"id\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"nfsStorageArea\":{\"areaName\":\"repository\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339698600000,\"internalPath\":\"/var/www/repository/\"},\"organizationCode\":\"parthi\",\"partyName\":\"Parthi\",\"partyType\":\"Organization\",\"partyUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"s3StorageArea\":{\"areaName\":\"profile-local\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339266600000}},\"partyName\":\"Parthi\",\"partyType\":\"user\",\"partyUid\":\"PARTHI_ANONYMOUS\",\"primaryOrganization\":{\"entryId\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"id\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"nfsStorageArea\":{\"areaName\":\"repository\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339698600000,\"internalPath\":\"/var/www/repository/\"},\"organizationCode\":\"parthi\",\"partyName\":\"Parthi\",\"partyType\":\"Organization\",\"partyUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"s3StorageArea\":{\"areaName\":\"profile-local\",\"areaPath\":\"http://gooru."+
+			"goorulearning.com/repository/\",\"createdOn\":1339266600000}},\"userId\":218,\"userRoleSet\":[{\"role\":{\"description\":\"ANONYMOUS\",\"name\":\"ANONYMOUS\",\"organization\":{\"entryId\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"id\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"nfsStorageArea\":{\"areaName\":\"repository\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339698600000,\"internalPath\":\"/var/www/repository/\"},\"organizationCode\":\"parthi\",\"partyName\":\"Parthi\",\"partyType\":\"Organization\",\"partyUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"s3StorageArea\":{\"areaName\":\"profile-local\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339266600000}},\"roleId\":13}},{\"role\":{\"description\":\"Student\",\"name\":\"Student\",\"organization\":{\"entryId\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"id\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"nfsStorageArea\":{\"areaName\":\"repository\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339698600000,\"internalPath\":\"/var/www/repository/\"},\"organizationCode\":\"parthi\",\"partyName\":\"Parthi\",\"partyType\":\"Organization\",\"partyUid\":\"e43db7d2-4f61-11e2-9aeb-b870f448148e\",\"s3StorageArea\":{\"areaName\":\"profile-local\",\"areaPath\":\"http://gooru.goorulearning.com/repository/\",\"createdOn\":1339266600000}},\"roleId\":11}}],\"userRoleSetString\":\"Student,ANONYMOUS\",\"userUid\":\"PARTHI_ANONYMOUS\",\"usernameDisplay\":\"Guest\",\"viewFlag\":0}}}";
+					JSONObject json = new JSONObject(data);
+					
+					System.out.println("data "+json);
+	}
 	public String getCacheData(String id){
 		if(redisService.hasRedisKey(id)){
 			if(redisService.hasRedisKey(redisService.getRedisValue(id))){
@@ -528,6 +514,20 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			}
 		}
 		return null;
+	}
+	
+	public boolean insertKey(String data){
+		try{
+		JSONObject jsonObject = new JSONObject(data);
+		Iterator<String> itr = jsonObject.keys();
+		while(itr.hasNext()){
+			String key = itr.next();
+			redisService.putRedisRawValue(key, jsonObject.getString(key));
+		}
+		return true;
+	}catch(Exception e){
+		return false;
+	}
 	}
 	
 	public boolean clearQuerys(String[] id) {

@@ -24,4 +24,6 @@ public interface ItemService {
 	JSONArray getQuery(String id);
 	
 	JSONArray getCacheData(String id);
+	
+	boolean insertKey(String data);
 }

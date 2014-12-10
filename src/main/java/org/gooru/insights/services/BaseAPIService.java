@@ -65,4 +65,6 @@ public interface BaseAPIService {
 	Set<String> getKeys();
 	
 	String getRedisRawValue(String key);
+	
+	boolean insertKey(String data);
 }

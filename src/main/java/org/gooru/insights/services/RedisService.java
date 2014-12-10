@@ -22,4 +22,6 @@ public interface RedisService {
 	
 	String getRedisRawValue(String key);
 	
+	String putRedisRawValue(String key,String value);
+	
 }

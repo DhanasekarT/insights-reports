@@ -187,6 +187,10 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return resultArray;
 	}
 
+	public boolean insertKey(String data){
+		return baseAPIService.insertKey(data);
+	}
+	
 	public boolean clearDataCache() {
 		return baseConnectionService.clearDataCache();
 	}

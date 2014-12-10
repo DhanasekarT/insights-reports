@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -88,6 +89,17 @@ public class ItemController extends BaseController{
 	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId ,HttpServletResponse response){
 		Map<String,Object> dataMap = new HashMap<String,Object>();
 		return getModel(itemService.getCacheData(queryId),dataMap);
+	}
+	
+	@RequestMapping(value="/keys",method =RequestMethod.PUT)
+	public ModelAndView putRedisData(HttpServletRequest request,@RequestBody String data ,HttpServletResponse response){
+		Map<String,String> resultData = new HashMap<String, String>();
+		if(itemService.insertKey(data)){
+			resultData.put("status", "inserted");
+		}else{
+			resultData.put("status", "failed to insert");
+		}
+		return getModel(resultData);
 	}
 	
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
