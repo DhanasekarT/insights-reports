@@ -687,7 +687,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		systemContentFields.setValue(userOrgUId);
 		systemContentFields.setOperator("in");
 		systemContentFields.setValueType("String");
-		systemContentFields.setValueType("selector");
+		systemContentFields.setType("selector");
 		userFilters.add(systemContentFields);		
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		
@@ -696,7 +696,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		systemUserFields.setValue(userOrgUId);
 		systemUserFields.setOperator("in");
 		systemUserFields.setValueType("String");
-		systemUserFields.setValueType("selector");
+		systemUserFields.setType("selector");
 		userFilters.add(systemUserFields);		
 
 		systeFilterDetails.setFields(userFilters);
@@ -713,7 +713,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		systemContentFields.setValue(userOrgUId);
 		systemContentFields.setOperator("in");
 		systemContentFields.setValueType("String");
-		systemContentFields.setValueType("selector");
+		systemContentFields.setType("selector");
 		userFilters.add(systemContentFields);		
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		systeFilterDetails.setFields(userFilters);					
@@ -730,7 +730,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		systemContentFields.setValue(userOrgUId);
 		systemContentFields.setOperator("in");
 		systemContentFields.setValueType("String");
-		systemContentFields.setValueType("selector");
+		systemContentFields.setType("selector");
 		userFilters.add(systemContentFields);		
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		systeFilterDetails.setFields(userFilters);					
