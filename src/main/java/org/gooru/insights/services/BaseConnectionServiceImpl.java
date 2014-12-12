@@ -475,7 +475,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public Map<String,Object> getUserObjectData(String sessionToken ,Map<Integer,String> errorMap){	
 
 			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
-			userMap = new LinkedHashMap<String, Object>();		
+			userMap = new LinkedHashMap<String, Object>();
+			Map<String,Set<String>> partyPermissions = new LinkedHashMap<String, Set<String>>();
 			try{
 				JSONObject jsonObject = new JSONObject(result);
 				jsonObject = new JSONObject(jsonObject.getString("userToken"));
@@ -485,6 +486,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 				userMap.put("emailId",jsonObject.getString("emailId"));
 				userMap.put("gooruUId",jsonObject.getString("partyUid"));
 				userMap.put("userRoleSetString",jsonObject.getString("userRoleSetString"));
+				userMap.put("permissions", partyPermissions);
 			}catch(Exception e){
 				errorMap.put(500, e.toString());
 			}

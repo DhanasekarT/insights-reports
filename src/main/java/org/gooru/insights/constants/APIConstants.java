@@ -48,7 +48,7 @@ public interface APIConstants {
 	
 	public static String USER = "userdata";
 	
-	public static String DEFAULTORGUID = "default";
+	public static String DEFAULTORGUID = "4261739e-ccae-11e1-adfb-5404a609bd14";
 	
 	public enum hasdata{
 		HAS_FEILDS("hasFields"),HAS_DATASOURCE("hasDataSource"),HAS_GRANULARITY("hasGranularity"),HAS_GROUPBY("hasGroupBy"),HAS_INTERVALS("hasIntervals"),
