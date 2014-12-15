@@ -72,7 +72,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			return businessLogicService.buildAggregateJSON(resultData);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(500, "Invalid JSON format");
+			errorMap.put(400, "Invalid JSON format");
 			return new JSONArray();
 		}
 
@@ -99,7 +99,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(500, "Invalid JSON format");
+			errorMap.put(400, "Invalid JSON format");
 			return new JSONArray();
 		}
 
