@@ -149,7 +149,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 	}
 
-	public static <T> T deserialize(String json, Class<T> clazz) {
+	public  <T> T deserialize(String json, Class<T> clazz) {
 		try {
 			return new JSONDeserializer<T>().use(null, clazz).deserialize(json);
 		} catch (Exception e) {
@@ -448,150 +448,108 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 
 		String gooruUId = userMap.containsKey(GOORUUID) ? userMap.get(GOORUUID).toString() : null;
 		
-		Set<String> fieldNameSet = new TreeSet<String>();
-		Set<String> fieldValueSet = new TreeSet<String>();		
+		Map<String,Object> allowedFilters = new LinkedHashMap<String, Object>();
+		Map<String,Object> userFiltersAndValues = this.getUserFiltersAndValues(requestParamsDTO.getFilter()); 
+		
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
 		boolean allow = false;
+
 		//Validate USER dataSource
 		if(requestParamsDTO.getDataSource().contains(USER) || requestParamsDTO.getDataSource().contains("user")){
-			fieldNameSet = new TreeSet<String>();
-			fieldValueSet = new TreeSet<String>();
-			fieldNameSet.add(GOORUUID);
-			fieldNameSet.add(CREATORUID);
-			fieldValueSet.add(gooruUId);			
-			if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet) && 
-					isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
+			allowedFilters = new LinkedHashMap<String, Object>();
+			allowedFilters.put(CREATORUID, gooruUId);
+			allowedFilters.put(GOORUUID, gooruUId);
+			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
 				allow = true;
+			}else if(partyPermissions.isEmpty()){
+				errorMap.put(403, "Sorry! You don't have access to see PII info.");
+				allow = false;
 			}else{
-				fieldNameSet = new TreeSet<String>();
-				fieldValueSet = new TreeSet<String>();
-				fieldNameSet.add(USERORGID);
-				String allowedParty = getRoleBasedParty(partyPermissions, fieldValueSet, AP_PARTY_PII);
-				
-				if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet)){
-						if(isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
-							allow = true;
-						}else{
-							errorMap.put(403, "Sorry! You don't have access to see PII info.");
-							allow = false;
-						}					
-				}else{
-					if(partyPermissions.isEmpty()){
-						errorMap.put(403, "Sorry! You don't have access to see PII info.");
-						allow = false;
-					}else{
-						addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-						allow = true;
-					}
+				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
+				addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				allow = true;
 				}
-			} 
-		}
+			}
+		
 		//Validate ACTIVITY dataSource
 		if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
-			fieldNameSet = new TreeSet<String>();
-			fieldValueSet = new TreeSet<String>();
-			fieldNameSet.add(GOORUUID);
-			fieldNameSet.add(CREATORUID);
-			fieldValueSet.add(gooruUId);			
-			if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet)&&
-					isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
+			allowedFilters = new LinkedHashMap<String, Object>();
+			allowedFilters.put(CREATORUID, gooruUId);
+			allowedFilters.put(GOORUUID, gooruUId);			
+			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
 				allow = true;
 			}else if(requestParamsDTO.getGroupBy() == null || requestParamsDTO.getGroupBy().isEmpty()){
-					fieldNameSet = new TreeSet<String>();
-					fieldValueSet = new TreeSet<String>();
-					fieldValueSet = new TreeSet<String>();
-					fieldNameSet.add(CONTENTORGUID);
-					fieldNameSet.add(USERORGID);
-					String allowedParty = getRoleBasedParty(partyPermissions, fieldValueSet, AP_PARTY_ACTIVITY_RAW);
-					
-					if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet)){
-							if(isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
-								allow = true;
-							}else{
-								errorMap.put(403, "Sorry! You don't have access to see data.");
-								allow = false;
-							}					
-					}else{
-						if(partyPermissions.isEmpty()){
-							errorMap.put(403, "Sorry! You don't have access to see data.");
-						}else if(!allowedParty.isEmpty()){
-							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-							allow = true;
-						}else{
+				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
+				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
+					String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
+					for(String val :userValue.split(",")){
+						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
-						}
-					}			
-				}else if(requestParamsDTO.getGroupBy() != null || !requestParamsDTO.getGroupBy().isEmpty()){
-					fieldNameSet = new TreeSet<String>();
-					fieldValueSet = new TreeSet<String>();
-					fieldNameSet.add(CONTENTORGUID);
-					fieldNameSet.add(USERORGID);
-					String allowedParty = getRoleBasedParty(partyPermissions, fieldValueSet, AP_PARTY_ACTIVITY);
-					
-					if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet)){
-							if(isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
-								allow = true;
-							}else{
-								errorMap.put(403, "Sorry! You don't have access to see data.");
-								allow = false;
-							}					
-					}else{
-						if(partyPermissions.isEmpty()){
-							errorMap.put(403, "Sorry! You don't have access to see data.");
-						}else if(!allowedParty.isEmpty()){
-							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-							allow = true;
-						}else{
-							errorMap.put(403, "Sorry! You don't have access to see data.");
-							allow = false;
-						}
+						}	
 					}
-				}else{				
+				}else{
+					if(allowedParty == null || allowedParty.isEmpty() ){
+						errorMap.put(403, "Sorry! You don't have access to see data.");
+						allow = false;
+					}else{
+							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+							allow = true;
+					}	
+				}
+			}else if(requestParamsDTO.getGroupBy() != null || !requestParamsDTO.getGroupBy().isEmpty()){
+					String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
+					String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
+					for(String val :userValue.split(",")){
+						if(!allowedParty.contains(val)){
+							errorMap.put(403, "Sorry! You don't have access to see data.");
+							allow = false;
+						}	
+					}	
+				}else{
+					if(allowedParty == null || allowedParty.isEmpty() ){
+								errorMap.put(403, "Sorry! You don't have access to see data.");
+								allow = false;
+					}else{
+							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+							allow = true;
+					}
+				}
+			}else{				
 					errorMap.put(403, "Sorry! You don't have access to see data.");
 					allow = false;
 				}
-			}
+		   }
 		//Validate CONTENT dataSource
 		if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
 				|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
-			fieldNameSet = new TreeSet<String>();
-			fieldValueSet = new TreeSet<String>();
-			fieldNameSet.add(GOORUUID);
-			fieldNameSet.add(CREATORUID);
-			fieldValueSet.add(gooruUId);			
-			if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet) && 
-					isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
+			allowedFilters = new LinkedHashMap<String, Object>();
+			allowedFilters.put(CREATORUID, gooruUId);
+			allowedFilters.put(GOORUUID, gooruUId);			
+			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
+			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
 				allow = true;
-			}else{
-				fieldNameSet = new TreeSet<String>();
-				fieldValueSet = new TreeSet<String>();
-				fieldNameSet.add(CONTENTORGUID);
-				String allowedParty = getRoleBasedParty(partyPermissions, fieldValueSet, AP_PARTY_OWN_CONTENT_USAGE);
-				
-				if(isFieldAvailableInFilter(requestParamsDTO.getFilter(), fieldNameSet)){
-						if(isFieldValueMatchInFilter(requestParamsDTO.getFilter(), fieldNameSet, fieldValueSet)){
-							allow = true;
-						}else{
-							errorMap.put(403, "Sorry! You don't have access to see data.");
-							allow = false;
-						}					
-				}else{
-					if(partyPermissions.isEmpty()){
-						addSystemContentOrgFilter(requestParamsDTO.getFilter(), DEFAULTORGUID);
-						allow = true;
-					}else{
-						addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-						allow = true;
-					}
+			}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
+				String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
+				for(String val :userValue.split(",")){
+					if(!allowedParty.contains(val)){
+						errorMap.put(403, "Sorry! You don't have access to see data.");
+						allow = false;
+					}	
 				}
-			} 
+			}else if(allowedParty != null&& !allowedParty.isEmpty() ){
+				addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+			}else{
+				errorMap.put(403, "Sorry! You don't have access to see data.");
+				allow = false;
+			}
 		}
 		
 		System.out.print("\n"+allow);
 		System.out.print("\nError :"+errorMap);
-		 JSONSerializer serializer = new JSONSerializer();	
-		 serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		JSONSerializer serializer = new JSONSerializer();	
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
 		
 		System.out.print("\n newObject : "+serializer.deepSerialize(requestParamsDTO));
 		
@@ -679,7 +637,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return queryId.toString();
 
 	}
-	public static List<RequestParamsFilterDetailDTO> addSystemContentUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
+	public List<RequestParamsFilterDetailDTO> addSystemContentUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
 
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
@@ -705,7 +663,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		userFilter.add(systeFilterDetails);
 		return userFilter;
 	}
-	public static List<RequestParamsFilterDetailDTO> addSystemContentOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
+	public List<RequestParamsFilterDetailDTO> addSystemContentOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
 		
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
@@ -722,7 +680,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		userFilter.add(systeFilterDetails);
 		return userFilter;
 	}
-	public static List<RequestParamsFilterDetailDTO> addSystemUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
+	public List<RequestParamsFilterDetailDTO> addSystemUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter,String userOrgUId){
 		
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
@@ -739,47 +697,49 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		userFilter.add(systeFilterDetails);
 		return userFilter;
 	}
-	public static boolean isFieldValueMatchInFilter(List<RequestParamsFilterDetailDTO> filters,Set<String> fieldNames,Set<String> fieldValues){
+		
+	
+	public Map<String,Object> getUserFiltersAndValues(List<RequestParamsFilterDetailDTO> filters){
+		Map<String,Object> userFiltersValue = new LinkedHashMap<String,Object>();
 		
 		for (RequestParamsFilterDetailDTO fieldData : filters) {
 			for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-				for(String fieldName : fieldNames ){
-					System.out.println(fieldsDetails.getFieldName() + ":" + fieldsDetails.getValue());					
-						if(fieldsDetails.getFieldName().equalsIgnoreCase(fieldName) ){
-							for(String value : fieldsDetails.getValue().split(",")){
-								if(!fieldValues.contains(value)){									
-									return false;
-								}
+				Set<Object> values = new TreeSet<Object>();
+					for(String value : fieldsDetails.getValue().split(",")){
+						values.add(value);
+					}
+					userFiltersValue.put(fieldsDetails.getFieldName(), values);
+			}
+		}
+		return userFiltersValue;
+	}
+	
+	public boolean checkIfFieldValueMatch(Map<String,Object> allowedFilters ,Map<String,Object> userFilters){
+		for(Map.Entry<String, Object> entry: allowedFilters.entrySet()){
+			if(userFilters.containsKey(entry.getKey())){
+				Set<Object> values = (Set<Object>) userFilters.get(entry.getKey());
+				if(entry.getValue() instanceof String && values.contains(entry.getValue())){
+					return true;
+				}
+				if(entry.getValue() instanceof Set<?>){
+					for(Object val : (Set<Object>)entry.getValue()){
+						if(values.contains(val)){
+							return true;
 						}
 					}
 				}
 			}
-		}
-		return true;
-	}
-
-	public static boolean isFieldAvailableInFilter(List<RequestParamsFilterDetailDTO> filters,Set<String> fieldNames){
-		
-		for (RequestParamsFilterDetailDTO fieldData : filters) {
-			for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-				for(String fieldName : fieldNames ){
-						if(fieldsDetails.getFieldName().equalsIgnoreCase(fieldName)){
-							return true;
-						}
-				}
-			}
+			
 		}
 		return false;
 	}
-	public static String getRoleBasedParty(Map<String,Set<String>> partyPermissions,Set<String> fieldValueSet,String permission){
+	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
 		String allowedOrg = "";
 		for(Map.Entry<String, Set<String>> entry: partyPermissions.entrySet()){
 			if(entry.getValue().contains(permission)){
-				fieldValueSet.add(entry.getKey().toString());
 				allowedOrg += ","+entry.getKey().toString();
 			}
 			if(allowedOrg.isEmpty() && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && 
-					!permission.equalsIgnoreCase(AP_PARTY_ACTIVITY) &&
 					!permission.equalsIgnoreCase(AP_PARTY_PII)){
 				allowedOrg = ","+DEFAULTORGUID;
 			}
