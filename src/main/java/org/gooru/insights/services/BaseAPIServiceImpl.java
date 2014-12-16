@@ -533,9 +533,9 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
 				allow = true;
 			}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
-				String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
+				Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
 				System.out.print("\n userValue:" + userValue);
-				for(String val :userValue.split(",")){
+				for(String val :userValue){
 					if(!allowedParty.contains(val)){
 						errorMap.put(403, "Sorry! You don't have access to see data!..");
 						allow = false;
