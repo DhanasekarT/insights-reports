@@ -492,12 +492,12 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						allow = true;
 					}
 				}else{
-					if(allowedParty == null || allowedParty.isEmpty() ){
+					if(allowedParty != null && !allowedParty.isEmpty() ){
+						addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+						allow = true;
+					}else{
 						errorMap.put(403, "Sorry! You don't have access to see data.");
 						allow = false;
-					}else{
-							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-							allow = true;
 					}	
 				}
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()){
@@ -712,14 +712,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 	
 	public Map<String,Object> getUserFiltersAndValues(List<RequestParamsFilterDetailDTO> filters){
 		Map<String,Object> userFiltersValue = new LinkedHashMap<String,Object>();
-		
-		for (RequestParamsFilterDetailDTO fieldData : filters) {
-			for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-				Set<Object> values = new TreeSet<Object>();
-					for(String value : fieldsDetails.getValue().split(",")){
-						values.add(value);
-					}
-					userFiltersValue.put(fieldsDetails.getFieldName(), values);
+		if(filters!= null){
+			for (RequestParamsFilterDetailDTO fieldData : filters) {
+				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
+					Set<Object> values = new TreeSet<Object>();
+						for(String value : fieldsDetails.getValue().split(",")){
+							values.add(value);
+						}
+						userFiltersValue.put(fieldsDetails.getFieldName(), values);
+				}
 			}
 		}
 		return userFiltersValue;
