@@ -481,12 +481,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			}else if(requestParamsDTO.getGroupBy() == null || requestParamsDTO.getGroupBy().isEmpty()){
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
 				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
-					String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
-					for(String val :userValue.split(",")){
+					Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
+					for(String val :userValue){
 						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
 						}	
+					}
+					if(errorMap.isEmpty()){
+						allow = true;
 					}
 				}else{
 					if(allowedParty == null || allowedParty.isEmpty() ){
@@ -500,13 +503,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()){
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
 				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
-					String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
-					for(String val :userValue.split(",")){
+					Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
+					for(String val :userValue){
 						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
 						}	
 					}	
+					if(errorMap.isEmpty()){
+						allow = true;
+					}
 				}else{
 					if(allowedParty != null && !allowedParty.isEmpty() ){
 								addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
@@ -534,12 +540,14 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				allow = true;
 			}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
 				Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
-				System.out.print("\n userValue:" + userValue);
 				for(String val :userValue){
 					if(!allowedParty.contains(val)){
 						errorMap.put(403, "Sorry! You don't have access to see data!..");
 						allow = false;
 					}	
+				}
+				if(errorMap.isEmpty()){
+					allow = true;
 				}
 			}else if(allowedParty != null&& !allowedParty.isEmpty() ){
 				addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
