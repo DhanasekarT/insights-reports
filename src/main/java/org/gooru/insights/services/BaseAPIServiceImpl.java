@@ -497,8 +497,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 							allow = true;
 					}	
 				}
-			}else if(requestParamsDTO.getGroupBy() != null || !requestParamsDTO.getGroupBy().isEmpty()){
-					String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()){
+				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
 				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
 					String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
 					for(String val :userValue.split(",")){
@@ -508,16 +508,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						}	
 					}	
 				}else{
-					if(allowedParty == null || allowedParty.isEmpty() ){
-								errorMap.put(403, "Sorry! You don't have access to see data.");
-								allow = false;
+					if(allowedParty != null && !allowedParty.isEmpty() ){
+								addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+								allow = true;
 					}else{
-							addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-							allow = true;
+								errorMap.put(403, "Sorry! You don't have access to see data..");
+								allow = false;
 					}
 				}
 			}else{				
-					errorMap.put(403, "Sorry! You don't have access to see data.");
+					errorMap.put(403, "Sorry! You don't have access to see data!.");
 					allow = false;
 				}
 		   }
@@ -736,14 +736,14 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
 		String allowedOrg = "";
 		for(Map.Entry<String, Set<String>> entry: partyPermissions.entrySet()){
-			if(entry.getValue().contains(permission)){
-				allowedOrg += ","+entry.getKey().toString();
+				if(entry.getValue().contains(permission)){
+					allowedOrg += ","+entry.getKey().toString();
+				}
 			}
 			if(allowedOrg.isEmpty() && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && 
 					!permission.equalsIgnoreCase(AP_PARTY_PII)){
 				allowedOrg = ","+DEFAULTORGUID;
 			}
-		}
 		
 		allowedOrg = allowedOrg.isEmpty() ? "" : allowedOrg.substring(1);
 		
