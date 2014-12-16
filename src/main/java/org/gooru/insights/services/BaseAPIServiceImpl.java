@@ -528,13 +528,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			allowedFilters.put(CREATORUID, gooruUId);
 			allowedFilters.put(GOORUUID, gooruUId);			
 			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
+			System.out.print("allowedParty:" + allowedParty);
+			System.out.print("\n userFiltersAndValues:" + userFiltersAndValues);
 			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
 				allow = true;
 			}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
 				String userValue = userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID).toString():userFiltersAndValues.get(CONTENTORGUID).toString();
+				System.out.print("\n userValue:" + userValue);
 				for(String val :userValue.split(",")){
 					if(!allowedParty.contains(val)){
-						errorMap.put(403, "Sorry! You don't have access to see data.");
+						errorMap.put(403, "Sorry! You don't have access to see data!..");
 						allow = false;
 					}	
 				}
