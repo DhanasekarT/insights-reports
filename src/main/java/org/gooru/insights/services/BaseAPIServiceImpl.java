@@ -453,7 +453,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
 		boolean allow = false;
 		//Validate USER dataSource
-		if(requestParamsDTO.getDataSource().contains(USER)){
+		if(requestParamsDTO.getDataSource().contains(USER) || requestParamsDTO.getDataSource().contains("user")){
 			fieldNameSet = new TreeSet<String>();
 			fieldValueSet = new TreeSet<String>();
 			fieldNameSet.add(GOORUUID);
@@ -487,7 +487,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			} 
 		}
 		//Validate ACTIVITY dataSource
-		if(requestParamsDTO.getDataSource().contains(ACTIVITY)){
+		if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
 			fieldNameSet = new TreeSet<String>();
 			fieldValueSet = new TreeSet<String>();
 			fieldNameSet.add(GOORUUID);
@@ -553,7 +553,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				}
 			}
 		//Validate CONTENT dataSource
-		if(requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)){
+		if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
+				|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
 			fieldNameSet = new TreeSet<String>();
 			fieldValueSet = new TreeSet<String>();
 			fieldNameSet.add(GOORUUID);
