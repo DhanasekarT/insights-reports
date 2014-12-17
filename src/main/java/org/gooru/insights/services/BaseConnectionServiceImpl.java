@@ -27,6 +27,7 @@ import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
 import org.gooru.insights.models.User;
 import org.gooru.insights.security.AuthorizeOperations;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
@@ -476,9 +477,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 
 			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
 			userMap = new LinkedHashMap<String, Object>();
-			Map<String,Set<String>> partyPermissions = new LinkedHashMap<String, Set<String>>();
 			try{
 				JSONObject jsonObject = new JSONObject(result);
+				Set<String> permissionSet = new HashSet<String>();
+				Map<String,Set<String>> partyPermissions = new HashMap<String, Set<String>>();
+
 				jsonObject = new JSONObject(jsonObject.getString("userToken"));
 				jsonObject = new JSONObject(jsonObject.getString("user"));
 				userMap.put("firstName",jsonObject.getString("firstName"));
@@ -486,6 +489,15 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 				userMap.put("emailId",jsonObject.getString("emailId"));
 				userMap.put("gooruUId",jsonObject.getString("partyUid"));
 				userMap.put("userRoleSetString",jsonObject.getString("userRoleSetString"));
+				
+				JSONArray jsonArray = new JSONArray(jsonObject.getString("partyPermissions"));
+				
+				for(int i=0;i < jsonArray.length();i++){
+				permissionSet.add(jsonArray.getString(i));
+				}
+				
+				partyPermissions.put(jsonObject.getString("partyUid"), permissionSet);
+				System.out.println("party Map "+partyPermissions);
 				userMap.put("permissions", partyPermissions);
 			}catch(Exception e){
 				errorMap.put(500, e.toString());
