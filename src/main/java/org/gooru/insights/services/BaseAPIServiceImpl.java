@@ -450,7 +450,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		
 		Map<String,Object> allowedFilters = new LinkedHashMap<String, Object>();
 		Map<String,Object> userFiltersAndValues = this.getUserFiltersAndValues(requestParamsDTO.getFilter()); 
-		Set<String> userFilterOrgValues = getUserFilterOrgs(userFiltersAndValues);
+		Set<String> userFilterOrgValues = getUserFilterPartyOrgs(userFiltersAndValues);
+		Set<String> userFilterUserValues = getUserFilterPartyUsers(userFiltersAndValues);
 		
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
 		boolean allow = false;
@@ -461,7 +462,26 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		allowedFilters.put(CREATOR_UID, gooruUId);
 		allowedFilters.put(GOORU_UID, gooruUId);
 		allowedFilters.put(USERUID, gooruUId);
+		
 		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
+			if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
+				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+				for(String v : userFilterUserValues){
+					if(!allowedParty.contains(v)){
+						return requestParamsDTO;
+					}
+				}
+			}
+			if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
+					|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
+				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
+				for(String v : userFilterUserValues){
+					if(!allowedParty.contains(v)){
+						return requestParamsDTO;
+					}
+				}
+			}
+			errorMap.clear();
 			return requestParamsDTO;
 		}
 		//Validate USER dataSource
@@ -537,8 +557,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
 				|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
 			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
-			System.out.print("allowedParty:" + allowedParty);
-			System.out.print("\n userFiltersAndValues:" + userFiltersAndValues);
 			if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
 				String allowedPIIParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
 				if(allowedPIIParty.isEmpty()){
@@ -756,7 +774,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 		return errorMap;
 	}
-	public Set<String> getUserFilterOrgs(Map<String,Object> userFiltersAndValues){
+	public Set<String> getUserFilterPartyOrgs(Map<String,Object> userFiltersAndValues){
 		Set<String> userValue = new TreeSet<String>();
 		if(userFiltersAndValues.containsKey(CONTENTORGUID)){
 			for(String val :(Set<String>) (userFiltersAndValues.get(CONTENTORGUID))){
@@ -780,6 +798,37 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 		return userValue;
 	}
+	public Set<String> getUserFilterPartyUsers(Map<String,Object> userFiltersAndValues){
+		Set<String> userValue = new TreeSet<String>();
+		
+		if(userFiltersAndValues.containsKey(CREATORUID)){
+			for(String val :(Set<String>) (userFiltersAndValues.get(CREATORUID))){
+				userValue.add(val);
+			}
+		}
+		if(userFiltersAndValues.containsKey(GOORUUID)){
+			for(String val :(Set<String>) (userFiltersAndValues.get(GOORUUID))){
+				userValue.add(val);
+			}
+		}
+		if(userFiltersAndValues.containsKey(CREATOR_UID)){
+			for(String val :(Set<String>) (userFiltersAndValues.get(CREATOR_UID))){
+				userValue.add(val);
+			}
+		}
+		if(userFiltersAndValues.containsKey(GOORU_UID)){
+			for(String val :(Set<String>) (userFiltersAndValues.get(GOORU_UID))){
+				userValue.add(val);
+			}
+		}
+		if(userFiltersAndValues.containsKey(USERUID)){
+			for(String val :(Set<String>) (userFiltersAndValues.get(USERUID))){
+				userValue.add(val);
+			}
+		}
+		return userValue;
+	}
+	
 	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
 		String allowedOrg = "";
 		for(Map.Entry<String, Set<String>> entry: partyPermissions.entrySet()){
