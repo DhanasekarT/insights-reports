@@ -3,6 +3,7 @@ package org.gooru.insights.services;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -490,13 +491,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 				userMap.put("gooruUId",jsonObject.getString("partyUid"));
 				userMap.put("userRoleSetString",jsonObject.getString("userRoleSetString"));
 				
-				JSONArray jsonArray = new JSONArray(jsonObject.getString("partyPermissions"));
-				
-				for(int i=0;i < jsonArray.length();i++){
-				permissionSet.add(jsonArray.getString(i));
+				JSONObject partyPermissionList = new JSONObject(jsonObject.getString("partyPermissions"));
+				Iterator<String> keys= partyPermissionList.keys();
+
+				while(keys.hasNext()){
+					String key = keys.next();
+					JSONArray jsonArray = partyPermissionList.getJSONArray(key);
+					for(int i=0;i < jsonArray.length();i++){
+						permissionSet.add(jsonArray.getString(i));
+					}
+					partyPermissions.put(key, permissionSet);
 				}
-				
-				partyPermissions.put(jsonObject.getString("partyUid"), permissionSet);
 				System.out.println("party Map "+partyPermissions);
 				userMap.put("permissions", partyPermissions);
 			}catch(Exception e){
