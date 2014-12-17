@@ -457,7 +457,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		allowedFilters = new LinkedHashMap<String, Object>();
 		allowedFilters.put(CREATORUID, gooruUId);
 		allowedFilters.put(GOORUUID, gooruUId);	
-		if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
+		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
 			return requestParamsDTO;
 		}
 		//Validate USER dataSource
@@ -739,13 +739,13 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			if(userFilters.containsKey(entry.getKey())){
 				Set<Object> values = (Set<Object>) userFilters.get(entry.getKey());
 				if(entry.getValue() instanceof String && !values.contains(entry.getValue())){
-					errorMap.put(403, "Sorry,You don't have permission.");
+					errorMap.put(403, "Sorry! You don't have access to see data.");
 					return errorMap;
 				}
 				if(entry.getValue() instanceof Set<?>){
 					for(Object val : (Set<Object>)entry.getValue()){
 						if(!values.contains(val)){
-							errorMap.put(403, "Sorry,You don't have permission.");
+							errorMap.put(403, "Sorry! You don't have access to see data.");
 							return errorMap;
 						}
 					}
