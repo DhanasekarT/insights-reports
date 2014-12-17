@@ -124,7 +124,10 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 
 			if (requestParamsDTO.isSaveQuery() != null) {
 				if (requestParamsDTO.isSaveQuery()) {
-					String queryId = baseAPIService.putRedisCache(data, jsonArray);
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put("data",jsonArray.toString());
+					jsonObject.put("message",dataMap);
+					String queryId = baseAPIService.putRedisCache(data, jsonObject);
 					dataMap.put("queryId", queryId);
 				}
 			}
@@ -140,10 +143,12 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return baseAPIService.clearQuery(id);
 	}
 
-	public JSONArray getQuery(String id) {
+	public JSONArray getQuery(String id,Map<String,Object> dataMap) {
 		String result = baseAPIService.getQuery(id);
 		try {
-			return new JSONArray(result);
+			JSONObject jsonObject = new JSONObject(result);
+			dataMap = (Map<String, Object>) jsonObject.get("message");
+			return new JSONArray(jsonObject.getString("data"));
 		} catch (Exception e) {
 			return new JSONArray();
 		}

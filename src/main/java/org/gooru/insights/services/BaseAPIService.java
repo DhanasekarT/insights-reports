@@ -8,6 +8,7 @@ import java.util.Set;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public interface BaseAPIService {
 
@@ -50,7 +51,7 @@ public interface BaseAPIService {
 	
 	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
 
-	String putRedisCache(String query,JSONArray jsonArray);
+	String putRedisCache(String query,JSONObject jsonObject);
 	
 	boolean clearQuery(String id);
 	
