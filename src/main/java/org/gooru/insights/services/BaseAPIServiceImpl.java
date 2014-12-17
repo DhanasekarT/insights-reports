@@ -493,7 +493,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 					}
 				}else{
 					if(allowedParty != null && !allowedParty.isEmpty() ){
-						addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+						addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 						allow = true;
 					}else{
 						errorMap.put(403, "Sorry! You don't have access to see data.");
@@ -551,6 +551,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				}
 			}else if(allowedParty != null&& !allowedParty.isEmpty() ){
 				addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				allow = true;
 			}else{
 				errorMap.put(403, "Sorry! You don't have access to see data.");
 				allow = false;
