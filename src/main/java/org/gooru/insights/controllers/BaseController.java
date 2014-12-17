@@ -122,10 +122,10 @@ public class BaseController {
 	}
 	
 	public void addFilterData(JSONObject data,Map<String,Object> messageData) throws JSONException{
-		Map<String,Long> paginateData = new HashMap<String, Long>();
+		Map<String,Object> paginateData = new HashMap<String, Object>();
 		if(messageData != null){
-			Long totalRows ;
-				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows").toString()) : 0L );				
+			Object totalRows=0 ;
+				totalRows = (messageData.get("totalRows") != null ? messageData.get("totalRows") : 0 );				
 				
 				if(messageData.containsKey("totalRows")){
 					messageData.remove("totalRows");

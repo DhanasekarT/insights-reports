@@ -149,7 +149,8 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		String result = baseAPIService.getQuery(id);
 		try {
 			JSONObject jsonObject = new JSONObject(result);
-			dataMap = new Gson().fromJson(jsonObject.getString("message"), dataMap.getClass());
+			Map<String,Object> messageMap = new Gson().fromJson(jsonObject.getString("message"), dataMap.getClass());
+			dataMap.putAll(messageMap);
 			return new JSONArray(jsonObject.getString("data"));
 		} catch (Exception e) {
 			return new JSONArray();
