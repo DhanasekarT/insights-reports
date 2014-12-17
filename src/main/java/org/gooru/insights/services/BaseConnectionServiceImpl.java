@@ -479,11 +479,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
 			userMap = new LinkedHashMap<String, Object>();
 			try{
-				JSONObject jsonObject = new JSONObject(result);
+				JSONObject coreJsonObject = new JSONObject(result);
 				Set<String> permissionSet = new HashSet<String>();
 				Map<String,Set<String>> partyPermissions = new HashMap<String, Set<String>>();
 
-				jsonObject = new JSONObject(jsonObject.getString("userToken"));
+				JSONObject jsonObject = new JSONObject(coreJsonObject.getString("userToken"));
 				jsonObject = new JSONObject(jsonObject.getString("user"));
 				userMap.put("firstName",jsonObject.getString("firstName"));
 				userMap.put("lastName",jsonObject.getString("lastName"));
@@ -491,7 +491,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 				userMap.put("gooruUId",jsonObject.getString("partyUid"));
 				userMap.put("userRoleSetString",jsonObject.getString("userRoleSetString"));
 				
-				JSONObject partyPermissionList = new JSONObject(jsonObject.getString("partyPermissions"));
+				JSONObject userCredential = new JSONObject(coreJsonObject.getString("userCredential"));
+				JSONObject partyPermissionList = new JSONObject(userCredential.getString("partyPermissions"));
 				Iterator<String> keys= partyPermissionList.keys();
 
 				while(keys.hasNext()){
