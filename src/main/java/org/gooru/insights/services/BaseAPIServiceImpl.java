@@ -454,14 +454,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
 		boolean allow = false;
 
+		allowedFilters = new LinkedHashMap<String, Object>();
+		allowedFilters.put(CREATORUID, gooruUId);
+		allowedFilters.put(GOORUUID, gooruUId);	
+		if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
+			return requestParamsDTO;
+		}
 		//Validate USER dataSource
 		if(requestParamsDTO.getDataSource().contains(USER) || requestParamsDTO.getDataSource().contains("user")){
-			allowedFilters = new LinkedHashMap<String, Object>();
-			allowedFilters.put(CREATORUID, gooruUId);
-			allowedFilters.put(GOORUUID, gooruUId);
-			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
-				allow = true;
-			}else if(partyPermissions.isEmpty()){
+			if(partyPermissions.isEmpty()){
 				errorMap.put(403, "Sorry! You don't have access to see PII info.");
 				allow = false;
 			}else{
@@ -473,12 +474,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		
 		//Validate ACTIVITY dataSource
 		if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
-			allowedFilters = new LinkedHashMap<String, Object>();
-			allowedFilters.put(CREATORUID, gooruUId);
-			allowedFilters.put(GOORUUID, gooruUId);			
-			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
-				allow = true;
-			}else if(requestParamsDTO.getGroupBy() == null || requestParamsDTO.getGroupBy().isEmpty()){
+			if(requestParamsDTO.getGroupBy() == null || requestParamsDTO.getGroupBy().isEmpty()){
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
 				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
 					Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
@@ -538,9 +534,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		//Validate CONTENT dataSource
 		if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
 				|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
-			allowedFilters = new LinkedHashMap<String, Object>();
-			allowedFilters.put(CREATORUID, gooruUId);
-			allowedFilters.put(GOORUUID, gooruUId);			
 			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
 			System.out.print("allowedParty:" + allowedParty);
 			System.out.print("\n userFiltersAndValues:" + userFiltersAndValues);
@@ -551,9 +544,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 					allow = false;
 				}
 			}else{
-				if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
-					allow = true;
-				}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
+				 if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
 					Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
 					for(String val :userValue){
 						if(!allowedParty.contains(val)){
@@ -743,24 +734,26 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return userFiltersValue;
 	}
 	
-	public boolean checkIfFieldValueMatch(Map<String,Object> allowedFilters ,Map<String,Object> userFilters){
+	public Map<Integer,String> checkIfFieldValueMatch(Map<String,Object> allowedFilters ,Map<String,Object> userFilters,Map<Integer,String> errorMap){
 		for(Map.Entry<String, Object> entry: allowedFilters.entrySet()){
 			if(userFilters.containsKey(entry.getKey())){
 				Set<Object> values = (Set<Object>) userFilters.get(entry.getKey());
-				if(entry.getValue() instanceof String && values.contains(entry.getValue())){
-					return true;
+				if(entry.getValue() instanceof String && !values.contains(entry.getValue())){
+					errorMap.put(403, "Sorry,You don't have permission.");
+					return errorMap;
 				}
 				if(entry.getValue() instanceof Set<?>){
 					for(Object val : (Set<Object>)entry.getValue()){
-						if(values.contains(val)){
-							return true;
+						if(!values.contains(val)){
+							errorMap.put(403, "Sorry,You don't have permission.");
+							return errorMap;
 						}
 					}
 				}
 			}
 			
 		}
-		return false;
+		return errorMap;
 	}
 	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
 		String allowedOrg = "";
