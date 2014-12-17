@@ -624,10 +624,10 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			return status;
 	}
 
-	public String getQuery(String id){
-		if(redisService.hasRedisKey(id)){
-			if(redisService.hasRedisKey(redisService.getRedisValue(id))){
-				return redisService.getRedisValue(redisService.getRedisValue(id));
+	public String getQuery(String prefix,String id){
+		if(redisService.hasRedisKey(prefix+id)){
+			if(redisService.hasRedisKey(prefix+redisService.getRedisValue(prefix+id))){
+				return redisService.getRedisValue(prefix+redisService.getRedisValue(prefix+id));
 			}
 		}
 		return null;
