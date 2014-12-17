@@ -106,12 +106,10 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 			sessionToken = request.getParameter("sessionToken");					
 
 			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
-			System.out.println("result "+result);
 			try{
 				JSONObject jsonObject = new JSONObject(result);
 				jsonObject = new JSONObject(jsonObject.getString("userToken"));
 				jsonObject = new JSONObject(jsonObject.getString("user"));
-				System.out.println("jsonObject "+jsonObject);
 				User user = new User();
 				user.setFirstName(jsonObject.getString("firstName"));
 				user.setLastName(jsonObject.getString("lastName"));
