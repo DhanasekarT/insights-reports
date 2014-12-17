@@ -38,6 +38,7 @@ public class BaseController {
 		 resultMap.put("message", entry.getValue());
 		 JSONObject resultJson = new JSONObject(resultMap);
 		 response.getWriter().write(resultJson.toString());
+		 response.setStatus(entry.getKey());
 		 } catch (IOException e) {
 			 e.printStackTrace();
 		 }
@@ -129,6 +130,7 @@ public class BaseController {
 				json.append("message", message);
 		}
 		response.getWriter().write(json.toString());
+		response.setStatus(errorCode);
 		
 	} catch (Exception e) {
 		e.printStackTrace();
