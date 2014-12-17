@@ -659,7 +659,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return redisService.getKeys();
 	}
 	
-	public String putRedisCache(String query, JSONArray jsonArray) {
+	public String putRedisCache(String query, JSONObject jsonObject) {
 
 		UUID queryId = UUID.randomUUID();
 
@@ -668,7 +668,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 
 		redisService.putRedisStringValue(queryId.toString(), query.trim());
-		redisService.putRedisStringValue(query.trim(), jsonArray.toString());
+		redisService.putRedisStringValue(query.trim(), jsonObject.toString());
 		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR + query.trim(), queryId.toString());
 
 		System.out.println("new Id created " + queryId);

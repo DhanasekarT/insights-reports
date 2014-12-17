@@ -83,7 +83,7 @@ public class ItemController extends BaseController{
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
 	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
 		Map<String,Object> dataMap = new HashMap<String,Object>();
-		return getModel(itemService.getQuery(queryId),dataMap);
+		return getModel(itemService.getQuery(queryId,dataMap),dataMap);
 	}
 
 	
