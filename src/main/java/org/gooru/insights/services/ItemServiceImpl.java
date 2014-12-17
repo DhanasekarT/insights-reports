@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.gson.Gson;
+
 @Service
 public class ItemServiceImpl implements ItemService, APIConstants {
 
@@ -143,17 +145,19 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return baseAPIService.clearQuery(id);
 	}
 
-	public JSONArray getQuery(String id,JSONObject dataMap) {
+	public JSONArray getQuery(String id,Map<String,Object> dataMap) {
 		String result = baseAPIService.getQuery(id);
 		try {
 			JSONObject jsonObject = new JSONObject(result);
-			dataMap = new JSONObject(jsonObject.getString("message"));
+			dataMap = new Gson().fromJson(jsonObject.getString("message"), dataMap.getClass());
 			return new JSONArray(jsonObject.getString("data"));
 		} catch (Exception e) {
 			return new JSONArray();
 		}
 	}
 
+	
+	
 	public JSONArray getCacheData(String id) {
 
 		JSONArray resultArray = new JSONArray();

@@ -78,13 +78,18 @@ public class BaseController {
 	
 	public ModelAndView resultSet(JSONArray data,JSONObject messageData){
 		ModelAndView model = new ModelAndView("content");
+		System.out.println("DATA array");
 		try {
 			JSONObject resultMap = new JSONObject();
 				resultMap.put("content",data );
 			addFilterData(resultMap, messageData);
+			if(messageData.length() > 0){
 			resultMap.put("message",messageData );
+			}
+			System.out.println("error message");
 			model.addObject("content", resultMap);
 		} catch (JSONException e) {
+			System.out.println("error catch");
 			e.printStackTrace();
 		}
 			return model;
@@ -136,7 +141,7 @@ public class BaseController {
 	
 	public void addFilterData(JSONObject data,JSONObject messageData) throws JSONException{
 		Map<String,Long> paginateData = new HashMap<String, Long>();
-		if(messageData != null){
+		if(messageData.has("totalRows")){
 			Long totalRows ;
 				totalRows = (messageData.get("totalRows") != null ? messageData.getLong("totalRows") : 0L );				
 				
