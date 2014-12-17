@@ -51,11 +51,11 @@ public interface BaseAPIService {
 	
 	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
 
-	String putRedisCache(String query,JSONObject jsonObject);
+	String putRedisCache(String query,Map<String,Object> userMap,JSONObject jsonObject);
 	
 	boolean clearQuery(String id);
 	
-	String getQuery(String id);
+	String getQuery(String prefix,String id);
 	
 	boolean clearQuerys(String[] id);
 	

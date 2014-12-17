@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.gson.Gson;
+
 @Service
 public class ItemServiceImpl implements ItemService, APIConstants {
 
@@ -127,7 +129,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 					JSONObject jsonObject = new JSONObject();
 					jsonObject.put("data",jsonArray.toString());
 					jsonObject.put("message",dataMap);
-					String queryId = baseAPIService.putRedisCache(data, jsonObject);
+					String queryId = baseAPIService.putRedisCache(data,userMap, jsonObject);
 					dataMap.put("queryId", queryId);
 				}
 			}
@@ -143,18 +145,21 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return baseAPIService.clearQuery(id);
 	}
 
-	public JSONArray getQuery(String id,JSONObject dataMap) {
-		String result = baseAPIService.getQuery(id);
+	public JSONArray getQuery(String prefix,String id,Map<String,Object> dataMap) {
+		String result = baseAPIService.getQuery(prefix,id);
 		try {
 			JSONObject jsonObject = new JSONObject(result);
-			dataMap = new JSONObject(jsonObject.getString("message"));
+			Map<String,Object> messageMap = new Gson().fromJson(jsonObject.getString("message"), dataMap.getClass());
+			dataMap.putAll(messageMap);
 			return new JSONArray(jsonObject.getString("data"));
 		} catch (Exception e) {
 			return new JSONArray();
 		}
 	}
 
-	public JSONArray getCacheData(String id) {
+	
+	
+	public JSONArray getCacheData(String prefix,String id) {
 
 		JSONArray resultArray = new JSONArray();
 		try {
@@ -163,26 +168,26 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 					JSONArray jsonArray = new JSONArray();
 					do {
 						JSONObject jsonObject = new JSONObject();
-						jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
-						requestId = baseAPIService.getKey(requestId);
+						jsonObject.put(requestId, baseAPIService.getKey(prefix+requestId) != null ? baseAPIService.getKey(prefix+requestId) : "");
+						requestId = baseAPIService.getKey(prefix+requestId);
 						jsonArray.put(jsonObject);
-					} while (baseAPIService.hasKey(requestId));
+					} while (baseAPIService.hasKey(prefix+requestId));
 					resultArray.put(jsonArray);
 				}
 			} else {
 				Set<String> keyIds = baseAPIService.getKeys();
 				Set<String> customizedKey = new HashSet<String>();
 				for (String keyId : keyIds) {
-					if (keyId.contains(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID)) {
-						customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID + SEPARATOR, ""));
+					if (keyId.contains(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID+prefix)) {
+						customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR + CACHE_PREFIX_ID + SEPARATOR+prefix, ""));
 					}else{
-					customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR, ""));
+					customizedKey.add(keyId.replaceAll(CACHE_PREFIX + SEPARATOR+prefix, ""));
 					}
 				}
 				for (String requestId : customizedKey) {
 						JSONObject jsonObject = new JSONObject();
-						jsonObject.put(requestId, baseAPIService.getKey(requestId) != null ? baseAPIService.getKey(requestId) : "");
-						requestId = baseAPIService.getKey(requestId);
+						jsonObject.put(requestId, baseAPIService.getKey(prefix+requestId) != null ? baseAPIService.getKey(prefix+requestId) : "");
+						requestId = baseAPIService.getKey(prefix+requestId);
 						resultArray.put(jsonObject);
 				}
 			}

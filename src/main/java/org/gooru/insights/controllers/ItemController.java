@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
@@ -24,7 +25,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 @RequestMapping(value ="/query")
 @Controller
-public class ItemController extends BaseController{
+public class ItemController extends BaseController implements APIConstants{
 	
 	@Autowired
 	ItemService itemService;
@@ -83,16 +84,46 @@ public class ItemController extends BaseController{
 	}
 	
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
-	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
-		JSONObject dataMap = new JSONObject();
-		return getModel(itemService.getQuery(queryId,dataMap),dataMap);
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
+		
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
+		
+		 if(!errorMap.isEmpty()){
+		    	sendError(response,errorMap);
+		    	return null;
+		 }
+		 
+		 String prefix = "";
+		 if(userMap.containsKey("gooruUId") && userMap.get("gooruUId") != null){
+			 prefix = userMap.get("gooruUId").toString()+SEPARATOR;
+		 }
+		 
+		return getModel(itemService.getQuery(prefix,queryId,dataMap),dataMap);
 	}
 
 	
 	@RequestMapping(value="/list",method =RequestMethod.GET)
-	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId ,HttpServletResponse response){
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
+		
 		Map<String,Object> dataMap = new HashMap<String,Object>();
-		return getModel(itemService.getCacheData(queryId),dataMap);
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
+		 
+		 if(!errorMap.isEmpty()){
+		    	sendError(response,errorMap);
+		    	return null;
+		 }
+		 
+		 String prefix = "";
+		 if(userMap.containsKey("gooruUId") && userMap.get("gooruUId") != null){
+			 prefix = userMap.get("gooruUId").toString()+SEPARATOR;
+		 }
+		 
+		return getModel(itemService.getCacheData(prefix,queryId),dataMap);
 	}
 	
 	@RequestMapping(value="/keys",method =RequestMethod.PUT)

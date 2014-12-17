@@ -78,13 +78,18 @@ public class BaseController {
 	
 	public ModelAndView resultSet(JSONArray data,JSONObject messageData){
 		ModelAndView model = new ModelAndView("content");
+		System.out.println("DATA array");
 		try {
 			JSONObject resultMap = new JSONObject();
 				resultMap.put("content",data );
 			addFilterData(resultMap, messageData);
+			if(messageData.length() > 0){
 			resultMap.put("message",messageData );
+			}
+			System.out.println("error message");
 			model.addObject("content", resultMap);
 		} catch (JSONException e) {
+			System.out.println("error catch");
 			e.printStackTrace();
 		}
 			return model;
@@ -117,10 +122,10 @@ public class BaseController {
 	}
 	
 	public void addFilterData(JSONObject data,Map<String,Object> messageData) throws JSONException{
-		Map<String,Long> paginateData = new HashMap<String, Long>();
+		Map<String,Object> paginateData = new HashMap<String, Object>();
 		if(messageData != null){
-			Long totalRows ;
-				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows").toString()) : 0L );				
+			Object totalRows=0 ;
+				totalRows = (messageData.get("totalRows") != null ? messageData.get("totalRows") : 0 );				
 				
 				if(messageData.containsKey("totalRows")){
 					messageData.remove("totalRows");
@@ -136,7 +141,7 @@ public class BaseController {
 	
 	public void addFilterData(JSONObject data,JSONObject messageData) throws JSONException{
 		Map<String,Long> paginateData = new HashMap<String, Long>();
-		if(messageData != null){
+		if(messageData.has("totalRows")){
 			Long totalRows ;
 				totalRows = (messageData.get("totalRows") != null ? messageData.getLong("totalRows") : 0L );				
 				

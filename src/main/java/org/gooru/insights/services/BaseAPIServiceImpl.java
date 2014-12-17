@@ -620,10 +620,10 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			return status;
 	}
 
-	public String getQuery(String id){
-		if(redisService.hasRedisKey(id)){
-			if(redisService.hasRedisKey(redisService.getRedisValue(id))){
-				return redisService.getRedisValue(redisService.getRedisValue(id));
+	public String getQuery(String prefix,String id){
+		if(redisService.hasRedisKey(prefix+id)){
+			if(redisService.hasRedisKey(prefix+redisService.getRedisValue(prefix+id))){
+				return redisService.getRedisValue(prefix+redisService.getRedisValue(prefix+id));
 			}
 		}
 		return null;
@@ -665,17 +665,21 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return redisService.getKeys();
 	}
 	
-	public String putRedisCache(String query, JSONObject jsonObject) {
+	public String putRedisCache(String query,Map<String,Object> userMap, JSONObject jsonObject) {
 
 		UUID queryId = UUID.randomUUID();
-
-		if (redisService.hasRedisKey(CACHE_PREFIX_ID + SEPARATOR + query.trim())) {
-			return redisService.getRedisValue(CACHE_PREFIX_ID + SEPARATOR + query.trim());
+		
+		String KEYPREFIX="";
+		if(userMap.containsKey("gooruUId") && userMap.get("gooruUId") != null){
+			KEYPREFIX+=userMap.get("gooruUId")+SEPARATOR;
+		}
+		if (redisService.hasRedisKey(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim())) {
+			return redisService.getRedisValue(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim());
 		}
 
-		redisService.putRedisStringValue(queryId.toString(), query.trim());
-		redisService.putRedisStringValue(query.trim(), jsonObject.toString());
-		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR + query.trim(), queryId.toString());
+		redisService.putRedisStringValue(KEYPREFIX+queryId.toString(), query.trim());
+		redisService.putRedisStringValue(KEYPREFIX+query.trim(), jsonObject.toString());
+		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim(), queryId.toString());
 
 		System.out.println("new Id created " + queryId);
 		return queryId.toString();
