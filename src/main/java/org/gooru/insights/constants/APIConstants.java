@@ -40,7 +40,17 @@ public interface APIConstants {
 	
 	public static String GOORUUID = "gooruUId";
 	
+	public static String USERUID = "userUid";
+	
 	public static String CREATORUID = "creatorUid";
+	
+	public static String CONTENT_ORG_UID = "content_organization_uid";
+	
+	public static String USER_ORG_UID = "user_organization_uid";
+	
+	public static String GOORU_UID = "gooru_uid";
+	
+	public static String CREATOR_UID = "creator_uid";
 	
 	public static String ACTIVITY = "rawData";
 	
