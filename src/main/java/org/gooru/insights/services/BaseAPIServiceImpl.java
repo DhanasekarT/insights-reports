@@ -9,14 +9,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.HashSet;
 import java.util.UUID;
 
 import org.codehaus.jackson.JsonParseException;
@@ -448,20 +449,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 
 		String gooruUId = userMap.containsKey(GOORUUID) ? userMap.get(GOORUUID).toString() : null;
 		
-		Map<String,Object> allowedFilters = new LinkedHashMap<String, Object>();
+		Map<String,Object> allowedFilters = getAllowedFilters(gooruUId);
 		Map<String,Object> userFiltersAndValues = this.getUserFiltersAndValues(requestParamsDTO.getFilter()); 
-		Set<String> userFilterOrgValues = getUserFilterPartyOrgs(userFiltersAndValues);
-		Set<String> userFilterUserValues = getUserFilterPartyUsers(userFiltersAndValues);
-		
+		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
+		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
+
 		boolean allow = false;
+		
 		System.out.print("partyPermissions:" + partyPermissions);
-		allowedFilters = new LinkedHashMap<String, Object>();
-		allowedFilters.put(CREATORUID, gooruUId);
-		allowedFilters.put(GOORUUID, gooruUId);
-		allowedFilters.put(CREATOR_UID, gooruUId);
-		allowedFilters.put(GOORU_UID, gooruUId);
-		allowedFilters.put(USERUID, gooruUId);
 		
 		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
 			if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
@@ -748,18 +744,36 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		
 	
 	public Map<String,Object> getUserFiltersAndValues(List<RequestParamsFilterDetailDTO> filters){
-		Map<String,Object> userFiltersValue = new LinkedHashMap<String,Object>();
+		Map<String,Object> userFiltersValue = null;
+		Set<String> userValue = null;
+		Set<String> orgValue = null;
 		if(filters!= null){
+			userFiltersValue = new HashMap<String,Object>();
+			userValue = new HashSet<String>();
+			orgValue = new HashSet<String>();
 			for (RequestParamsFilterDetailDTO fieldData : filters) {
 				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-					Set<Object> values = new TreeSet<Object>();
-						for(String value : fieldsDetails.getValue().split(",")){
-							values.add(value);
+					Set<Object> values = new HashSet<Object>();
+							for(String value : fieldsDetails.getValue().split(",")){
+								values.add(value);
+								userFiltersValue.put(fieldsDetails.getFieldName(), values);
+							
+								if(fieldsDetails.getFieldName().equalsIgnoreCase(CONTENTORGUID)|| fieldsDetails.getFieldName().equalsIgnoreCase(CONTENT_ORG_UID)||
+										fieldsDetails.getFieldName().equalsIgnoreCase(USERORGID)|| fieldsDetails.getFieldName().equalsIgnoreCase(USER_ORG_UID)){
+									orgValue.add(value);
+								}
+								if(fieldsDetails.getFieldName().equalsIgnoreCase(CREATORUID)|| fieldsDetails.getFieldName().equalsIgnoreCase(CREATOR_UID)||
+										fieldsDetails.getFieldName().equalsIgnoreCase(GOORUUID)|| fieldsDetails.getFieldName().equalsIgnoreCase(GOORU_UID) || 
+										fieldsDetails.getFieldName().equalsIgnoreCase(USERUID)){
+									userValue.add(value);
+								}
+							}
 						}
-						userFiltersValue.put(fieldsDetails.getFieldName(), values);
 				}
+				userFiltersValue.put("orgFilters", orgValue);
+				userFiltersValue.put("userFilters", userValue);
 			}
-		}
+		
 		return userFiltersValue;
 	}
 	
@@ -784,60 +798,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		}
 		return errorMap;
 	}
-	public Set<String> getUserFilterPartyOrgs(Map<String,Object> userFiltersAndValues){
-		Set<String> userValue = new TreeSet<String>();
-		if(userFiltersAndValues.containsKey(CONTENTORGUID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CONTENTORGUID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(USERORGID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CONTENTORGUID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(CONTENT_ORG_UID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CONTENTORGUID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(USER_ORG_UID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CONTENTORGUID))){
-				userValue.add(val);
-			}
-		}
-		return userValue;
-	}
-	public Set<String> getUserFilterPartyUsers(Map<String,Object> userFiltersAndValues){
-		Set<String> userValue = new TreeSet<String>();
-		
-		if(userFiltersAndValues.containsKey(CREATORUID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CREATORUID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(GOORUUID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(GOORUUID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(CREATOR_UID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(CREATOR_UID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(GOORU_UID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(GOORU_UID))){
-				userValue.add(val);
-			}
-		}
-		if(userFiltersAndValues.containsKey(USERUID)){
-			for(String val :(Set<String>) (userFiltersAndValues.get(USERUID))){
-				userValue.add(val);
-			}
-		}
-		return userValue;
-	}
 	
 	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
 		String allowedOrg = "";
@@ -856,5 +816,17 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		System.out.print("allowedOrg : "+allowedOrg);
 		return allowedOrg;
 	}
-	
+
+	public final Map<String,Object> getAllowedFilters(String gooruUId){
+		
+		Map<String,Object> allowedFilters = new HashMap<String, Object>();
+		
+		allowedFilters.put(CREATORUID, gooruUId);
+		allowedFilters.put(GOORUUID, gooruUId);
+		allowedFilters.put(CREATOR_UID, gooruUId);
+		allowedFilters.put(GOORU_UID, gooruUId);
+		allowedFilters.put(USERUID, gooruUId);
+		
+		return allowedFilters;		
+	}
 }
