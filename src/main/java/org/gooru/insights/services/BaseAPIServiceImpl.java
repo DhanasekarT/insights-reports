@@ -669,17 +669,21 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		return redisService.getKeys();
 	}
 	
-	public String putRedisCache(String query, JSONObject jsonObject) {
+	public String putRedisCache(String query,Map<String,Object> userMap, JSONObject jsonObject) {
 
 		UUID queryId = UUID.randomUUID();
-
-		if (redisService.hasRedisKey(CACHE_PREFIX_ID + SEPARATOR + query.trim())) {
-			return redisService.getRedisValue(CACHE_PREFIX_ID + SEPARATOR + query.trim());
+		
+		String KEYPREFIX="";
+		if(userMap.containsKey("gooruUId") && userMap.get("gooruUId") != null){
+			KEYPREFIX+=userMap.get("gooruUId")+SEPARATOR;
+		}
+		if (redisService.hasRedisKey(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim())) {
+			return redisService.getRedisValue(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim());
 		}
 
-		redisService.putRedisStringValue(queryId.toString(), query.trim());
-		redisService.putRedisStringValue(query.trim(), jsonObject.toString());
-		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR + query.trim(), queryId.toString());
+		redisService.putRedisStringValue(KEYPREFIX+queryId.toString(), query.trim());
+		redisService.putRedisStringValue(KEYPREFIX+query.trim(), jsonObject.toString());
+		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR +KEYPREFIX+ query.trim(), queryId.toString());
 
 		System.out.println("new Id created " + queryId);
 		return queryId.toString();

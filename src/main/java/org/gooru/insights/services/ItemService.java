@@ -21,9 +21,9 @@ public interface ItemService {
 	
 	Boolean clearQuery(String id);
 	
-	JSONArray getQuery(String id,Map<String,Object> dataMap);
+	JSONArray getQuery(String prefix,String id,Map<String,Object> dataMap);
 	
-	JSONArray getCacheData(String id);
+	JSONArray getCacheData(String prefix,String id);
 	
 	boolean insertKey(String data);
 	

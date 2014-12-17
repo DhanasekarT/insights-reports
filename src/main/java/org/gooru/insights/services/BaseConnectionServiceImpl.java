@@ -81,8 +81,6 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,String> indexMap;
 	
-	private static Map<String,Object> userMap;
-
 	private ColumnList<String> endPoint = null;
 	
 	protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
@@ -446,9 +444,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	}
 	
 	public Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){
-
 		endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
-		userMap = new LinkedHashMap<String, Object>();		
+		Map<String,Object> userMap = new LinkedHashMap<String, Object>();		
 		String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
 		ClientResource client = new ClientResource(address);
 		
@@ -477,7 +474,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	public Map<String,Object> getUserObjectData(String sessionToken ,Map<Integer,String> errorMap){	
 
 			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
-			userMap = new LinkedHashMap<String, Object>();
+			Map<String,Object> userMap = new LinkedHashMap<String, Object>();
 			try{
 				JSONObject coreJsonObject = new JSONObject(result);
 				Set<String> permissionSet = new HashSet<String>();
