@@ -500,6 +500,14 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						allow = false;
 					}	
 				}
+			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
+				String allowedPIIParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
+				if(allowedPIIParty.isEmpty()){
+					errorMap.put(403, "Sorry! You don't have access to see data..");
+					allow = false;
+				}else{
+					addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedPIIParty);
+				}
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()){
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
 				if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
@@ -536,25 +544,33 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
 			System.out.print("allowedParty:" + allowedParty);
 			System.out.print("\n userFiltersAndValues:" + userFiltersAndValues);
-			if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
-				allow = true;
-			}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
-				Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
-				for(String val :userValue){
-					if(!allowedParty.contains(val)){
-						errorMap.put(403, "Sorry! You don't have access to see data!..");
-						allow = false;
-					}	
+			if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
+				String allowedPIIParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
+				if(allowedPIIParty.isEmpty()){
+					errorMap.put(403, "Sorry! You don't have access to see data..");
+					allow = false;
 				}
-				if(errorMap.isEmpty()){
-					allow = true;
-				}
-			}else if(allowedParty != null&& !allowedParty.isEmpty() ){
-				addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-				allow = true;
 			}else{
-				errorMap.put(403, "Sorry! You don't have access to see data.");
-				allow = false;
+				if(checkIfFieldValueMatch(allowedFilters, userFiltersAndValues)){
+					allow = true;
+				}else if(userFiltersAndValues.containsKey(CONTENTORGUID) || userFiltersAndValues.containsKey(USERORGID)){
+					Set<String> userValue = (Set<String>) (userFiltersAndValues.get(CONTENTORGUID) == null ? userFiltersAndValues.get(USERORGID):userFiltersAndValues.get(CONTENTORGUID));
+					for(String val :userValue){
+						if(!allowedParty.contains(val)){
+							errorMap.put(403, "Sorry! You don't have access to see data!..");
+							allow = false;
+						}	
+					}
+					if(errorMap.isEmpty()){
+						allow = true;
+					}
+				}else if(allowedParty != null&& !allowedParty.isEmpty() ){
+					addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+					allow = true;
+				}else{
+					errorMap.put(403, "Sorry! You don't have access to see data.");
+					allow = false;
+				}
 			}
 		}
 		
