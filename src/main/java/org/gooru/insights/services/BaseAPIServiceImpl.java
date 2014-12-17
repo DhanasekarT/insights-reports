@@ -455,7 +455,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
 		boolean allow = false;
-
+		System.out.print("partyPermissions:" + partyPermissions);
 		allowedFilters = new LinkedHashMap<String, Object>();
 		allowedFilters.put(CREATORUID, gooruUId);
 		allowedFilters.put(GOORUUID, gooruUId);
@@ -489,6 +489,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 			if(partyPermissions.isEmpty()){
 				errorMap.put(403, "Sorry! You don't have access to see PII info.");
 				allow = false;
+				return requestParamsDTO;
 			}else{
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
 				addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
@@ -505,6 +506,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
+							return requestParamsDTO;
 						}	
 					}
 					if(errorMap.isEmpty()){
@@ -517,6 +519,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 					}else{
 						errorMap.put(403, "Sorry! You don't have access to see data.");
 						allow = false;
+						return requestParamsDTO;
 					}	
 				}
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
@@ -524,6 +527,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				if(allowedPIIParty.isEmpty()){
 					errorMap.put(403, "Sorry! You don't have access to see data..");
 					allow = false;
+					return requestParamsDTO;
 				}else{
 					addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedPIIParty);
 				}
@@ -534,6 +538,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
+							return requestParamsDTO;
 						}	
 					}
 					if(errorMap.isEmpty()){
@@ -546,11 +551,13 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 					}else{
 								errorMap.put(403, "Sorry! You don't have access to see data..");
 								allow = false;
+								return requestParamsDTO;
 					}
 				}
 			}else{				
 					errorMap.put(403, "Sorry! You don't have access to see data!.");
 					allow = false;
+					return requestParamsDTO;
 				}
 		   }
 		//Validate CONTENT dataSource
@@ -562,6 +569,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				if(allowedPIIParty.isEmpty()){
 					errorMap.put(403, "Sorry! You don't have access to see data..");
 					allow = false;
+					return requestParamsDTO;
 				}
 			}else{
 				if(!userFilterOrgValues.isEmpty()){
@@ -569,6 +577,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 						if(!allowedParty.contains(val)){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
+							return requestParamsDTO;
 						}	
 					}
 					if(errorMap.isEmpty()){
@@ -580,6 +589,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				}else{
 					errorMap.put(403, "Sorry! You don't have access to see data.");
 					allow = false;
+					return requestParamsDTO;
 				}
 			}
 		}
