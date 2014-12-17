@@ -11,6 +11,8 @@ import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.mortbay.util.ajax.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,7 +84,7 @@ public class ItemController extends BaseController{
 	
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
 	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId ,HttpServletResponse response){
-		Map<String,Object> dataMap = new HashMap<String,Object>();
+		JSONObject dataMap = new JSONObject();
 		return getModel(itemService.getQuery(queryId,dataMap),dataMap);
 	}
 

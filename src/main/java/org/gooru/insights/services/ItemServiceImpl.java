@@ -143,11 +143,11 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return baseAPIService.clearQuery(id);
 	}
 
-	public JSONArray getQuery(String id,Map<String,Object> dataMap) {
+	public JSONArray getQuery(String id,JSONObject dataMap) {
 		String result = baseAPIService.getQuery(id);
 		try {
 			JSONObject jsonObject = new JSONObject(result);
-			dataMap = (Map<String, Object>) jsonObject.get("message");
+			dataMap = new JSONObject(jsonObject.getString("message"));
 			return new JSONArray(jsonObject.getString("data"));
 		} catch (Exception e) {
 			return new JSONArray();

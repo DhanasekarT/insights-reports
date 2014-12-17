@@ -21,7 +21,7 @@ public interface ItemService {
 	
 	Boolean clearQuery(String id);
 	
-	JSONArray getQuery(String id,Map<String,Object> dataMap);
+	JSONArray getQuery(String id,JSONObject dataMap);
 	
 	JSONArray getCacheData(String id);
 	

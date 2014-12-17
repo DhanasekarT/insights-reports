@@ -22,6 +22,10 @@ public class BaseController {
 	protected ModelAndView getModel(JSONArray data,Map<String,Object> messageData){
 		return  this.resultSet(data,messageData);
 	}
+	
+	protected ModelAndView getModel(JSONArray data,JSONObject messageData){
+		return  this.resultSet(data,messageData);
+	}
 
 	public ModelAndView getModel(Map<String,String> data){
 		return  this.resultSet(data);
@@ -72,6 +76,20 @@ public class BaseController {
 			return model;
 		}
 	
+	public ModelAndView resultSet(JSONArray data,JSONObject messageData){
+		ModelAndView model = new ModelAndView("content");
+		try {
+			JSONObject resultMap = new JSONObject();
+				resultMap.put("content",data );
+			addFilterData(resultMap, messageData);
+			resultMap.put("message",messageData );
+			model.addObject("content", resultMap);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+			return model;
+		}
+	
 	public ModelAndView resultSet(Map<String,String> messageData){
 		ModelAndView model = new ModelAndView("content");
 		try {
@@ -112,6 +130,20 @@ public class BaseController {
 			paginateData.put("totalRows",totalRows);
 					
 			}
+	}
+		data.put("paginate", paginateData);
+	}
+	
+	public void addFilterData(JSONObject data,JSONObject messageData) throws JSONException{
+		Map<String,Long> paginateData = new HashMap<String, Long>();
+		if(messageData != null){
+			Long totalRows ;
+				totalRows = (messageData.get("totalRows") != null ? messageData.getLong("totalRows") : 0L );				
+				
+				if(messageData.has("totalRows")){
+					messageData.remove("totalRows");
+				}
+			paginateData.put("totalRows",totalRows);
 	}
 		data.put("paginate", paginateData);
 	}
