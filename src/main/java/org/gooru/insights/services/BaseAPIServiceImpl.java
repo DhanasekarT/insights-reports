@@ -461,23 +461,22 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 		
 		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){
 			if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
-				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
 				for(String v : userFilterUserValues){
-					if(!allowedParty.contains(v)){
+					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_ACTIVITY))){
 						return requestParamsDTO;
 					}
 				}
 			}
 			if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
 					|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
-				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
 				for(String v : userFilterUserValues){
-					if(!allowedParty.contains(v)){
+					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_OWN_CONTENT_USAGE))){
 						return requestParamsDTO;
 					}
 				}
 			}
 			errorMap.clear();
+			allow = true;
 			return requestParamsDTO;
 		}
 		//Validate USER dataSource
@@ -486,107 +485,149 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants {
 				errorMap.put(403, "Sorry! You don't have access to see PII info.");
 				allow = false;
 				return requestParamsDTO;
+			}else if(!userFilterOrgValues.isEmpty()){
+				for(String v : userFilterOrgValues){
+					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_PII))){
+						errorMap.put(403, "Sorry! You don't have access to see PII info.");
+						allow = false;
+						return requestParamsDTO;
+					}
+				}
+				allow = true;
 			}else{
 				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
-				addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-				allow = true;
+				if(!allowedParty.isEmpty()){
+					addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+					allow = true;
+				}else{
+					errorMap.put(403, "Sorry! You don't have access to see PII info.");
+					allow = false;
+					return requestParamsDTO;
 				}
 			}
+		}
 		
 		//Validate ACTIVITY dataSource
 		if(requestParamsDTO.getDataSource().contains(ACTIVITY) || requestParamsDTO.getDataSource().contains("activity")){
 			if(requestParamsDTO.getGroupBy() == null || requestParamsDTO.getGroupBy().isEmpty()){
-				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
-				if(!userFilterOrgValues.isEmpty()){
+				if(partyPermissions.isEmpty()){
+					errorMap.put(403, "Sorry!You don't have access to see data.");
+					allow = false;
+					return requestParamsDTO;
+				}else if(!userFilterOrgValues.isEmpty()){
 					for(String val :userFilterOrgValues){
-						if(!allowedParty.contains(val)){
+						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_ACTIVITY_RAW))){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
 							return requestParamsDTO;
 						}	
 					}
-					if(errorMap.isEmpty()){
-						allow = true;
-					}
+					allow = true;
+					return requestParamsDTO;
 				}else{
-					if(allowedParty != null && !allowedParty.isEmpty() ){
-						addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+					
+					String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
+					if(!allowedParty.isEmpty()){
+						addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 						allow = true;
+						return requestParamsDTO;
 					}else{
-						errorMap.put(403, "Sorry! You don't have access to see data.");
+						errorMap.put(403, "Sorry! You don't have access to see PII info.");
 						allow = false;
 						return requestParamsDTO;
-					}	
+					}
 				}
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
-				String allowedPIIParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
-				if(allowedPIIParty.isEmpty()){
-					errorMap.put(403, "Sorry! You don't have access to see data..");
+
+				if(partyPermissions.isEmpty()){
+					errorMap.put(403, "Sorry!You don't have access to see data.");
 					allow = false;
 					return requestParamsDTO;
+				}else if(!userFilterOrgValues.isEmpty()){
+					for(String val :userFilterOrgValues){
+						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_PII))){
+							errorMap.put(403, "Sorry! You don't have access to grouping by user ids.");
+							allow = false;
+							return requestParamsDTO;
+						}	
+					}
+					allow = true;
+					return requestParamsDTO;
 				}else{
-					addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedPIIParty);
+					allow = true;
+					return requestParamsDTO;
 				}
 			}else if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()){
-				String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+				
 				if(!userFilterOrgValues.isEmpty()){
 					for(String val :userFilterOrgValues){
-						if(!allowedParty.contains(val)){
+						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_ACTIVITY))){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
 							return requestParamsDTO;
 						}	
 					}
-					if(errorMap.isEmpty()){
-						allow = true;
-					}
-				}else{
-					if(allowedParty != null && !allowedParty.isEmpty() ){
-								addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-								allow = true;
-					}else{
-								errorMap.put(403, "Sorry! You don't have access to see data..");
-								allow = false;
-								return requestParamsDTO;
-					}
-				}
-			}else{				
-					errorMap.put(403, "Sorry! You don't have access to see data!.");
-					allow = false;
+					allow = true;
 					return requestParamsDTO;
-				}
+				}else{
+					String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+					if(!allowedParty.isEmpty()){
+						addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+						allow = true;
+						return requestParamsDTO;
+					}else{
+						errorMap.put(403, "Sorry! You don't have access to see PII info.");
+						allow = false;
+						return requestParamsDTO;
+					}
+				}			
+			}
 		   }
 		//Validate CONTENT dataSource
 		if((requestParamsDTO.getDataSource().contains(CONTENT) && !requestParamsDTO.getDataSource().contains(ACTIVITY)) 
 				|| (requestParamsDTO.getDataSource().contains("resource") && !requestParamsDTO.getDataSource().contains("activity"))){
-			String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
 			if(requestParamsDTO.getGroupBy() != null && !requestParamsDTO.getGroupBy().isEmpty()&&(requestParamsDTO.getGroupBy().contains(GOORUUID) || requestParamsDTO.getGroupBy().contains(CREATORUID)) ){
-				String allowedPIIParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
-				if(allowedPIIParty.isEmpty()){
-					errorMap.put(403, "Sorry! You don't have access to see data..");
+				if(partyPermissions.isEmpty()){
+					errorMap.put(403, "Sorry!You don't have access to see data.");
 					allow = false;
+					return requestParamsDTO;
+				}else if(!userFilterOrgValues.isEmpty()){
+					for(String val :userFilterOrgValues){
+						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_PII))){
+							errorMap.put(403, "Sorry! You don't have access to grouping by user ids.");
+							allow = false;
+							return requestParamsDTO;
+						}	
+					}
+					allow = true;
+					return requestParamsDTO;
+				}else{
+					allow = true;
 					return requestParamsDTO;
 				}
 			}else{
 				if(!userFilterOrgValues.isEmpty()){
 					for(String val :userFilterOrgValues){
-						if(!allowedParty.contains(val)){
+						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_OWN_CONTENT_USAGE))){
 							errorMap.put(403, "Sorry! You don't have access to see data.");
 							allow = false;
 							return requestParamsDTO;
 						}	
 					}
-					if(errorMap.isEmpty()){
-						allow = true;
-					}
-				}else if(allowedParty != null&& !allowedParty.isEmpty() ){
-					addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 					allow = true;
-				}else{
-					errorMap.put(403, "Sorry! You don't have access to see data.");
-					allow = false;
 					return requestParamsDTO;
-				}
+				}else{
+					String allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
+					if(!allowedParty.isEmpty()){
+						addSystemContentOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+						allow = true;
+						return requestParamsDTO;
+					}else{
+						errorMap.put(403, "Sorry! You don't have access to see PII info.");
+						allow = false;
+						return requestParamsDTO;
+					}
+				}			
 			}
 		}
 		
