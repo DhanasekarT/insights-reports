@@ -37,10 +37,10 @@ public class CassandraConnectionProvider {
     private static String CASSANDRA_KEYSPACE;
     public void init(Map<String, String> configOptionsMap) {
 
-//        CASSANDRA_IP = "198.199.93.161:9160";
-    	CASSANDRA_IP = "127.0.0.1:9160";
+        CASSANDRA_IP = "198.199.93.161:9160";
+//    	CASSANDRA_IP = "127.0.0.1:9160";
         CASSANDRA_PORT = "9160";
-        CASSANDRA_KEYSPACE = "event_logger_insights";
+        CASSANDRA_KEYSPACE = "insights_qa";
 
         String esClusterName = "";
         String esHost = "107.170.199.76";
@@ -88,12 +88,12 @@ public class CassandraConnectionProvider {
 
     public  Keyspace initializeAwsCassandra(){
 		 
-//		String awsNewHosts =  "54.193.233.64";
-		String awsNewHosts =  "127.0.0.1:9160";
-//		String awsNewCluster = "gooru-cassandra-prod";
-		String awsNewCluster = "Test Cluster";
-//		String keyspace = CASSANDRA_KEYSPACE;
-		String keyspace = "gooru_local";
+		String awsNewHosts =  "54.219.62.215";
+//		String awsNewHosts =  "127.0.0.1:9160";
+		String awsNewCluster = "gooru-cassandra-qa";
+//		String awsNewCluster = "Test Cluster";
+		String keyspace = CASSANDRA_KEYSPACE;
+//		String keyspace = "gooru_local";
 		ConnectionPoolConfigurationImpl poolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
 	    .setPort(9160)
 	    .setMaxConnsPerHost(3)
