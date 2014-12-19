@@ -533,6 +533,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 				allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
 			}else if(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)){
 				allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+			}else if(requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)){
+				allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
 			}
 			if(!StringUtils.isBlank(allowedParty)){
 				addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
