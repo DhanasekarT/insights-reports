@@ -455,36 +455,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
 		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 		Map<String,Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
-
-		boolean allow = false;
 		
 		System.out.print("partyPermissions:" + partyPermissions);
 		
-		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValues,errorMap).isEmpty()){			
-			for(String v : userFilterUserValues){
-				if(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)){
-					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_OWN_CONTENT_USAGE))){
-						return requestParamsDTO;
-					}
-				}
-				if((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)&& !requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES))){ 
-					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_OWN_CONTENT_USAGE))){
-						return requestParamsDTO;
-					}
-				}
-			}
+		requestParamsDTO = preValidations(requestParamsDTO, userFiltersAndValues, userFilterUserValues, partyPermissions, allowedFilters, errorMap);
 
-			errorMap.clear();
-			allow = true;
-			return requestParamsDTO;
-		}
-		
 		if(partyPermissions.isEmpty() || requestParamsDTO.getDataSource().matches(USERDATASOURCES)
 				||((requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM))
 						||(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())))){
 					
 					errorMap.put(403, E1003);
-					allow = false;
 					return requestParamsDTO;
 		}
 		if(!userFilterOrgValues.isEmpty()){
@@ -492,7 +472,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 				if(requestParamsDTO.getDataSource().matches(USERDATASOURCES)){
 						if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_PII))){
 							errorMap.put(403, E1003);
-							allow = false;
 							return requestParamsDTO;
 						}
 				}
@@ -500,7 +479,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 				else if((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)||requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)){
 					if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_PII))){
 						errorMap.put(403, E1003);
-						allow = false;
 						return requestParamsDTO;
 					}
 				}
@@ -508,22 +486,18 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 				else if(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())){
 					if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_ACTIVITY_RAW))){
 						errorMap.put(403, E1004);
-						allow = false;
 						return requestParamsDTO;
 					}
 				}
 				else if(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())){
 					if(!(partyPermissions.containsKey(val) && partyPermissions.get(val).contains(AP_PARTY_ACTIVITY))){
 						errorMap.put(403, E1005);
-						allow = false;
 						return requestParamsDTO;
 					}
 				}
 				else {					
-						allow = true;
 						return requestParamsDTO;
 				}
-				
 			}
 		}else{
 			String allowedParty = null;
@@ -538,15 +512,12 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 			}
 			if(!StringUtils.isBlank(allowedParty)){
 				addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-				allow = true;
 			}else{
 				errorMap.put(403, E1009);
-				allow = false;
 				return requestParamsDTO;
 			}
 		}		
 
-		System.out.print("\n"+allow);
 		System.out.print("\nError :"+errorMap);
 		JSONSerializer serializer = new JSONSerializer();	
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
@@ -760,23 +731,43 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants,ErrorCod
 	}
 	
 	public String getRoleBasedParty(Map<String,Set<String>> partyPermissions,String permission){
-		String allowedOrg = "";
+		StringBuilder allowedOrg = new StringBuilder();
+		String sep = "";
 		for(Map.Entry<String, Set<String>> entry: partyPermissions.entrySet()){
 				if(entry.getValue().contains(permission)){
-					allowedOrg += ","+entry.getKey().toString();
+					allowedOrg.append(sep);
+					allowedOrg.append(entry.getKey().toString());
+				    sep = ",";
 				}
 			}
-			if(allowedOrg.isEmpty() && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && 
+			if(allowedOrg.length() == 0 && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && 
 					!permission.equalsIgnoreCase(AP_PARTY_PII)){
-				allowedOrg = ","+DEFAULTORGUID;
+				allowedOrg.append(DEFAULTORGUID);
 			}
-		
-		allowedOrg = allowedOrg.isEmpty() ? "" : allowedOrg.substring(1);
-		
-		System.out.print("allowedOrg : "+allowedOrg);
-		return allowedOrg;
+				
+		System.out.print("allowedOrg : "+allowedOrg.toString());
+		return allowedOrg.toString();
 	}
 
+	private RequestParamsDTO preValidations(RequestParamsDTO requestParamsDTO,Map<String,Object> userFiltersAndValue,Set<String> userFilterUserValues,Map<String,Set<String>> partyPermissions ,Map<String,Object> allowedFilters,Map<Integer,String> errorMap){
+		if(!checkIfFieldValueMatch(allowedFilters, userFiltersAndValue,errorMap).isEmpty()){			
+			for(String v : userFilterUserValues){
+				if(requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)){
+					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_OWN_CONTENT_USAGE))){
+						return requestParamsDTO;
+					}
+				}
+				if((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)&& !requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES))){ 
+					if(!(partyPermissions.containsKey(v) && partyPermissions.get(v).contains(AP_PARTY_OWN_CONTENT_USAGE))){
+						return requestParamsDTO;
+					}
+				}
+			}
+		}
+		errorMap.clear();
+		return requestParamsDTO;
+				
+	}
 	public static final Map<String,Object> getAllowedFilters(String gooruUId){
 		
 		final Map<String,Object> allowedFilters = new HashMap<String, Object>();
