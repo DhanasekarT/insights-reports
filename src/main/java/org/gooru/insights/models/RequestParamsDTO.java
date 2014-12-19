@@ -139,14 +139,5 @@ public class RequestParamsDTO implements Serializable {
 		this.saveQuery = saveQuery;
 	}
 
-	public boolean isAuthenticated() {
-		return isAuthenticated;
-	}
-
-	public void setAuthenticated(boolean isAuthenticated) {
-		this.isAuthenticated = isAuthenticated;
-	}
-	
-	
 	
 }
