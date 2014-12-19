@@ -59,6 +59,16 @@ public interface APIConstants {
 	public static String USER = "userdata";
 	
 	public static String DEFAULTORGUID = "4261739e-ccae-11e1-adfb-5404a609bd14";
+
+	public String ACTIVITYDATASOURCES =  ".*rawData.*|.*rawdata.*|.*activity.*|.*Activity.*";
+	
+	public String CONTENTDATASOURCES =  ".*content.*|.*resource.*";
+	
+	public String USERDATASOURCES =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
+	
+	public String USERFILTERPARAM =  ".*user_uid.*|.*userUid.*|.*gooru_uid.*|.*gooruUId.*|.*creatorUid.*|.*creator_uid.*";
+	
+	public String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
 	
 	public enum hasdata{
 		HAS_FEILDS("hasFields"),HAS_DATASOURCE("hasDataSource"),HAS_GRANULARITY("hasGranularity"),HAS_GROUPBY("hasGroupBy"),HAS_INTERVALS("hasIntervals"),
