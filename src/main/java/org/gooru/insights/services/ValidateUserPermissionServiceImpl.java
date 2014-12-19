@@ -13,7 +13,9 @@ import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService, APIConstants, ErrorCodes {
 
 	public final Map<String, Object> getAllowedFilters(String gooruUId) {
