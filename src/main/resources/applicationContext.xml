@@ -26,7 +26,7 @@
 	<mvc:annotation-driven />
 	
 	<!-- Load Hibernate related configuration -->
- 	<import resource="hibernate-context.xml" />
+<!--  	<import resource="hibernate-context.xml" /> -->
  	
 </beans>
 		

@@ -30,7 +30,6 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 public class CassandraConnectionProvider {
 
     private Keyspace cassandraKeyspace;
-    private Keyspace cassandraAwsKeyspace;
     private static final Logger logger = LoggerFactory.getLogger(CassandraConnectionProvider.class);
     private static String CASSANDRA_IP;
     private static String CASSANDRA_PORT;
@@ -42,9 +41,6 @@ public class CassandraConnectionProvider {
         CASSANDRA_PORT = "9160";
         CASSANDRA_KEYSPACE = "insights_qa";
 
-        String esClusterName = "";
-        String esHost = "107.170.199.76";
-        int esPort = 9300;
         try {
 
             logger.info("Loading cassandra properties");
@@ -78,64 +74,15 @@ public class CassandraConnectionProvider {
 
             cassandraKeyspace = (Keyspace) context.getClient();
             logger.info("Initialized connection to Cassandra");
-            if(cassandraAwsKeyspace == null ){
-            	cassandraAwsKeyspace = this.initializeAwsCassandra();
-            }
         } catch (Exception e) {
             logger.info("Error while initializing cassandra", e);
         }
     }
 
-    public  Keyspace initializeAwsCassandra(){
-		 
-		String awsNewHosts =  "54.219.62.215";
-//		String awsNewHosts =  "127.0.0.1:9160";
-		String awsNewCluster = "gooru-cassandra-qa";
-//		String awsNewCluster = "Test Cluster";
-		String keyspace = CASSANDRA_KEYSPACE;
-//		String keyspace = "gooru_local";
-		ConnectionPoolConfigurationImpl poolConfig = new ConnectionPoolConfigurationImpl("MyConnectionPool")
-	    .setPort(9160)
-	    .setMaxConnsPerHost(3)
-	    .setSeeds(awsNewHosts);
-		
-		if (!awsNewHosts.startsWith("127.0")) {
-//			poolConfig.setLocalDatacenter("us-west");
-			poolConfig.setLocalDatacenter("datacenter1");
-		}
-	
-		//poolConfig.setLatencyScoreStrategy(new SmaLatencyScoreStrategyImpl()); // Enabled SMA.  Omit this to use round robin with a token range
-	
-		AstyanaxContext<Keyspace> context = new AstyanaxContext.Builder()
-		    .forCluster(awsNewCluster)
-		    .forKeyspace(keyspace)
-		    .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
-		    .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
-		    .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN))
-		    .withConnectionPoolConfiguration(poolConfig)
-		    .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
-		    .buildKeyspace(ThriftFamilyFactory.getInstance());
-	
-		context.start();
-		
-		cassandraAwsKeyspace = (Keyspace) context.getClient();
-		
-        logger.info("Initialized connection to AWS Cassandra");
-        
-		return cassandraAwsKeyspace;
-        
-	}
-    
     public Keyspace getKeyspace() throws IOException {
     	if (cassandraKeyspace == null) {
     		this.init(null);
         }
         return cassandraKeyspace;
-    }
-    public Keyspace getAwsKeyspace() throws IOException {
-        if (cassandraAwsKeyspace == null) {
-            throw new IOException("New Keyspace not initialized.");
-        }
-        return cassandraAwsKeyspace;
     }
 }

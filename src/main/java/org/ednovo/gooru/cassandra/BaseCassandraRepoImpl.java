@@ -53,7 +53,7 @@ import com.netflix.astyanax.util.RangeBuilder;
 	    public Column<String> readWithKeyColumn(String cfName,String key,String columnName, String keySpaceType){
 	    	Keyspace keySpace = getKeyspace();
 			if (keySpaceType != null && keySpaceType.equalsIgnoreCase("AWS")) {
-				keySpace = getAwsKeyspace();
+				keySpace = getKeyspace();
 			}
 	    	Column<String> result = null;
 	    	try {
@@ -79,7 +79,7 @@ import com.netflix.astyanax.util.RangeBuilder;
 	    public ColumnList<String> readWithKeyColumnList(String cfName,String key,Collection<String> columnList, String keySpaceType){
 	    	Keyspace keySpace = getKeyspace();
 			if (keySpaceType != null && keySpaceType.equalsIgnoreCase("AWS")) {
-				keySpace = getAwsKeyspace();
+				keySpace = getKeyspace();
 			}
 	    	ColumnList<String> result = null;
 	    	try {
@@ -581,7 +581,7 @@ import com.netflix.astyanax.util.RangeBuilder;
 
 	    	Keyspace keyspace = getKeyspace();
 	    	if(keySpaceType != null && keySpaceType.equalsIgnoreCase("AWS")){
-	    		keyspace = getAwsKeyspace();
+	    		keyspace = getKeyspace();
 	    	}
 	        MutationBatch m = keyspace.prepareMutationBatch().setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL);
 

@@ -9,8 +9,8 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.ednovo.gooru.cassandra.BaseCassandraRepo;
-import org.ednovo.gooru.table.ColumnFamily;
 import org.ednovo.gooru.cassandra.Constants;
+import org.ednovo.gooru.table.ColumnFamily;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
