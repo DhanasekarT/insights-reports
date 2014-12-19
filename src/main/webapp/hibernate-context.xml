@@ -1,0 +1,123 @@
+<?xml  version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:lang="http://www.springframework.org/schema/lang"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+		http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<!-- Enable annotation style of managing transactions -->
+	<tx:annotation-driven transaction-manager="gooruMasterTransaction" />
+	<tx:annotation-driven transaction-manager="gooruSlave1Transaction" />
+	<tx:annotation-driven transaction-manager="gooruSlave2Transaction" />
+	<tx:annotation-driven transaction-manager="sc2LocalTransaction" />
+	
+	<!-- Gooru Master connection  -->
+	<bean id="gooruMasterSessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="gooruMasterDataSource" />
+		<property name="configLocation">
+			<value>classpath:hibernate.cfg.xml</value>
+		</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="packagesToScan">
+			<value>org.ednovo.gooru</value>
+		</property>
+	</bean>
+	
+	<!-- Gooru slave1 Connection -->
+	<bean id="gooruSlave1SessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="gooruSlave1DataSource" />
+		<property name="configLocation">
+			<value>classpath:hibernate.cfg.xml</value>
+		</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="packagesToScan">
+			<value>org.ednovo.gooru</value>
+		</property>
+	</bean>
+	
+	<!-- Gooru slave2 Connection -->
+	<bean id="gooruSlave2SessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="gooruSlave2DataSource" />
+		<property name="configLocation">
+			<value>classpath:hibernate.cfg.xml</value>
+		</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="hibernateProperties"> <value>hibernate.dialect=org.ednovo.gooru.utils.CustomDialect</value></property>
+		<property name="packagesToScan">
+			<value>org.ednovo.gooru</value>
+		</property>
+	</bean>
+	
+	<!-- SC2 local Connection -->
+	<bean id="sc2LocalSessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="sc2LocalDataSource" />
+		<property name="configLocation">
+			<value>classpath:hibernate.cfg.xml</value>
+		</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="hibernateProperties"> <value>hibernate.dialect=org.ednovo.gooru.utils.CustomDialect</value></property>
+		<property name="packagesToScan">
+			<value>org.ednovo.gooru</value>
+		</property>
+	</bean>
+	
+	<bean id="gooruMasterDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" p:driverClassName="com.mysql.jdbc.Driver"
+		p:url="jdbc:mysql://localhost:3306/gooru_local" p:username="root" p:password="bambeeq" />
+
+
+	<bean id="gooruSlave1DataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" p:driverClassName="com.mysql.jdbc.Driver"
+		p:url="jdbc:mysql://localhost:3306/gooru_local" p:username="root" p:password="bambeeq" />
+
+
+	<bean id="gooruSlave2DataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" p:driverClassName="com.mysql.jdbc.Driver"
+		p:url="jdbc:mysql://localhost:3306/gooru_local" p:username="root" p:password="bambeeq" />
+
+	<bean id="sc2LocalDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" p:driverClassName="com.mysql.jdbc.Driver"
+		p:url="jdbc:mysql://localhost:3306/gooru_local" p:username="root" p:password="bambeeq" />
+	
+	<bean id="gooruMasterTransaction"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="gooruMasterSessionFactory" />
+	</bean>
+	
+		<bean id="gooruSlave1Transaction"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="gooruSlave1SessionFactory" />
+	</bean>
+	
+	<bean id="gooruSlave2Transaction"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="gooruSlave2SessionFactory" />
+	</bean>
+	
+	<bean id="sc2LocalTransaction"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sc2LocalSessionFactory" />
+	</bean>
+</beans>
+		

@@ -4,12 +4,10 @@
 <title>Being Java Guys | Hello World</title>  
 </head>  
 <body>  
-      
+  
     <center>  
         <h2>Being Java Guys | Hello World</h2>  
-        <h4>  
-            <a href="/codettool/v1/hm/hello.jsp">Click Here</a>  
-        </h4>  
+        <h4>${message}</h4>  
     </center>  
 </body>  
-</html>
+</html> 
