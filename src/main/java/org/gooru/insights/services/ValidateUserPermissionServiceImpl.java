@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService, APIConstants, ErrorCodes {
 
-	public final Map<String, Object> getAllowedFilters(String gooruUId) {
+	public Map<String, Object> getAllowedFilters(String gooruUId) {
 
 		final Map<String, Object> allowedFilters = new HashMap<String, Object>();
 
@@ -30,7 +30,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 
 		return allowedFilters;
 	}
-	
+
 	public Map<String, Object> getUserFiltersAndValues(List<RequestParamsFilterDetailDTO> filters) {
 		Map<String, Object> userFiltersValue = null;
 		Set<String> userValue = null;
@@ -62,29 +62,32 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 
 		return userFiltersValue;
 	}
-	
+
 	public Map<Integer, String> checkIfFieldValueMatch(Map<String, Object> allowedFilters, Map<String, Object> userFilters, Map<Integer, String> errorMap) {
+		boolean allow = false;
 		for (Map.Entry<String, Object> entry : allowedFilters.entrySet()) {
 			if (userFilters.containsKey(entry.getKey())) {
 				Set<Object> values = (Set<Object>) userFilters.get(entry.getKey());
 				if (entry.getValue() instanceof String && !values.contains(entry.getValue())) {
-					errorMap.put(403, E1009);
-					return errorMap;
+					allow = true;
+					break;
 				}
 				if (entry.getValue() instanceof Set<?>) {
 					for (Object val : (Set<Object>) entry.getValue()) {
 						if (!values.contains(val)) {
-							errorMap.put(403, E1009);
-							return errorMap;
+							allow = true;
+							break;						
 						}
 					}
 				}
 			}
-
+		}
+		if(allow){
+			errorMap.put(403, E1009);
 		}
 		return errorMap;
 	}
-	
+
 	public RequestParamsDTO userPreValidation(RequestParamsDTO requestParamsDTO, Set<String> userFilterUserValues, Map<String, Set<String>> partyPermissions, Map<Integer, String> errorMap) {
 		for (String userFilterUserValue : userFilterUserValues) {
 			if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) {
@@ -101,7 +104,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		errorMap.clear();
 		return requestParamsDTO;
 	}
-	
+
 	public RequestParamsDTO validateOrganization(RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions, Map<Integer, String> errorMap, Set<String> userFilterOrgValues) {
 		for (String userFilterOrgValue : userFilterOrgValues) {
 			if (requestParamsDTO.getDataSource().matches(USERDATASOURCES)) {
@@ -130,7 +133,6 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public List<RequestParamsFilterDetailDTO> addSystemContentUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter, String userOrgUId) {
-
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
 		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", CONTENTORGUID, userOrgUId, "String", "selector");
@@ -144,10 +146,10 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public List<RequestParamsFilterDetailDTO> addSystemContentOrgFilter(List<RequestParamsFilterDetailDTO> userFilter, String userOrgUId) {
-
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", CONTENTORGUID, userOrgUId, "String", "selector");		userFilters.add(systemContentFields);
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", CONTENTORGUID, userOrgUId, "String", "selector");
+		userFilters.add(systemContentFields);
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		systeFilterDetails.setFields(userFilters);
 
@@ -168,15 +170,12 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		return userFilter;
 	}
 
-
 	public String getRoleBasedParty(Map<String, Set<String>> partyPermissions, String permission) {
 		StringBuilder allowedOrg = new StringBuilder();
-		String sep = "";
 		for (Map.Entry<String, Set<String>> entry : partyPermissions.entrySet()) {
 			if (entry.getValue().contains(permission)) {
-				allowedOrg.append(sep);
+				allowedOrg.append(allowedOrg.length() == 0 ? "" : ",");
 				allowedOrg.append(entry.getKey().toString());
-				sep = ",";
 			}
 		}
 		if (allowedOrg.length() == 0 && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && !permission.equalsIgnoreCase(AP_PARTY_PII)) {
@@ -186,19 +185,20 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		System.out.print("allowedOrg : " + allowedOrg.toString());
 		return allowedOrg.toString();
 	}
-	
-	public String getAllowedParties(RequestParamsDTO requestParamsDTO,Map<String, Set<String>> partyPermissions){
+
+	public String getAllowedParties(RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions) {
 		String allowedParty = null;
 		if ((requestParamsDTO.getDataSource().matches(USERDATASOURCES)) || (requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())
 				&& requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)) {
-			allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_PII);
+			allowedParty = AP_PARTY_PII;
 		} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
-			allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY_RAW);
+			allowedParty = AP_PARTY_ACTIVITY_RAW;
 		} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) {
-			allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_ACTIVITY);
+			allowedParty = AP_PARTY_ACTIVITY;
 		} else if (requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)) {
-			allowedParty = getRoleBasedParty(partyPermissions, AP_PARTY_OWN_CONTENT_USAGE);
+			allowedParty = AP_PARTY_OWN_CONTENT_USAGE;
 		}
-		return allowedParty;
+		return getRoleBasedParty(partyPermissions, allowedParty);
 	}
+
 }
