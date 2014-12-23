@@ -463,6 +463,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 			if(errorMap.containsKey(403)){
 				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions, errorMap);
 			}else{
+				errorMap.clear();
 				return requestParamsDTO;
 			}
 		}
