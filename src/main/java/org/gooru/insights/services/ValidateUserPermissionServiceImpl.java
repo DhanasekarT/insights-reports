@@ -64,26 +64,31 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public Map<Integer, String> checkIfFieldValueMatch(Map<String, Object> allowedFilters, Map<String, Object> userFilters, Map<Integer, String> errorMap) {
-		boolean allow = false;
+		boolean notAllow = false;
+		boolean isFilterAvailable = false;
 		for (Map.Entry<String, Object> entry : allowedFilters.entrySet()) {
 			if (userFilters.containsKey(entry.getKey())) {
+				isFilterAvailable = true;
 				Set<Object> values = (Set<Object>) userFilters.get(entry.getKey());
 				if (entry.getValue() instanceof String && !values.contains(entry.getValue())) {
-					allow = true;
+					notAllow = true;
 					break;
 				}
 				if (entry.getValue() instanceof Set<?>) {
 					for (Object val : (Set<Object>) entry.getValue()) {
 						if (!values.contains(val)) {
-							allow = true;
+							notAllow = true;
 							break;						
 						}
 					}
 				}
 			}
 		}
-		if(allow){
+		if(notAllow){
 			errorMap.put(403, E1009);
+		}
+		if(isFilterAvailable && !notAllow){
+			errorMap.put(200, E1012);
 		}
 		return errorMap;
 	}

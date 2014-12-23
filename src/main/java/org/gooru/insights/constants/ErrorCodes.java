@@ -23,4 +23,6 @@ public interface ErrorCodes {
 	public String E1010 = "Oops!Invalid JSON format.";
 	
 	public String E1011 = "Please provide valid data sources.";
+	
+	public String E1012 = "Allow me to next process.";
 }

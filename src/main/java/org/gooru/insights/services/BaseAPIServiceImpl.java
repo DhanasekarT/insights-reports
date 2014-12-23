@@ -454,11 +454,17 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
 		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
-
-		System.out.print("partyPermissions:" + partyPermissions);
+		
+		System.out.println("gooruUId:" + gooruUId);
+		
+		System.out.println("partyPermissions:" + partyPermissions);
 
 		if (!validateUserPermissionService.checkIfFieldValueMatch(allowedFilters, userFiltersAndValues, errorMap).isEmpty()) {
-			return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions, errorMap);
+			if(errorMap.containsKey(403)){
+				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions, errorMap);
+			}else{
+				return requestParamsDTO;
+			}
 		}
 
 		if (partyPermissions.isEmpty()|| requestParamsDTO.getDataSource().matches(USERDATASOURCES)|| ((requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) 
