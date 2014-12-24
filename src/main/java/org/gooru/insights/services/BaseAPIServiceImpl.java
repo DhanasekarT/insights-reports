@@ -468,11 +468,13 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 			}
 		}
 
-		if (partyPermissions.isEmpty()|| requestParamsDTO.getDataSource().matches(USERDATASOURCES)|| ((requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) 
-				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM))
-				|| (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())))) {
-			
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) 
+				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)))) {
 				errorMap.put(403, E1003);
+				return requestParamsDTO;
+		}
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
+				errorMap.put(403, E1004);
 				return requestParamsDTO;
 		}
 
