@@ -107,18 +107,22 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		}
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
-		for (RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
-			for (RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {		
-		for (RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
-			for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-				if(fieldsDetails.getFieldName().equalsIgnoreCase(systemfieldsDetails.getFieldName())){
-					systemfieldsDetails.setValue(fieldsDetails.getValue());
-					systemfieldsDetails.setOperator(fieldsDetails.getOperator());
+		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
+			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {		
+			   for(RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
+				 for(RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
+					if(fieldsDetails.getFieldName().equalsIgnoreCase(systemfieldsDetails.getFieldName())){
+						systemfieldsDetails.setValue(fieldsDetails.getValue());
+						systemfieldsDetails.setOperator(fieldsDetails.getOperator());
+					}
 				}
 			}
+		  }
 		}
-	  }
-	}
+		if(requestParamsDTO.getPagination() != null){
+			systemRequestParamsDTO.setPagination(requestParamsDTO.getPagination());
+		}
+		
 		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
 		
 		JSONSerializer serializer = new JSONSerializer();
