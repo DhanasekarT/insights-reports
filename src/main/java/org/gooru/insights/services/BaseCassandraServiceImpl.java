@@ -142,5 +142,8 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 
 		return columnFamily;
 	}
+	public static void main(String[] args){
+		System.out.print("hgdhfg kjhKhxkjhvdk");
+	}
 }
 

@@ -1,6 +1,7 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.RequestParamsFilterDetailDTO;
+import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,6 +23,8 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.netflix.astyanax.model.ColumnList;
+
+import flexjson.JSONSerializer;
 
 @Service
 public class ItemServiceImpl implements ItemService, APIConstants {
@@ -91,10 +96,39 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		return resultList;
 	}
 	public JSONArray getPartyReport(String data,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
-
+		RequestParamsDTO requestParamsDTO = null;
+		RequestParamsDTO systemRequestParamsDTO = null;
+		try {
+			requestParamsDTO = baseAPIService.buildRequestParameters(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			errorMap.put(400, "Invalid JSON format");
+			return new JSONArray();
+		}
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
+		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		for (RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
+			for (RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {		
+		for (RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
+			for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
+				if(fieldsDetails.getFieldName().equalsIgnoreCase(systemfieldsDetails.getFieldName())){
+					systemfieldsDetails.setValue(fieldsDetails.getValue());
+					systemfieldsDetails.setOperator(fieldsDetails.getOperator());
+				}
+			}
+		}
+	  }
+	}
+		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
+		
+		JSONSerializer serializer = new JSONSerializer();
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		String datas = serializer.deepSerialize(systemRequestParamsDTO);
+		System.out.print("\n newObject : " + datas);
+
+		
 		if(columns.getStringValue("query", null) != null){			
-			return getEventDetail(columns.getStringValue("query", null), dataMap, userMap, errorMap);
+			return getEventDetail(datas, dataMap, userMap, errorMap);
 		}
 		
 		return new JSONArray();
@@ -222,4 +256,5 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
 		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
 	}
+	
 }
