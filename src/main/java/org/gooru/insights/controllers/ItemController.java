@@ -77,7 +77,7 @@ public class ItemController extends BaseController implements APIConstants{
 	    	   
 	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
 	    
-	    JSONArray jsonArray = itemService.getPartyReport(data,dataMap,userMap,errorMap);
+	    JSONArray jsonArray = itemService.getPartyReport(data,reportType,dataMap,userMap,errorMap);
 	     
 	    if(!errorMap.isEmpty()){
 	    	sendError(response,errorMap);
