@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService, APIConstants, ErrorCodes {
 
-	public Map<String, Object> getAllowedFilters(String gooruUId) {
+	public Map<String, Object> getUserFilters(String gooruUId) {
 
 		final Map<String, Object> allowedFilters = new HashMap<String, Object>();
 
@@ -183,7 +183,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 				allowedOrg.append(entry.getKey().toString());
 			}
 		}
-		if (allowedOrg.length() == 0 && !permission.equalsIgnoreCase(AP_PARTY_ACTIVITY_RAW) && !permission.equalsIgnoreCase(AP_PARTY_PII)) {
+		if (allowedOrg.length() == 0 && !permission.matches(RESTRICTEDPERMISSION)) {
 			allowedOrg.append(DEFAULTORGUID);
 		}
 

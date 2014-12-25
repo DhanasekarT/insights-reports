@@ -64,7 +64,9 @@ public interface APIConstants {
 	
 	public String CONTENTDATASOURCES =  ".*content.*|.*resource.*";
 	
-	public String USERDATASOURCES =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
+	public String USERDATASOURCES =  ".*AP_PARTY_ACTIVITY_RAW.*|.*AP_PARTY_PII.*|.*AP_ALL_PARTY_ALL_DATA.*|.*AP_PARTY_ALL_DATA.*";
+	
+	public String RESTRICTEDPERMISSION =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
 	
 	public String USERFILTERPARAM =  ".*user_uid.*|.*userUid.*|.*gooru_uid.*|.*gooruUId.*|.*creatorUid.*|.*creator_uid.*";
 	

@@ -25,4 +25,6 @@ public interface ErrorCodes {
 	public String E1011 = "Please provide valid data sources.";
 	
 	public String E1012 = "Allow me to next process.";
+	
+	public String E1013 = "Oops!You don't have permission to see this organization data.";
 }

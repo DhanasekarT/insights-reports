@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -449,17 +450,49 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 		String gooruUId = userMap.containsKey(GOORUUID) ? userMap.get(GOORUUID).toString() : null;
 
-		Map<String, Object> allowedFilters = validateUserPermissionService.getAllowedFilters(gooruUId);
-		Map<String, Object> userFiltersAndValues = validateUserPermissionService.getUserFiltersAndValues(requestParamsDTO.getFilter());
-		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
-		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
-		
 		System.out.println("gooruUId:" + gooruUId);
 		
 		System.out.println("partyPermissions:" + partyPermissions);
+		
+		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,"AP_ALL_PARTY_ALL_DATA"))){
+			return requestParamsDTO;
+		}
 
-		if (!validateUserPermissionService.checkIfFieldValueMatch(allowedFilters, userFiltersAndValues, errorMap).isEmpty()) {
+		Map<String, Object> userFilters = validateUserPermissionService.getUserFilters(gooruUId);
+		Map<String, Object> userFiltersAndValues = validateUserPermissionService.getUserFiltersAndValues(requestParamsDTO.getFilter());
+		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
+		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
+
+		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,"AP_PARTY_ALL_DATA");
+		
+		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
+			validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
+		}
+		if(!StringUtils.isBlank(partyAlldataPerm) && !userFilterOrgValues.isEmpty()){			
+			for(String org : userFilterOrgValues){
+				if(!partyAlldataPerm.contains(org)){
+					errorMap.put(403, E1013);
+					break;
+				}
+			}		
+			return requestParamsDTO;
+		}
+		
+		Map<String, Object> orgFilters = new HashMap<String, Object>();
+		
+		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
+			if(e.getValue().contains("AP_ALL_PARTY_ALL_DATA")){
+				return requestParamsDTO;
+			}else if(e.getValue().contains("AP_PARTY_ALL_DATA")){
+				orgFilters.put(e.getKey(), e.getValue());
+			}
+		}
+		if(userFilterOrgValues.isEmpty() && !orgFilters.isEmpty()){
+			return requestParamsDTO;
+		}
+		
+		if (!validateUserPermissionService.checkIfFieldValueMatch(userFilters, userFiltersAndValues, errorMap).isEmpty()) {
 			if(errorMap.containsKey(403)){
 				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions, errorMap);
 			}else{
