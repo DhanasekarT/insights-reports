@@ -20,6 +20,10 @@ public interface APIConstants {
 	
 	public static String AP_PARTY_PII = "AP_PARTY_PII";
 	
+	public static String AP_ALL_PARTY_ALL_DATA = "AP_ALL_PARTY_ALL_DATA";
+	
+	public static String AP_PARTY_ALL_DATA = "AP_PARTY_ALL_DATA";
+	
 	public static String AP_SYSTEM_PUBLIC = "AP_SYSTEM_PUBLIC";
 	
 	public static String AP_OWN_CONTENT_USAGE = "AP_OWN_CONTENT_USAGE";
@@ -64,9 +68,9 @@ public interface APIConstants {
 	
 	public String CONTENTDATASOURCES =  ".*content.*|.*resource.*";
 	
-	public String USERDATASOURCES =  ".*AP_PARTY_ACTIVITY_RAW.*|.*AP_PARTY_PII.*|.*AP_ALL_PARTY_ALL_DATA.*|.*AP_PARTY_ALL_DATA.*";
-	
-	public String RESTRICTEDPERMISSION =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
+	public String RESTRICTEDPERMISSION =  ".*AP_PARTY_ACTIVITY_RAW.*|.*AP_PARTY_PII.*|.*AP_ALL_PARTY_ALL_DATA.*|.*AP_PARTY_ALL_DATA.*";
+
+	public String USERDATASOURCES =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
 	
 	public String USERFILTERPARAM =  ".*user_uid.*|.*userUid.*|.*gooru_uid.*|.*gooruUId.*|.*creatorUid.*|.*creator_uid.*";
 	

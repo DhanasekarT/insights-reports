@@ -455,7 +455,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		
 		System.out.println("partyPermissions:" + partyPermissions);
 		
-		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,"AP_ALL_PARTY_ALL_DATA"))){
+		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,AP_ALL_PARTY_ALL_DATA))){
 			return requestParamsDTO;
 		}
 
@@ -464,7 +464,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
 		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 
-		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,"AP_PARTY_ALL_DATA");
+		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,AP_PARTY_ALL_DATA);
 		
 		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
 			validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
