@@ -68,6 +68,25 @@ public class ItemController extends BaseController implements APIConstants{
 	
 	}
 	
+	@RequestMapping(value="/report",method ={RequestMethod.GET,RequestMethod.POST})
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getPartyReports(HttpServletRequest request,@RequestParam(value="reportType",required = true) String reportType,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
+		
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+	    	   
+	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
+	    
+	    JSONArray jsonArray = itemService.getPartyReport(data,dataMap,userMap,errorMap);
+	     
+	    if(!errorMap.isEmpty()){
+	    	sendError(response,errorMap);
+	    	return null;
+	    }
+	    return getModel(jsonArray, dataMap);	
+	
+	}
+	
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response){
 		Map<String,String> dataMap = new HashMap<String,String>();

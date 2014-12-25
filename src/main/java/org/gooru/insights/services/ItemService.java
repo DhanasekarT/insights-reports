@@ -11,6 +11,8 @@ public interface ItemService {
 
 	JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
 	
+	JSONArray getPartyReport(String data,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	
 	JSONArray processApi(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 	
 	boolean clearDataCache();

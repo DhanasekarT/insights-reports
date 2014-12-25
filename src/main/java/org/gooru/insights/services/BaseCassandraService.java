@@ -13,4 +13,6 @@ public interface BaseCassandraService {
 	OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamilyName, Collection<String> keys, Collection<String> columns);
 
 	OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns);
+	
+	public ColumnList<String> read(String keyspace,String cfName,String key);
 }

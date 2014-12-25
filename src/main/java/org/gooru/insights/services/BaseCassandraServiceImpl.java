@@ -19,6 +19,7 @@ import com.netflix.astyanax.query.ColumnFamilyQuery;
 import com.netflix.astyanax.query.IndexQuery;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.query.RowSliceQuery;
+import com.netflix.astyanax.retry.ConstantBackoff;
 import com.netflix.astyanax.serializers.StringSerializer;
 
 @Component
@@ -81,6 +82,29 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 		}
 		return queryResult;
 
+	}
+	
+	public ColumnList<String> read(String keyspace,String cfName,String key){
+		ColumnList<String> result = null;
+		Keyspace queryKeyspace = null;
+		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
+			queryKeyspace = connector.connectInsights();
+		} else {
+			queryKeyspace = connector.connectSearch();
+		}
+		try {
+              result = queryKeyspace.prepareQuery(this.accessColumnFamily(cfName))
+                    .setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(2000, 5))
+                    .getKey(key)
+                    .execute()
+                    .getResult()
+                    ;
+
+        } catch (ConnectionException e) {
+        		e.printStackTrace();
+        }
+    	
+    	return result;
 	}
 	
 	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns) {

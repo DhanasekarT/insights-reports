@@ -1,31 +1,25 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
+import org.apache.commons.codec.binary.StringUtils;
 import org.gooru.insights.constants.APIConstants;
-import org.gooru.insights.constants.APIConstants.hasdata;
-import org.gooru.insights.constants.ESConstants.esIndices;
-import org.gooru.insights.constants.ESConstants.esSources;
-import org.gooru.insights.constants.ESConstants.esTypes;
+import org.gooru.insights.constants.CassandraConstants.columnFamilies;
+import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
-import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.google.gson.Gson;
+import com.netflix.astyanax.model.ColumnList;
 
 @Service
 public class ItemServiceImpl implements ItemService, APIConstants {
@@ -42,6 +36,9 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 	@Autowired
 	BaseConnectionService baseConnectionService;
 
+	@Autowired
+	BaseCassandraService baseCassandraService;
+	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
@@ -93,7 +90,16 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
 		return resultList;
 	}
+	public JSONArray getPartyReport(String data,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
+		if(columns.getStringValue("query", null) != null){			
+			return getEventDetail(columns.getStringValue("query", null), dataMap, userMap, errorMap);
+		}
+		
+		return new JSONArray();
+	}
+	
 	public JSONArray getEventDetail(String data, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO requestParamsDTO = null;
 
@@ -104,7 +110,6 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			errorMap.put(400, "Invalid JSON format");
 			return new JSONArray();
 		}
-
 		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
 		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
@@ -117,6 +122,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		if (!errorMap.isEmpty()) {
 			return new JSONArray();
 		}
+
 
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
