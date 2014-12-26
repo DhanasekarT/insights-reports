@@ -1,17 +1,16 @@
 package org.gooru.insights.services;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 public interface ItemService {
 
 	JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
 	
-	JSONArray getPartyReport(String data,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	JSONArray getPartyReport(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
 	
 	JSONArray processApi(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 	

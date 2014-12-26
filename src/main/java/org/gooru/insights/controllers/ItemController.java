@@ -70,14 +70,14 @@ public class ItemController extends BaseController implements APIConstants{
 	
 	@RequestMapping(value="/report/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getPartyReports(HttpServletRequest request,@PathVariable(value="reportType") String reportType,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
+	public ModelAndView getPartyReports(HttpServletRequest request,@PathVariable(value="reportType") String reportType,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
 		
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		Map<String,Object> dataMap = new HashMap<String,Object>();
 	    	   
 	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
 	    
-	    JSONArray jsonArray = itemService.getPartyReport(data,reportType,dataMap,userMap,errorMap);
+	    JSONArray jsonArray = itemService.getPartyReport(request,reportType,dataMap,userMap,errorMap);
 	     
 	    if(!errorMap.isEmpty()){
 	    	sendError(response,errorMap);

@@ -1,13 +1,13 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
+import javax.servlet.http.HttpServletRequest;
+
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
@@ -16,6 +16,7 @@ import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -96,19 +97,14 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
 		return resultList;
 	}
-	public JSONArray getPartyReport(String data,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
-		RequestParamsDTO requestParamsDTO = null;
+	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
-		try {
-			requestParamsDTO = baseAPIService.buildRequestParameters(data);
-		} catch (Exception e) {
-			e.printStackTrace();
-			errorMap.put(400, E1014);
-			return new JSONArray();
-		}
+
+		Map<String,Object> filtersMap = baseAPIService.getRequestFieldNameValueInMap(request, "f");
+		Map<String,Object> paginationMap = baseAPIService.getRequestFieldNameValueInMap(request, "p");
 		
-		if(requestParamsDTO.getFilter() == null){
+		if(filtersMap.isEmpty()){
 			errorMap.put(400, E1015);
 			return new JSONArray();
 		}
@@ -116,26 +112,36 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
-			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {		
-			   for(RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
-				 for(RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
-					if(fieldsDetails.getFieldName().equalsIgnoreCase(systemfieldsDetails.getFieldName())){
-						isMerged = true;
-						systemfieldsDetails.setValue(fieldsDetails.getValue());
-						systemfieldsDetails.setOperator(fieldsDetails.getOperator());
+			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {
+				if(filtersMap.containsKey(systemfieldsDetails.getFieldName())){
+					isMerged = true;
+					String[] values = filtersMap.get(systemfieldsDetails.getFieldName()).toString().split(",");
+					systemfieldsDetails.setValue(filtersMap.get(systemfieldsDetails.getFieldName()).toString());
+					if(values.length > 1){
+						systemfieldsDetails.setOperator("in");
 					}
 				}
 			}
-		  }
 		}
 		if(!isMerged){
 			errorMap.put(400, E1017);
 			return new JSONArray();
 		}
-		
-		if(requestParamsDTO.getPagination() != null){
-			systemRequestParamsDTO.setPagination(requestParamsDTO.getPagination());
+
+		if(!paginationMap.isEmpty()){
+			if(paginationMap.containsKey("limit")){
+				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf(""+paginationMap.get("limit")));
+			}
+			if(paginationMap.containsKey("offset")){
+				systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf(""+paginationMap.get("offset")));
+			}
+			if(paginationMap.containsKey("sortOrder")){
+				for(RequestParamsSortDTO requestParamsSortDTO :   systemRequestParamsDTO.getPagination().getOrder()){
+					requestParamsSortDTO.setSortOrder(paginationMap.get("sortOrder").toString());
+				}
+			}
 		}
+		
 		
 		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
 		

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +18,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonParseException;
@@ -618,4 +621,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 	}
 
+	@Override
+	public Map<String, Object> getRequestFieldNameValueInMap(HttpServletRequest request, String prefix) {
+	     Map<String, Object> requestFieldNameValue = new HashMap<String, Object>();
+         Enumeration paramNames = request.getParameterNames();
+         while (paramNames.hasMoreElements()) {
+                 String paramName = (String) paramNames.nextElement();
+                 if (paramName.startsWith(prefix+".")) {
+                	 requestFieldNameValue.put(paramName.replace(prefix+".", ""), request.getParameter(paramName));
+                 }
+         }
+         return requestFieldNameValue;
+	}
 }

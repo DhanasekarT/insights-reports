@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
@@ -13,6 +15,9 @@ import org.json.JSONObject;
 public interface BaseAPIService {
 
 	RequestParamsDTO buildRequestParameters(String data);
+	
+	Map<String,Object> getRequestFieldNameValueInMap(HttpServletRequest request,String prefix);
+	
 	boolean checkNull(Collection<?> request);
 	
 	boolean checkNull(Object request);
