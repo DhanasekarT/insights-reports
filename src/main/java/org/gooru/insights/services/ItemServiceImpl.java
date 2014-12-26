@@ -307,7 +307,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				UUID reportId = UUID.randomUUID();
 	
 				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportName, reportId.toString());
-				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportId.toString(), data);
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportId.toString(), "query", data);
 				
 				errorMap.put(200,E1019);
 				return errorMap;
