@@ -36,4 +36,9 @@ public interface ErrorCodes {
 	
 	public String E1017 = "Oops!Please pass valid filters!";
 	
+	public String E1018 = "Oops!No reports available.Please check your report name!!";
+	
+	public String E1019 = "Successfully added!";
+	
+	public String E1020 = "Oops!Report already available!!";
 }

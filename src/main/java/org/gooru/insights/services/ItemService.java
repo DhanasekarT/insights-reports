@@ -29,4 +29,6 @@ public interface ItemService {
 	boolean insertKey(String data);
 	
 	Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap);
+	
+	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
 }

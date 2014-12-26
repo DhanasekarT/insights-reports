@@ -5,9 +5,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
+import com.netflix.astyanax.model.Column;
 import com.netflix.astyanax.model.ColumnList;
 
 import flexjson.JSONSerializer;
@@ -109,7 +112,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			return new JSONArray();
 		}
 		
-		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
+		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		
+		if(val == null){
+			errorMap.put(400, E1018);
+			return new JSONArray();
+		}
+		
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
 			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {
@@ -281,4 +292,30 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
 	}
 	
+	public Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap){
+		if(action.equalsIgnoreCase("add")){
+			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportName);
+			
+			if(val == null || (val !=null && StringUtils.isBlank(val.getStringValue()))){
+				try {
+					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+				} catch (Exception e) {
+					errorMap.put(400,E1014);
+					return errorMap;
+				}	
+				
+				UUID reportId = UUID.randomUUID();
+	
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportName, reportId.toString());
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportId.toString(), data);
+				
+				errorMap.put(200,E1019);
+				return errorMap;
+			}else{
+				errorMap.put(403,E1020);
+			}
+		}
+				
+		return errorMap;	
+	}
 }

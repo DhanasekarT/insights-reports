@@ -4,6 +4,8 @@ public interface APIConstants {
 
 	public static String CACHE_PREFIX ="insights";
 	
+	public static String DI_REPORTS ="di_reports";
+	
 	public static String CACHE_PREFIX_ID ="key";
 	
 	public static String GOORU_PREFIX = "authenticate_";

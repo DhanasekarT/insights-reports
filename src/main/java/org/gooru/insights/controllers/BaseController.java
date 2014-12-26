@@ -30,7 +30,9 @@ public class BaseController {
 	public ModelAndView getModel(Map<String,String> data){
 		return  this.resultSet(data);
 	}
-	
+	public ModelAndView getModels(Map<Integer,String> data){
+		return  this.resultSets(data);
+	}
 	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
 		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){ 
 		response.setStatus(entry.getKey());
@@ -96,6 +98,20 @@ public class BaseController {
 		}
 	
 	public ModelAndView resultSet(Map<String,String> messageData){
+		ModelAndView model = new ModelAndView("content");
+		try {
+			JSONObject resultMap = new JSONObject();
+				resultMap.put("content",new ArrayList<Map<String,String>>() );
+				resultMap.put("paginate", new HashMap<String, String>());
+			resultMap.put("message",messageData );
+			model.addObject("content", resultMap);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+			return model;
+		}
+	
+	public ModelAndView resultSets(Map<Integer,String> messageData){
 		ModelAndView model = new ModelAndView("content");
 		try {
 			JSONObject resultMap = new JSONObject();

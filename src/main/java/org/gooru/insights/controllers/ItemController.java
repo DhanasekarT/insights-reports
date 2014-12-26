@@ -68,6 +68,13 @@ public class ItemController extends BaseController implements APIConstants{
 	
 	}
 	
+	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView manageReports(HttpServletRequest request,@PathVariable(value="action") String action,@RequestParam(value="reportName",required = true) String reportName,@RequestParam(value="sessionToken",required = true) String sessionToken,@RequestBody String data ,HttpServletResponse response) throws IOException{
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		itemService.manageReports(action,reportName,data,errorMap);
+		return getModels(errorMap);
+	}
 	@RequestMapping(value="/report/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getPartyReports(HttpServletRequest request,@PathVariable(value="reportType") String reportType,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
