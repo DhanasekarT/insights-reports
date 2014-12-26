@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
+import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
@@ -27,7 +28,7 @@ import com.netflix.astyanax.model.ColumnList;
 import flexjson.JSONSerializer;
 
 @Service
-public class ItemServiceImpl implements ItemService, APIConstants {
+public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	@Autowired
 	BaseAPIService baseAPIService;
@@ -76,7 +77,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			return businessLogicService.buildAggregateJSON(resultData);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(400, "Invalid JSON format");
+			errorMap.put(400, E1014);
 			return new JSONArray();
 		}
 
@@ -87,7 +88,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
 		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
-			errorMap.put(400, "should provide the data source to be fetched");
+			errorMap.put(400, E1016);
 			return new ArrayList<Map<String, Object>>();
 		}
 
@@ -98,13 +99,20 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 	public JSONArray getPartyReport(String data,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO requestParamsDTO = null;
 		RequestParamsDTO systemRequestParamsDTO = null;
+		boolean isMerged = false;
 		try {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(400, "Invalid JSON format");
+			errorMap.put(400, E1014);
 			return new JSONArray();
 		}
+		
+		if(requestParamsDTO.getFilter() == null){
+			errorMap.put(400, E1015);
+			return new JSONArray();
+		}
+		
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportType);
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
@@ -112,6 +120,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			   for(RequestParamsFilterDetailDTO fieldData : requestParamsDTO.getFilter()) {
 				 for(RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
 					if(fieldsDetails.getFieldName().equalsIgnoreCase(systemfieldsDetails.getFieldName())){
+						isMerged = true;
 						systemfieldsDetails.setValue(fieldsDetails.getValue());
 						systemfieldsDetails.setOperator(fieldsDetails.getOperator());
 					}
@@ -119,6 +128,11 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			}
 		  }
 		}
+		if(!isMerged){
+			errorMap.put(400, E1017);
+			return new JSONArray();
+		}
+		
 		if(requestParamsDTO.getPagination() != null){
 			systemRequestParamsDTO.setPagination(requestParamsDTO.getPagination());
 		}
@@ -145,13 +159,13 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(400, "Invalid JSON format");
+			errorMap.put(400, E1014);
 			return new JSONArray();
 		}
 		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
 		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
-			errorMap.put(400, "should provide the data source to be fetched");
+			errorMap.put(400,E1016);
 			return new JSONArray();
 		}
 

@@ -27,4 +27,13 @@ public interface ErrorCodes {
 	public String E1012 = "Allow me to next process.";
 	
 	public String E1013 = "Oops!You don't have permission to see this organization data.";
+	
+	public String E1014 = "Oops!Invalid JSON format!";
+	
+	public String E1015 = "Oops!Filters can not be null or empty!";
+	
+	public String E1016 = "Oops!DataSource can not be null or empty!";
+	
+	public String E1017 = "Oops!Please pass valid filters!";
+	
 }
