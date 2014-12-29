@@ -485,9 +485,9 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		Map<String, Object> orgFilters = new HashMap<String, Object>();
 		
 		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
-			if(e.getValue().contains("AP_ALL_PARTY_ALL_DATA")){
+			if(e.getValue().contains(AP_ALL_PARTY_ALL_DATA)){
 				return requestParamsDTO;
-			}else if(e.getValue().contains("AP_PARTY_ALL_DATA")){
+			}else if(e.getValue().contains(AP_PARTY_ALL_DATA)){
 				orgFilters.put(e.getKey(), e.getValue());
 			}
 		}
@@ -519,7 +519,11 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		} else {
 			String allowedParty = validateUserPermissionService.getAllowedParties(requestParamsDTO, partyPermissions);
 			if (!StringUtils.isBlank(allowedParty)) {
-				validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				if(requestParamsDTO.getDataSource().matches(USERDATASOURCES)){
+					validateUserPermissionService.addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}else{
+					validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}
 			} else {
 				errorMap.put(403, E1009);
 				return requestParamsDTO;

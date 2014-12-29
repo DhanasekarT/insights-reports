@@ -48,6 +48,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	@Autowired
 	BaseCassandraService baseCassandraService;
+
+	JSONSerializer serializer = new JSONSerializer();
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -155,10 +157,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		
 		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
-		
-		JSONSerializer serializer = new JSONSerializer();
+
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
+		
 		System.out.print("\n newObject : " + datas);
 
 		
@@ -308,6 +311,25 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportName, reportId.toString());
 				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportId.toString(), "query", data);
+				
+				errorMap.put(200,E1019);
+				return errorMap;
+			}else{
+				errorMap.put(403,E1020);
+			}
+		}
+		else if(action.equalsIgnoreCase("update")){
+			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportName);
+			
+			if(val !=null && !StringUtils.isBlank(val.getStringValue())){
+				try {
+					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+				} catch (Exception e) {
+					errorMap.put(400,E1014);
+					return errorMap;
+				}	
+				
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue(), "query", data);
 				
 				errorMap.put(200,E1019);
 				return errorMap;
