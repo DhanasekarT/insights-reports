@@ -165,10 +165,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				filterBuilder.subAggregation(dateHistogram);
 			}else{
 //				termBuilder.size(recordSize);
+				termBuilder.size(0);
 				filterBuilder.subAggregation(termBuilder);	
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
+				termBuilder.size(0);
 //				termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
@@ -921,17 +923,22 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					JSONObject json = new JSONObject(resultData);
 					int totalRows =0;
 					json = new JSONObject(json.get("aggregations").toString());
-					if(hasFilter){
+
+					/*This commented due to filter data may not available in sub aggregate
+					 * 					
+ 						 if(hasFilter){
 						json = new JSONObject(json.get("filters").toString());
 						totalRows = json.getInt("doc_count");
 						dataMap.put("totalRows", totalRows);
 					}
-		           while(counter < groupBy.length){
+					 */	
+					
+					while(counter < groupBy.length){
 		        	   if(json.length() > 0){
 		               JSONObject requestJSON = new JSONObject(json.get("field"+counter).toString());
 		           JSONArray jsonArray = new JSONArray(requestJSON.get("buckets").toString());
 		           
-		           if(counter == 0 && !hasFilter){
+		           if(counter == 0){
 		        	   totalRows = jsonArray.length();
 						dataMap.put("totalRows", totalRows); 
 		           }
