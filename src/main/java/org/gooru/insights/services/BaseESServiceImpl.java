@@ -224,13 +224,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		/*System.out.print("indices :" + indices);*/
 		SearchRequestBuilder searchRequestBuilder =  null;
 		
-		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
-				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
-		}else{
 			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-		}
 
 		if(validatedData.get(hasdata.HAS_FEILDS.check()))
 			dataKey=esSources.FIELDS.esSource();
@@ -281,7 +276,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 
 		//Include only source file to avoid miss functionality of data during aggregation on ES version 1.2.2 
-		 searchRequestBuilder.setPreference("_primaries");
+//		 searchRequestBuilder.setPreference("_primaries");
 
 		 //currently its not working in ES version 1.2.2,its shows record count is 1 * no of shades = total Records
 		 /*System.out.println(" pagination status "+validatedData);*/

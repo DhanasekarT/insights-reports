@@ -72,6 +72,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				if( i == groupBy.length-1){
 					/*System.out.println("expected");*/
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
+					termBuilder.size(0);
 				}
 			}
 			if(baseAPIService.checkNull(requestParamsDTO.getFilter())){
@@ -81,10 +82,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			}
 			if(termBuilder != null){
 				//termBuilder.size(recordSize);
+				termBuilder.size(0);
 				filterBuilder.subAggregation(termBuilder);
 			}
 			searchRequestBuilder.addAggregation(filterBuilder);
 			}else{
+				termBuilder.size(0);
 				//termBuilder.size(recordSize);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
@@ -140,6 +143,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					if(termBuilder != null ){
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
 					includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder,null,metricsName);
+					termBuilder.size(0);
 					}
 					}
 				
