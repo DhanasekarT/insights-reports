@@ -1,34 +1,38 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.constants.APIConstants;
-import org.gooru.insights.constants.APIConstants.hasdata;
-import org.gooru.insights.constants.ESConstants.esIndices;
-import org.gooru.insights.constants.ESConstants.esSources;
-import org.gooru.insights.constants.ESConstants.esTypes;
+import org.gooru.insights.constants.CassandraConstants.columnFamilies;
+import org.gooru.insights.constants.CassandraConstants.keyspaces;
+import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.RequestParamsFilterDetailDTO;
+import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.google.gson.Gson;
+import com.netflix.astyanax.model.Column;
+import com.netflix.astyanax.model.ColumnList;
+
+import flexjson.JSONSerializer;
 
 @Service
-public class ItemServiceImpl implements ItemService, APIConstants {
+public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	@Autowired
 	BaseAPIService baseAPIService;
@@ -42,6 +46,11 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 	@Autowired
 	BaseConnectionService baseConnectionService;
 
+	@Autowired
+	BaseCassandraService baseCassandraService;
+
+	JSONSerializer serializer = new JSONSerializer();
+	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
@@ -74,7 +83,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			return businessLogicService.buildAggregateJSON(resultData);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(400, "Invalid JSON format");
+			errorMap.put(400, E1014);
 			return new JSONArray();
 		}
 
@@ -85,7 +94,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
 		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
-			errorMap.put(400, "should provide the data source to be fetched");
+			errorMap.put(400, E1016);
 			return new ArrayList<Map<String, Object>>();
 		}
 
@@ -93,7 +102,76 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
 		return resultList;
 	}
+	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+		RequestParamsDTO systemRequestParamsDTO = null;
+		boolean isMerged = false;
 
+		Map<String,Object> filtersMap = baseAPIService.getRequestFieldNameValueInMap(request, "f");
+		Map<String,Object> paginationMap = baseAPIService.getRequestFieldNameValueInMap(request, "p");
+		
+		if(filtersMap.isEmpty()){
+			errorMap.put(400, E1015);
+			return new JSONArray();
+		}
+		
+		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		
+		if(val == null){
+			errorMap.put(400, E1018);
+			return new JSONArray();
+		}
+		
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		
+		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
+			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {
+				if(filtersMap.containsKey(systemfieldsDetails.getFieldName())){
+					isMerged = true;
+					String[] values = filtersMap.get(systemfieldsDetails.getFieldName()).toString().split(",");
+					systemfieldsDetails.setValue(filtersMap.get(systemfieldsDetails.getFieldName()).toString());
+					if(values.length > 1){
+						systemfieldsDetails.setOperator("in");
+					}
+				}
+			}
+		}
+		if(!isMerged){
+			errorMap.put(400, E1017);
+			return new JSONArray();
+		}
+
+		if(!paginationMap.isEmpty()){
+			if(paginationMap.containsKey("limit")){
+				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf(""+paginationMap.get("limit")));
+			}
+			if(paginationMap.containsKey("offset")){
+				systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf(""+paginationMap.get("offset")));
+			}
+			if(paginationMap.containsKey("sortOrder")){
+				for(RequestParamsSortDTO requestParamsSortDTO :   systemRequestParamsDTO.getPagination().getOrder()){
+					requestParamsSortDTO.setSortOrder(paginationMap.get("sortOrder").toString());
+				}
+			}
+		}
+		
+		
+		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
+
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
+		String datas = serializer.deepSerialize(systemRequestParamsDTO);
+		
+		System.out.print("\n newObject : " + datas);
+
+		
+		if(columns.getStringValue("query", null) != null){			
+			return getEventDetail(datas, dataMap, userMap, errorMap);
+		}
+		
+		return new JSONArray();
+	}
+	
 	public JSONArray getEventDetail(String data, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO requestParamsDTO = null;
 
@@ -101,14 +179,13 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
 			e.printStackTrace();
-			errorMap.put(400, "Invalid JSON format");
+			errorMap.put(400, E1014);
 			return new JSONArray();
 		}
-
 		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
 
 		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
-			errorMap.put(400, "should provide the data source to be fetched");
+			errorMap.put(400,E1016);
 			return new JSONArray();
 		}
 
@@ -117,6 +194,7 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 		if (!errorMap.isEmpty()) {
 			return new JSONArray();
 		}
+
 
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
@@ -215,5 +293,51 @@ public class ItemServiceImpl implements ItemService, APIConstants {
 
 	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
 		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
+	}
+	
+	public Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap){
+		if(action.equalsIgnoreCase("add")){
+			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportName);
+			
+			if(val == null || (val !=null && StringUtils.isBlank(val.getStringValue()))){
+				try {
+					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+				} catch (Exception e) {
+					errorMap.put(400,E1014);
+					return errorMap;
+				}	
+				
+				UUID reportId = UUID.randomUUID();
+	
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, reportName, reportId.toString());
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), reportId.toString(), "query", data);
+				
+				errorMap.put(200,E1019);
+				return errorMap;
+			}else{
+				errorMap.put(403,E1020);
+			}
+		}
+		else if(action.equalsIgnoreCase("update")){
+			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportName);
+			
+			if(val !=null && !StringUtils.isBlank(val.getStringValue())){
+				try {
+					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+				} catch (Exception e) {
+					errorMap.put(400,E1014);
+					return errorMap;
+				}	
+				
+				baseCassandraService.saveStringValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue(), "query", data);
+				
+				errorMap.put(200,E1019);
+				return errorMap;
+			}else{
+				errorMap.put(403,E1020);
+			}
+		}
+				
+		return errorMap;	
 	}
 }

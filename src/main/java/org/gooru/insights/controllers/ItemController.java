@@ -68,6 +68,32 @@ public class ItemController extends BaseController implements APIConstants{
 	
 	}
 	
+	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView manageReports(HttpServletRequest request,@PathVariable(value="action") String action,@RequestParam(value="reportName",required = true) String reportName,@RequestParam(value="sessionToken",required = true) String sessionToken,@RequestBody String data ,HttpServletResponse response) throws IOException{
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		itemService.manageReports(action,reportName,data,errorMap);
+		return getModels(errorMap);
+	}
+	@RequestMapping(value="/report/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getPartyReports(HttpServletRequest request,@PathVariable(value="reportType") String reportType,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
+		
+		Map<Integer,String> errorMap = new HashMap<Integer,String>();
+		Map<String,Object> dataMap = new HashMap<String,Object>();
+	    	   
+	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
+	    
+	    JSONArray jsonArray = itemService.getPartyReport(request,reportType,dataMap,userMap,errorMap);
+	     
+	    if(!errorMap.isEmpty()){
+	    	sendError(response,errorMap);
+	    	return null;
+	    }
+	    return getModel(jsonArray, dataMap);	
+	
+	}
+	
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response){
 		Map<String,String> dataMap = new HashMap<String,String>();

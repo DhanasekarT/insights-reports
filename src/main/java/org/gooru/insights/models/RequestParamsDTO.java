@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
-
 public class RequestParamsDTO implements Serializable {
 
 	private static final long serialVersionUID = -2840599796987757919L;
@@ -35,6 +33,7 @@ public class RequestParamsDTO implements Serializable {
 	private List<RequestParamsFilterDetailDTO> filter;
 	
 	private String apiJoinKey;
+	
 
 	public String getApiJoinKey() {
 		return apiJoinKey;
@@ -139,7 +138,6 @@ public class RequestParamsDTO implements Serializable {
 	public void setSaveQuery(Boolean saveQuery) {
 		this.saveQuery = saveQuery;
 	}
-	
-	
+
 	
 }
