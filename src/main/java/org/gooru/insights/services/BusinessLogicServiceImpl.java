@@ -924,14 +924,15 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					int totalRows =0;
 					json = new JSONObject(json.get("aggregations").toString());
 
-					/*This commented due to filter data may not available in sub aggregate
-					 * 					
  						 if(hasFilter){
 						json = new JSONObject(json.get("filters").toString());
+						
+						/*This commented due to filter data may not available in sub aggregate
+						 * 					
 						totalRows = json.getInt("doc_count");
 						dataMap.put("totalRows", totalRows);
+						 */	
 					}
-					 */	
 					
 					while(counter < groupBy.length){
 		        	   if(json.length() > 0){

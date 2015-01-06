@@ -251,7 +251,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
-			searchRequestBuilder.setNoFields();
 			businessLogicService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
 			hasAggregate = true;
 		}
@@ -266,24 +265,32 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 */		
 		
 		if(!hasAggregate){
-
+				
+			/* 
+			 * No need of any fields.
+			 */
+			searchRequestBuilder.setNoFields();
+				
+				/* 
+				 * Setting the hit result to size of 1.
+				 */
+				searchRequestBuilder.setSize(1);
+				
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
 				searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
 
 				if(validatedData.get(hasdata.HAS_SORTBY.check()))
 					sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
+
+				if(validatedData.get(hasdata.HAS_PAGINATION.check()))
+					paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
 
 		//Include only source file to avoid miss functionality of data during aggregation on ES version 1.2.2 
 //		 searchRequestBuilder.setPreference("_primaries");
 
-		 //currently its not working in ES version 1.2.2,its shows record count is 1 * no of shades = total Records
-		 /*System.out.println(" pagination status "+validatedData);*/
-		 if(validatedData.get(hasdata.HAS_PAGINATION.check()))
-		paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
-		/*System.out.println("query \n"+searchRequestBuilder);*/
 		
 		try{
 			
