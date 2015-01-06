@@ -303,8 +303,20 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if(hasAggregate){
 		try {
+			
+			int limit = 0;
+			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
+
+				if(validatedData.get(hasdata.HAS_LIMIT.check()))
+				limit = requestParamsDTO.getPagination().getLimit();
+				
+				if(validatedData.get(hasdata.HAS_Offset.check()) && requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit() != 0){
+					limit = requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit();
+				}
+			}
+				
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap);
+			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap,limit);
 			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
 			
 			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()))

@@ -915,7 +915,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return data;
 		}
 
-		public List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap){
+		public List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit){
 
 			List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		       try {
@@ -950,6 +950,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 		               JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
 		               Object key=newJson.get("key");
 		               keys.add(key);
+		               
+		               if(counter == 0){
+		               if(limit == i){
+		            	   break;
+		               }
+		               }
+		               
 		               if(counter+1 == (groupBy.length)){
 		            	   Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
 		                   for(Map.Entry<String,String> entry : metrics.entrySet()){

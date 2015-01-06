@@ -24,7 +24,7 @@ public interface BusinessLogicService {
 
 	BoolFilterBuilder includeFilter(String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
 	
-	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap);
+	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit);
 
 	BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap,Set<String> userFilter);
 
