@@ -252,6 +252,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
 			businessLogicService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
+
+			/* 
+			 * Setting the hit result to size of 1.
+			 */
+			searchRequestBuilder.setSize(1);
+			
 			hasAggregate = true;
 		}
 /*		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
@@ -270,11 +276,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			 * No need of any fields.
 			 */
 			searchRequestBuilder.setNoFields();
-				
-				/* 
-				 * Setting the hit result to size of 1.
-				 */
-				searchRequestBuilder.setSize(1);
 				
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
