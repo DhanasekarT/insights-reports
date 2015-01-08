@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -169,6 +170,14 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 	public String[] convertStringtoArray(String data) {
 		return data.split(",");
+	}
+	
+	public Set<String> convertStringtoSet(String inputDatas) {
+		Set<String> outDatas = new HashSet<String>();
+		for(String inputData : inputDatas.split(",")){
+			outDatas.add(inputData);
+		}
+		return outDatas;
 	}
 
 	public Object[] convertSettoArray(Set<?> data) {

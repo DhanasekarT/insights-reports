@@ -28,6 +28,8 @@ public interface BaseAPIService {
 	
 	String convertArraytoString(String[] data);
 	
+	Set<String> convertStringtoSet(String inputDatas);
+	
 	Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO);
 	
 	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap,Map<Integer,String> errorMap);

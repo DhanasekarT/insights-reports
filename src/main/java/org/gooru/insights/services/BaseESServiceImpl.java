@@ -227,13 +227,12 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
-		if(validatedData.get(hasdata.HAS_FEILDS.check()))
-			dataKey=esSources.FIELDS.esSource();
-		
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
-			for (String field : fields.split(",")) {
+			Set<String> filterFields = baseAPIService.convertStringtoSet(fields);
+			for (String field : filterFields) {
 				searchRequestBuilder.addField(field);
 			}
+			dataKey=esSources.FIELDS.esSource();
 		}
 		
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
@@ -241,6 +240,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
+			
 			searchRequestBuilder.setNoFields();
 			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
 			hasAggregate = true;
@@ -248,6 +248,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
 			int recordSize = 500;
+			searchRequestBuilder.setNoFields();
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 				recordSize = requestParamsDTO.getPagination().getLimit();
 			}
@@ -260,23 +261,8 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			
 			hasAggregate = true;
 		}
-/*		if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			int recordSize = 500;
-			if(validatedData.containsKey(hasdata.HAS_PAGINATION.check())){
-				recordSize = requestParamsDTO.getPagination().getLimit();
-			}
-			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
-			hasAggregate = true;
-			} 
-*/		
-		
 		if(!hasAggregate){
-				
-			/* 
-			 * No need of any fields.
-			 */
-			searchRequestBuilder.setNoFields();
-				
+		
 				// Add filter in Query
 				if(validatedData.get(hasdata.HAS_FILTER.check()))
 				searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
@@ -288,10 +274,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
 
-		//Include only source file to avoid miss functionality of data during aggregation on ES version 1.2.2 
-//		 searchRequestBuilder.setPreference("_primaries");
-
-		
+System.out.println("query "+ searchRequestBuilder);		
 		
 		try{
 			
