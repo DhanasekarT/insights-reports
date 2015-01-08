@@ -107,11 +107,11 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 						String groupConcatFieldName = baseConnectionService.getFieldArrayHandler().get(groupConcatField);
 						tempMap.putAll(dataEntry);
 					try{
-					Set<String> courseIds = (Set<String>) dataEntry.get(groupConcatField);
+					Set<Object> courseIds = (Set<Object>) dataEntry.get(groupConcatField);
 					StringBuffer stringBuffer = new StringBuffer();
-					for(String courseId : courseIds){
+					for(Object courseId : courseIds){
 						for(Map<String,Object> resultMap : resultList){
-							if(resultMap.containsKey(groupConcatField) && resultMap.containsKey(groupConcatFieldName) && resultMap.get(groupConcatField).toString().equalsIgnoreCase(courseId)){
+							if(resultMap.containsKey(groupConcatField) && resultMap.containsKey(groupConcatFieldName) && resultMap.get(groupConcatField).toString().equalsIgnoreCase(courseId.toString())){
 								if(stringBuffer.length() > 0){
 									stringBuffer.append("|");
 								}
@@ -125,6 +125,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 					}
 					tempList.add(tempMap);
 				}
+				dataList = tempList;
 			}
 		}
 		
