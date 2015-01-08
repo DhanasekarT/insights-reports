@@ -480,7 +480,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					userFilter.add(key);
 				Set<Object> data = (Set<Object>) filterMap.get(key);	
 			if(!data.isEmpty()){
-				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), baseAPIService.convertCollectionObjecttoString(data)));
+				for(Object value : data){
+				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), value));
+			}
 			}
 				}
 			}
