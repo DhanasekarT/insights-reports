@@ -281,6 +281,17 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		}
 		return result.toString();
 	}
+	
+	public String convertCollectiontoString(Collection<String> datas) {
+		StringBuffer result = new StringBuffer();
+		for (String data : datas) {
+			if (result.length() > 0) {
+				result.append(",");
+			}
+			result.append(data);
+		}
+		return result.toString();
+	}
 
 	public List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder) {
 

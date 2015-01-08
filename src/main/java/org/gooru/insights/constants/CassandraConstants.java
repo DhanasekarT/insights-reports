@@ -31,7 +31,7 @@ public interface CassandraConstants {
 	}
 	
 	public enum cassRowKeys{
-		RAW_KEY("");
+		RAW_KEY(""),FILED_ARRAY_HANDLER("fieldArrayHandler");
 		
 		private String index;
 		cassRowKeys(String name){

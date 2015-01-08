@@ -1,6 +1,7 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -69,6 +70,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Keyspace searchKeyspace;
 	
+	private static String arrayHandler;
+	
 	private static Map<String,String> fieldsDataTypeCache;
 	
 	private static Map<String,Map<String,String>>  fieldsCustomDataTypeCache;
@@ -78,6 +81,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	private static Map<String,Map<String,String>> fieldsCache;
 	
 	private static Map<String,Map<String,Map<String, String>>> dependentFieldsCache;
+	
+	private static Map<String,String> fieldArrayHandler;
 	
 	private static Map<String,String> indexMap;
 	
@@ -133,6 +138,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			fieldsConfig();
 		}
 		
+		if(!baseAPIService.checkNull(fieldArrayHandler)){
+			fieldArrayHandler();
+		}
 	}
 	
 	public Client getDevClient(){
@@ -373,6 +381,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		System.out.println(" dependent list "+dependentFieldsCache);
 	}
 	
+	public void fieldArrayHandler(){
+		fieldArrayHandler = new HashMap<String, String>();
+		arrayHandler = new String();
+		ColumnList<String> operationalResult = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),cassRowKeys.FILED_ARRAY_HANDLER.cassRowKey());
+		Collection<String> columnList = operationalResult.getColumnNames();
+		arrayHandler = baseAPIService.convertCollectiontoString(columnList);
+		for(Column<String> column : operationalResult){
+			fieldArrayHandler.put(column.getName(),column.getStringValue());
+		}
+	}
+	
 	public Map<String,Map<String,Map<String, String>>> getDependentFieldsCache() {
 		
 		if(!baseAPIService.checkNull(dependentFieldsCache)){
@@ -430,6 +449,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		fieldsCache = new HashMap<String,Map<String,String>>();
 		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
 		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
+		fieldArrayHandler = new HashMap<String, String>();
+		arrayHandler = new String();
 		return true;
 		}catch(Exception e){
 			return false;
@@ -508,5 +529,22 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		return userMap;
 	
 	}
+
+	public String getArrayHandler() {
+		
+		if(arrayHandler == null || arrayHandler.isEmpty()){
+			fieldArrayHandler();
+		}
+		return arrayHandler;
+	}
+
+	public  Map<String, String> getFieldArrayHandler() {
+		
+		if(fieldArrayHandler == null || fieldArrayHandler.isEmpty()){
+			fieldArrayHandler();
+		}
+		return fieldArrayHandler;
+	}
+
 }
 

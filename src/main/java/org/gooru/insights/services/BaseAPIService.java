@@ -42,6 +42,8 @@ public interface BaseAPIService {
 	
 	Object[] convertSettoArray(Set<?> set);
 	
+	String convertCollectiontoString(Collection<String> datas);
+	
 	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey);
 	
 	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);

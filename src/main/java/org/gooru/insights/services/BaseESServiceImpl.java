@@ -92,6 +92,40 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			System.out.println("user filter : "+usedFilter);*/
 			
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
+
+			Set<String> groupConcatFields = new HashSet<String>(); 
+			for(String data : usedFilter){
+			if(baseConnectionService.getArrayHandler().contains(data)){
+				groupConcatFields.add(data);
+			}
+			}
+			if(!groupConcatFields.isEmpty()){
+				List<Map<String,Object>> tempList = new ArrayList<Map<String,Object>>();
+				for(Map<String,Object> dataEntry : dataList){
+					Map<String,Object> tempMap = new HashMap<String, Object>();
+					for(String groupConcatField : groupConcatFields){
+						String groupConcatFieldName = baseConnectionService.getFieldArrayHandler().get(groupConcatField);
+						tempMap.putAll(dataEntry);
+					try{
+					Set<String> courseIds = (Set<String>) dataEntry.get(groupConcatField);
+					StringBuffer stringBuffer = new StringBuffer();
+					for(String courseId : courseIds){
+						for(Map<String,Object> resultMap : resultList){
+							if(resultMap.containsKey(groupConcatField) && resultMap.containsKey(groupConcatFieldName) && resultMap.get(groupConcatField).toString().equalsIgnoreCase(courseId)){
+								if(stringBuffer.length() > 0){
+									stringBuffer.append("|");
+								}
+								stringBuffer.append(resultMap.get(groupConcatFieldName));
+							}
+						}
+					}
+					tempMap.put(groupConcatFieldName, stringBuffer.toString());
+					}catch(Exception e){
+					}
+					}
+					tempList.add(tempMap);
+				}
+			}
 		}
 		
 		/*System.out.println("combined "+ dataList);*/
