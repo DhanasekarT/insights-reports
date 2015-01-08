@@ -26,13 +26,13 @@ public interface BusinessLogicService {
 	
 	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit);
 
-	BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap,Set<String> userFilter);
+	BoolFilterBuilder customFilter(String index,Map<String,Object> filterMap,Set<String> userFilter);
 
 	List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys);
 
 	List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey);
 
-	Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList);
+	Map<String,Object> fetchFilters(String index,List<Map<String,Object>> dataList);
 	
 	JSONArray convertJSONArray(List<Map<String,Object>> data);
 	

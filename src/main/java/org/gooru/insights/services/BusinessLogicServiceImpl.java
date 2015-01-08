@@ -460,7 +460,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return filterBuilder;
 		}
 		
-		public BoolFilterBuilder customFilter(String index,Map<String,Set<Object>> filterMap,Set<String> userFilter){
+		public BoolFilterBuilder customFilter(String index,Map<String,Object> filterMap,Set<String> userFilter){
 		
 			BoolFilterBuilder boolFilter =FilterBuilders.boolFilter();
 			
@@ -478,7 +478,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			
 				if(supportKey.contains(key)){
 					userFilter.add(key);
-				Set<Object> data = filterMap.get(key);	
+				Set<Object> data = (Set<Object>) filterMap.get(key);	
 			if(!data.isEmpty())
 				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));
 			}
@@ -1187,9 +1187,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			return resultList;
 		}
 
-		public Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList){
+		public Map<String,Object> fetchFilters(String index,List<Map<String,Object>> dataList){
 			Map<String,String> filterFields = new HashMap<String, String>();
-			Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
+			Map<String,Object> filters = new HashMap<String, Object>();
 			if(baseConnectionService.getFieldsJoinCache().containsKey(index)){
 				filterFields = baseConnectionService.getFieldsJoinCache().get(index);
 			}
@@ -1199,7 +1199,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					for(String key : keySet.split(",")){
 						if(dataMap.containsKey(key)){
 							if(!filters.isEmpty() && filters.containsKey(key)){
-								Set<Object> filterValue = filters.get(key);
+								Set<Object> filterValue = (Set<Object>) filters.get(key);
 								try{
 									Set<Object> datas = (Set<Object>) dataMap.get(key);
 									for(Object data : datas){

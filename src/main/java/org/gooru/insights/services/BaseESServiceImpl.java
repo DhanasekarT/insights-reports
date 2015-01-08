@@ -68,7 +68,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
-		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
+		Map<String,Object> filterMap = new HashMap<String,Object>();
 
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
 		
@@ -80,7 +80,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		for(int i=1;i<indices.length;i++){
 		
 			Set<String> usedFilter = new HashSet<String>();
-			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
 
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			
@@ -148,7 +148,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
-		Map<String,Set<Object>> filterMap = new HashMap<String,Set<Object>>();
+		Map<String,Object> filterMap = new HashMap<String,Object>();
 		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
 		/*System.out.println(" result data : "+dataList);*/
 		
@@ -161,7 +161,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		for(int i=1;i<indices.length;i++){
 			
 			Set<String> usedFilter = new HashSet<String>();
-			Map<String,Set<Object>> innerFilterMap = new HashMap<String,Set<Object>>();
+			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
 			
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			
@@ -178,7 +178,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
-			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit,Set<String> usedFilter) {
+			Map<String,Boolean> validatedData,Map<String,Object> filterMap,Map<Integer,String> errorRecord,Integer limit,Set<String> usedFilter) {
 		
 		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 				indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
@@ -245,7 +245,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	
 	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
 			String[] indices, String[] types,
-			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Map<String,Set<Object>> filterMap) {
+			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Map<String,Object> filterMap) {
 		
 		Map<String,String> metricsName = new HashMap<String,String>();
 		boolean hasAggregate = false;
