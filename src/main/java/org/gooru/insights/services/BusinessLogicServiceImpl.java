@@ -479,9 +479,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 				if(supportKey.contains(key)){
 					userFilter.add(key);
 				Set<Object> data = (Set<Object>) filterMap.get(key);	
-			if(!data.isEmpty())
-				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), data));
+			if(!data.isEmpty()){
+				for(Object value : data){
+				boolFilter.must(FilterBuilders.inFilter(esFields(index,key), value));
 			}
+			}
+				}
 			}
 			return boolFilter;
 		}
