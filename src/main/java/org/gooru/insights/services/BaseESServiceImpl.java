@@ -146,7 +146,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			Map<String,Boolean> validatedData,Map<String,Set<Object>> filterMap,Map<Integer,String> errorRecord,Integer limit,Set<String> usedFilter) {
 		
 		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
-				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
+				indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		String result ="[{}]";
@@ -172,9 +172,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			if(filterData.hasClauses())
 			searchRequestBuilder.setPostFilter(filterData);
 		}
-
-
-		searchRequestBuilder.setPreference("_primaries");
 
 		searchRequestBuilder.setSize(limit);
 		

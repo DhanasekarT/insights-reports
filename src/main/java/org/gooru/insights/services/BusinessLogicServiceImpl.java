@@ -1186,7 +1186,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			}
 			return resultList;
 		}
-		
+
 		public Map<String,Set<Object>> fetchFilters(String index,List<Map<String,Object>> dataList){
 			Map<String,String> filterFields = new HashMap<String, String>();
 			Map<String,Set<Object>> filters = new HashMap<String, Set<Object>>();
@@ -1201,7 +1201,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							if(!filters.isEmpty() && filters.containsKey(key)){
 								Set<Object> filterValue = filters.get(key);
 								try{
-									Object[] datas = (Object[]) dataMap.get(key);
+									Set<Object> datas = (Set<Object>) dataMap.get(key);
 									for(Object data : datas){
 										filterValue.add(data);
 									}
@@ -1212,7 +1212,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 							}else{
 								Set<Object> filterValue = new HashSet<Object>();
 								try{
-									Object[] datas = (String[]) dataMap.get(key);
+									Set<Object> datas = (Set<Object>) dataMap.get(key);
 									for(Object data : datas){
 										filterValue.add(data);
 									}
