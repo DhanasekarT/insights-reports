@@ -218,7 +218,6 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
 		String dataKey=esSources.SOURCE.esSource();
 
-		/*System.out.print("indices :" + indices);*/
 		SearchRequestBuilder searchRequestBuilder =  null;
 		
 			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
@@ -258,6 +257,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			
 			hasAggregate = true;
 		}
+		
 		if(!hasAggregate){
 		
 				// Add filter in Query
