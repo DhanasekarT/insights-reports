@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.cassandra.cql3.Lists.Appender;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -1139,16 +1138,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 					for(String key : keys){
 						
 					if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
-						if (parentEntry.get(key).toString().contains(childEntry.get(key).toString())) {
-							if(!appended.isEmpty()){
-								Map<String,Object> tempMap = new HashMap<String, Object>();
-								for(Map.Entry<String,Object> courseAppender : appended.entrySet()){
-									if(childEntry.containsKey(courseAppender.getKey()) && !childEntry.get(courseAppender.getKey()).toString().equals(courseAppender.getValue())){
-										tempMap.put(courseAppender.getKey(), courseAppender.getKey()+" | "+childEntry.get(courseAppender.getKey()));
-									}
-								}
-								appended.putAll(tempMap);
-							}
+						if (childEntry.get(key).toString().equals(parentEntry.get(key).toString())) {
 						}else{
 							
 							validated = true;
