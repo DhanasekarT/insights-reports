@@ -77,4 +77,6 @@ public interface BaseAPIService {
 	String getRedisRawValue(String key);
 	
 	boolean insertKey(String data);
+	
+	String convertCollectionObjecttoString(Collection<Object> datas);
 }
