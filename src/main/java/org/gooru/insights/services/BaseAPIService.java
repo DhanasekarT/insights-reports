@@ -77,4 +77,6 @@ public interface BaseAPIService {
 	String getRedisRawValue(String key);
 	
 	boolean insertKey(String data);
+
+	void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap);
 }

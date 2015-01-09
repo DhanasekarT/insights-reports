@@ -14,17 +14,15 @@ import org.json.JSONException;
 
 public interface BusinessLogicService {
 
-	boolean aggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData,Integer recordSize);
+	boolean performAggregation(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName);
 
-	boolean granularityAggregate(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData,Integer recordSize);
+	boolean performGranularityAggregation(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData);
 
 	Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 
-	List<Map<String,Object>> buildAggregateJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
-
 	BoolFilterBuilder includeFilter(String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
 	
-	List<Map<String,Object>> buildJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit);
+	List<Map<String,Object>> customizeJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit);
 
 	BoolFilterBuilder customFilter(String index,Map<String,Object> filterMap,Set<String> userFilter);
 
@@ -50,13 +48,13 @@ public interface BusinessLogicService {
 		
 	JSONArray buildAggregateJSON(List<Map<String,Object>> resultList) throws JSONException;
 		
-	List<Map<String,Object>> customPaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
+	List<Map<String,Object>> customPagination(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
 	
 	List<Map<String,Object>> aggregatePaginate(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
 		
-	List<Map<String,Object>> aggregateSortBy(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
+	List<Map<String,Object>> customSort(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
 
-public List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey,Map<String,Object> dataMap);
+	List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey,Map<String,Object> dataMap);
 	
-	public List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
+	List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
 }

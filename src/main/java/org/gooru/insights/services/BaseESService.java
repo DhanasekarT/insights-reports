@@ -11,7 +11,7 @@ import org.json.JSONException;
 
 public interface BaseESService {
 
-	List<Map<String, Object>> itemSearch(RequestParamsDTO requestParamsDTO,
-			String[] indices,Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord);
+	List<Map<String, Object>> generateQuery(RequestParamsDTO requestParamsDTO,
+			String[] indices,Map<String,Boolean> validatedData,Map<String,Object> messageData,Map<Integer,String> errorData);
 
 }

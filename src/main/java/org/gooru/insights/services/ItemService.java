@@ -8,7 +8,7 @@ import org.json.JSONArray;
 
 public interface ItemService {
 
-	JSONArray getEventDetail(String data,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	JSONArray generateQuery(String data,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
 	
 	JSONArray getPartyReport(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
 	

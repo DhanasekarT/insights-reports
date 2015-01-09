@@ -71,7 +71,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						resultData = businessLogicService.leftJoin(resultData, tempData, previousAPIKey, api.getApiJoinKey());
 					}
 				}
-				System.out.println("combined " + resultData);
+
 				if (baseAPIService.checkNull(requestParamsCoreDTO.getCoreKey())) {
 					resultData = businessLogicService.formatAggregateKeyValueJson(resultData, requestParamsCoreDTO.getCoreKey());
 				}
@@ -99,9 +99,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		}
 
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
-		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
+		List<Map<String, Object>> resultList = esService.generateQuery(requestParamsDTO, indices, validatedData, dataMap, errorMap);
 		return resultList;
 	}
+	
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
@@ -166,51 +167,49 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 		
 		if(columns.getStringValue("query", null) != null){			
-			return getEventDetail(datas, dataMap, userMap, errorMap);
+			return generateQuery(datas, dataMap, userMap, errorMap);
 		}
 		
 		return new JSONArray();
 	}
 	
-	public JSONArray getEventDetail(String data, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+	public JSONArray generateQuery(String data, Map<String, Object> messageData, Map<String, Object> userMap, Map<Integer, String> errorData) {
 		RequestParamsDTO requestParamsDTO = null;
 
 		try {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
-			e.printStackTrace();
-			errorMap.put(400, E1014);
+			errorData.put(400, E1014);
 			return new JSONArray();
 		}
-		Map<String, Boolean> validatedData = baseAPIService.validateData(requestParamsDTO);
+		
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(requestParamsDTO);
 
-		if (!validatedData.get(hasdata.HAS_DATASOURCE.check())) {
-			errorMap.put(400,E1016);
-			return new JSONArray();
-		}
-
-		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap, errorMap);
-
-		if (!errorMap.isEmpty()) {
+		if (!checkPoint.get(hasdata.HAS_DATASOURCE.check())) {
+			errorData.put(400,E1016);
 			return new JSONArray();
 		}
 
+		/*
+		 * Additional filters are added based on user authentication
+		 */
+		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap, errorData);
+
+		if (!errorData.isEmpty()) {
+			return new JSONArray();
+		}
 
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
-		List<Map<String, Object>> resultList = esService.itemSearch(requestParamsDTO, indices, validatedData, dataMap, errorMap);
+		List<Map<String, Object>> resultList = esService.generateQuery(requestParamsDTO, indices, checkPoint, messageData, errorData);
 
 		try {
 			JSONArray jsonArray = businessLogicService.buildAggregateJSON(resultList);
-
-			if (requestParamsDTO.isSaveQuery() != null) {
-				if (requestParamsDTO.isSaveQuery()) {
-					JSONObject jsonObject = new JSONObject();
-					jsonObject.put("data",jsonArray.toString());
-					jsonObject.put("message",dataMap);
-					String queryId = baseAPIService.putRedisCache(data,userMap, jsonObject);
-					dataMap.put("queryId", queryId);
-				}
-			}
+			
+			/*
+			 * save data to redis
+			 */
+			baseAPIService.saveQuery(requestParamsDTO,jsonArray,data,messageData,userMap);
+			
 			return jsonArray;
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -275,26 +274,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultArray;
 	}
 
-	public boolean insertKey(String data){
-		return baseAPIService.insertKey(data);
-	}
-	
-	public boolean clearDataCache() {
-		return baseConnectionService.clearDataCache();
-	}
-
-	public void clearConnectionCache() {
-		baseConnectionService.clearConnectionCache();
-	}
-
-	public Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
-		return baseConnectionService.getUserObject(sessionToken, errorMap);
-	}
-
-	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
-		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
-	}
-	
 	public Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap){
 		if(action.equalsIgnoreCase("add")){
 			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportName);
@@ -340,4 +319,25 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				
 		return errorMap;	
 	}
+
+	public boolean insertKey(String data){
+		return baseAPIService.insertKey(data);
+	}
+	
+	public boolean clearDataCache() {
+		return baseConnectionService.clearDataCache();
+	}
+
+	public void clearConnectionCache() {
+		baseConnectionService.clearConnectionCache();
+	}
+
+	public Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
+		return baseConnectionService.getUserObject(sessionToken, errorMap);
+	}
+
+	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
+		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
+	}
+	
 }

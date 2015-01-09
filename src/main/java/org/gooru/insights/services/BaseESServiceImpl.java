@@ -1,18 +1,13 @@
 package org.gooru.insights.services;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -21,31 +16,19 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ESConstants;
-import org.gooru.insights.constants.ESConstants.esConfigs;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.mortbay.servlet.jetty.IncludableGzipFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
 
 @Service
 public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants {
@@ -62,34 +45,39 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 	RequestParamsSortDTO requestParamsSortDTO;
 
 	RequestParamsFilterDetailDTO requestParamsFiltersDetailDTO;
-
-	public List<Map<String,Object>> itemSearch(RequestParamsDTO requestParamsDTO,
+	
+	public List<Map<String,Object>> generateQuery(RequestParamsDTO requestParamsDTO,
 			String[] indices,
-			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) {
+			Map<String,Boolean> checkPoint,Map<String,Object> messageData,Map<Integer,String> errorData) {
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
-		Map<String,Object> filterMap = new HashMap<String,Object>();
+		Map<String,Object> filterData = new HashMap<String,Object>();
 
-		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
+		/*
+		 * Core Get
+		 */
+		dataList = coreGet(requestParamsDTO,new String[]{ indices[0]},checkPoint,messageData,errorData,filterData);
 		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
 		
-		filterMap = businessLogicService.fetchFilters(indices[0], dataList);
+		/*
+		 * Get all the acceptable filter data from the index
+		 */
+		filterData = businessLogicService.fetchFilters(indices[0], dataList);
 		
+		/*
+		 * MultiGet loop
+		 */
 		for(int i=1;i<indices.length;i++){
 		
 			Set<String> usedFilter = new HashSet<String>();
 			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
 
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{}, checkPoint,filterData,errorData,dataList.size(),usedFilter);
 			
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
-			filterMap.putAll(innerFilterMap);
-			
-			/*System.out.println("filter Map: "+filterMap);
-			System.out.println("index "+indices[i]+" result : "+resultList);
-			System.out.println("user filter : "+usedFilter);*/
+			filterData.putAll(innerFilterMap);
 			
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
 
@@ -129,15 +117,14 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			}
 		}
 		
-		/*System.out.println("combined "+ dataList);*/
-		if(validatedData.get(hasdata.HAS_GROUPBY.check()) && validatedData.get(hasdata.HAS_GRANULARITY.check())){
+		if(checkPoint.get(hasdata.HAS_GROUPBY.check()) && checkPoint.get(hasdata.HAS_GRANULARITY.check())){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			dataList = businessLogicService.formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, validatedData);		
+		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, checkPoint);		
 		}
 		
 	return dataList;
@@ -149,27 +136,19 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Object> filterMap = new HashMap<String,Object>();
-		dataList = searchData(requestParamsDTO,new String[]{ indices[0]},new String[]{ indexTypes.get(indices[0])},validatedData,dataMap,errorRecord,filterMap);
-		/*System.out.println(" result data : "+dataList);*/
+		dataList = coreGet(requestParamsDTO,new String[]{ indices[0]},validatedData,dataMap,errorRecord,filterMap);
 		
 		if(dataList.isEmpty())
 		return new ArrayList<Map<String,Object>>();			
 		
 		filterMap = businessLogicService.fetchFilters(indices[0], dataList);
-		/*System.out.println("filter Map: "+filterMap);*/
-		
+
 		for(int i=1;i<indices.length;i++){
-			
 			Set<String> usedFilter = new HashSet<String>();
 			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
-			
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{ indexTypes.get(indices[i])}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
-			
+			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{}, validatedData,filterMap,errorRecord,dataList.size(),usedFilter);
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
-			
-			/*System.out.println("filter Map: "+filterMap);
-			System.out.println("user filter : "+usedFilter);*/
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
 		}
 		
@@ -187,31 +166,23 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		String result ="[{}]";
 		String dataKey=esSources.SOURCE.esSource();
 		String fields = esFields(indices[0],requestParamsDTO.getFields());
-		/*System.out.println("fields"+fields);*/
 		
 		if(fields.contains("code_id") || fields.contains("label")){
-		fields = fields+",depth";	
+		fields = fields+COMMA+"depth";	
 		}
-		
-		if(validatedData.get(hasdata.HAS_FEILDS.check()))
-			dataKey=esSources.FIELDS.esSource();
-		
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
-			for (String field : fields.split(",")) {
+			for (String field : fields.split(COMMA)) {
 				searchRequestBuilder.addField(field);
 			}
+			dataKey=esSources.FIELDS.esSource();
 		}
-		
 		if(!filterMap.isEmpty()){
 			BoolFilterBuilder filterData = businessLogicService.customFilter(indices[0],filterMap,usedFilter);
 			if(filterData.hasClauses())
 			searchRequestBuilder.setPostFilter(filterData);
 		}
-
 		searchRequestBuilder.setSize(limit);
-		
 		try{
-			/*System.out.println("mutiget query "+searchRequestBuilder);*/
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -240,76 +211,66 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		termBuilder.subAggregation(AggregationBuilders.sum("score").field("score")).order(org.elasticsearch.search.aggregations.bucket.terms.Terms.Order.aggregation("score",false));
 		searchRequestBuilder.addAggregation(termBuilder);
 		/*System.out.println("query"+searchRequestBuilder);*/
-		/*System.out.println(searchRequestBuilder.execute().actionGet());*/
 	}
 	
-	public List<Map<String,Object>> searchData(RequestParamsDTO requestParamsDTO,
-			String[] indices, String[] types,
+	/*
+	 * @requestParamsDTO is the de-serialized API request
+	 * @type is the list of specified index type
+	 * @validatedData is the pre-validated data
+	 * @dataMap is for messaging map to user
+	 * @errorRecord is for returning the error message from service
+	 * @filterMap is the filter for core API's and sub-sequent API's
+	 */
+	public List<Map<String,Object>> coreGet(RequestParamsDTO requestParamsDTO,
+			String[] indices,
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Map<String,Object> filterMap) {
 		
-		Map<String,String> metricsName = new HashMap<String,String>();
-		boolean hasAggregate = false;
 		String result ="[{}]";
-		String fields = esFields(indices[0],requestParamsDTO.getFields());
+		boolean hasAggregate = false;
+		Map<String,String> metricsName = new HashMap<String,String>();
 		String dataKey=esSources.SOURCE.esSource();
 
-		/*System.out.print("indices :" + indices);*/
-		SearchRequestBuilder searchRequestBuilder =  null;
-		
-			searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
+		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
-		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
+		searchRequestBuilder.setNoFields();
+		searchRequestBuilder.setSize(1);
+
+		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
+			
+			businessLogicService.performGranularityAggregation(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
+			hasAggregate = true;
+
+		}else if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
+
+			businessLogicService.performAggregation(indices[0],requestParamsDTO, searchRequestBuilder,metricsName);
+			hasAggregate = true;
+		
+		}else if(validatedData.get(hasdata.HAS_FEILDS.check())) {
+
+			dataKey=esSources.FIELDS.esSource();
+			String fields = esFields(indices[0],requestParamsDTO.getFields());
 			Set<String> filterFields = baseAPIService.convertStringtoSet(fields);
 			for (String field : filterFields) {
 				searchRequestBuilder.addField(field);
 			}
-			dataKey=esSources.FIELDS.esSource();
 		}
 		
-		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
-			int recordSize = 500;
-			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
-				recordSize = requestParamsDTO.getPagination().getLimit();
-			}
-			
-			searchRequestBuilder.setNoFields();
-			businessLogicService.granularityAggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
-			hasAggregate = true;
-			} 
-		
-		if (!validatedData.get(hasdata.HAS_GRANULARITY.check()) && validatedData.get(hasdata.HAS_GROUPBY.check())) {
-			int recordSize = 500;
-			searchRequestBuilder.setNoFields();
-			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
-				recordSize = requestParamsDTO.getPagination().getLimit();
-			}
-			businessLogicService.aggregate(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData,recordSize);
-
-			/* 
-			 * Setting the hit result to size of 1.
-			 */
-			searchRequestBuilder.setSize(1);
-			
-			hasAggregate = true;
-		}
 		if(!hasAggregate){
+
+			if(validatedData.get(hasdata.HAS_FILTER.check()))
+			searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
+
+			if(validatedData.get(hasdata.HAS_SORTBY.check()))
+				includeSort(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
+
+			if(validatedData.get(hasdata.HAS_PAGINATION.check()))
+				performPagination(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		
-				// Add filter in Query
-				if(validatedData.get(hasdata.HAS_FILTER.check()))
-				searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
-
-				if(validatedData.get(hasdata.HAS_SORTBY.check()))
-					sortData(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);
-
-				if(validatedData.get(hasdata.HAS_PAGINATION.check()))
-					paginate(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
-
-System.out.println("query "+ searchRequestBuilder);		
 		
 		try{
-			
+		System.out.println("query "+ searchRequestBuilder);		
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -317,11 +278,10 @@ System.out.println("query "+ searchRequestBuilder);
 		}
 		
 		if(hasAggregate){
-		try {
 			
 			int limit = 0;
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
-
+			
 				if(validatedData.get(hasdata.HAS_LIMIT.check()))
 				limit = requestParamsDTO.getPagination().getLimit();
 				
@@ -330,76 +290,39 @@ System.out.println("query "+ searchRequestBuilder);
 				}
 			}
 				
-			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
-			List<Map<String,Object>> data = businessLogicService.buildJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap,limit);
-			data = businessLogicService.aggregateSortBy(requestParamsDTO.getPagination(), data, validatedData);
+			String groupBy[] = requestParamsDTO.getGroupBy().split(COMMA);
+			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap,limit);
+			queryResult = businessLogicService.customSort(requestParamsDTO.getPagination(), queryResult, validatedData);
 			
 			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()))
-				data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData);
+				queryResult = businessLogicService.customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
 			
-			return data;
-		} catch (Exception e) {
-			e.printStackTrace();
+			return queryResult;
+		}else{
+			return businessLogicService.getRecords(indices,result,errorRecord,dataKey,dataMap);
 		}
-		}
-		
-		List<Map<String,Object>> data = businessLogicService.getRecords(indices,result,errorRecord,dataKey,dataMap);
-		
-//		data = businessLogicService.customPaginate(requestParamsDTO.getPagination(), data, validatedData, dataMap);
-		
-		return data;
-
 	}
-	
-	public List<Map<String,Object>> subSearch(RequestParamsDTO requestParamsDTOs,String[] indices,String fields,Map<String,Set<Object>> filtersData){
-		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTOs.getSourceIndex()).prepareSearch(
-				indices).setSearchType(SearchType.DFS_QUERY_AND_FETCH);
-		
-		if(baseAPIService.checkNull(fields)){
-			for(String field : fields.split(",")){
-		searchRequestBuilder.addField(field);
-			}
-		}
-		BoolFilterBuilder boolFilter = FilterBuilders.boolFilter();
-		
-		for(Map.Entry<String,Set<Object>> entry : filtersData.entrySet()){
-			boolFilter.must(FilterBuilders.inFilter(entry.getKey(),baseAPIService.convertSettoArray(entry.getValue())));
-		}
-		businessLogicService.includeFilter(indices[0],requestParamsDTOs.getFilter());
-		searchRequestBuilder.setPostFilter(boolFilter);
-	/*System.out.println(" sub query \n"+searchRequestBuilder);*/
-	
-		String resultSet = searchRequestBuilder.execute().actionGet().toString();
-		return businessLogicService.getData(fields, resultSet);
-	}
-	
 	
 	public Client getClient(String indexSource) {
-		if(indexSource != null && indexSource.equalsIgnoreCase("dev")){
+		if(indexSource != null && indexSource.equalsIgnoreCase(DEV)){
 			return baseConnectionService.getDevClient();
-		}else if(indexSource != null && indexSource.equalsIgnoreCase("prod")){
+		}else if(indexSource != null && indexSource.equalsIgnoreCase(PROD)){
 			return baseConnectionService.getProdClient();
 		}else{			
 			return baseConnectionService.getProdClient();
 		}
 	}
 
-	public void sortData(String[] indices,List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
+	public void includeSort(String[] indices,List<RequestParamsSortDTO> requestParamsSortDTO,SearchRequestBuilder searchRequestBuilder,Map<String,Boolean> validatedData){
 			for(RequestParamsSortDTO sortData : requestParamsSortDTO){
 				if(validatedData.get(hasdata.HAS_SORTBY.check()))
 				searchRequestBuilder.addSort(esFields(indices[0],sortData.getSortBy()), (baseAPIService.checkNull(sortData.getSortOrder()) && sortData.getSortOrder().equalsIgnoreCase("DESC")) ? SortOrder.DESC : SortOrder.ASC);
 		}
 	}
 
-	public void paginate(SearchRequestBuilder searchRequestBuilder,RequestParamsPaginationDTO requestParamsPaginationDTO,Map<String,Boolean> validatedData) {
+	public void performPagination(SearchRequestBuilder searchRequestBuilder,RequestParamsPaginationDTO requestParamsPaginationDTO,Map<String,Boolean> validatedData) {
 		searchRequestBuilder.setFrom(validatedData.get(hasdata.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset().intValue() == 0 ? 0 : requestParamsPaginationDTO.getOffset().intValue() -1  : 0);
 		searchRequestBuilder.setSize(validatedData.get(hasdata.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit().intValue() == 0 ? 0 : requestParamsPaginationDTO.getLimit().intValue() : 10);
-	}
-	
-	public Map<String, Object> record(String sourceIndex,String index, String type, String id) {
-		GetResponse response = getClient(sourceIndex).prepareGet(index, type, id)
-				.execute().actionGet();
-		return response.getSource();
 	}
 	
 	public long recordCount(String sourceIndex,String[] indices, String[] types,
@@ -417,9 +340,9 @@ System.out.println("query "+ searchRequestBuilder);
 	public String esFields(String index,String fields){
 		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 		StringBuffer esFields = new StringBuffer();
-		for(String field : fields.split(",")){
+		for(String field : fields.split(COMMA)){
 			if(esFields.length() > 0){
-				esFields.append(",");
+				esFields.append(COMMA);
 			}
 			if(mappingfields.containsKey(field)){
 				esFields.append(mappingfields.get(field));

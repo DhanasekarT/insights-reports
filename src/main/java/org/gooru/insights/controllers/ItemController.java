@@ -30,47 +30,45 @@ public class ItemController extends BaseController implements APIConstants{
 	@Autowired
 	ItemService itemService;
 	
-	
-	@RequestMapping(value="/classpage/collections",method = {RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView getClasspageCollectionDetail(HttpServletRequest request,@RequestParam(value="data", required = true) String data,@RequestParam(value="sessionToken",required = false) String sessionToken,HttpServletResponse response){
+	@RequestMapping(value="/server/status",method = RequestMethod.GET)
+	public ModelAndView checkAPiStatus(HttpServletRequest request,HttpServletResponse response){
 		ModelAndView model = new ModelAndView();
 		model.setViewName("content");
-		model.addObject("content","got working");
-		return model;
-	}
-	
-	@RequestMapping(value="/classpage",method = {RequestMethod.GET,RequestMethod.POST})
-	public ModelAndView getClasspageDetail(HttpServletRequest request,@RequestParam(value="data", required = false) String data,HttpServletResponse response){
-		ModelAndView model = new ModelAndView();
-		model.setViewName("content");
-		model.addObject("content","got working");
+		model.addObject("content","tomcat started");
 		return model;
 	}
 
-	@RequestMapping(method ={RequestMethod.GET,RequestMethod.POST})
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getEventDetail(HttpServletRequest request,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
-		
-		Map<Integer,String> errorMap = new HashMap<Integer,String>();
-		Map<String,Object> dataMap = new HashMap<String,Object>();
-	    
-//	    Map<String,Object> userMap = itemService.getUserObject(sessionToken, errorMap); 
-	   
-	    Map<String,Object> userMap = itemService.getUserObjectData(sessionToken, errorMap); 
-	    
-	    JSONArray jsonArray = itemService.getEventDetail(data,dataMap,userMap,errorMap);
-	     
-	    if(!errorMap.isEmpty()){
-	    	sendError(response,errorMap);
-	    	return null;
-	    }
-	    return getModel(jsonArray, dataMap);	
-	
+	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getEventDetail(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+			@RequestParam(value = "sessionToken", required = true) String sessionToken, HttpServletResponse response) throws IOException {
+
+		Map<Integer, String> errorMap = new HashMap<Integer, String>();
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+
+		/*
+		 * validate API Directly from Gooru API permanently disabled since we
+		 * have Redis server support but maintaining for backup.
+		 * Map<String,Object> userMap = itemService.getUserObject(sessionToken,
+		 * errorMap);
+		 */
+		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
+
+		JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
+
+		if (!errorMap.isEmpty()) {
+			sendError(response, errorMap);
+			return null;
+		}
+
+		return getModel(jsonArray, dataMap);
+
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request,@PathVariable(value="action") String action,@RequestParam(value="reportName",required = true) String reportName,@RequestParam(value="sessionToken",required = true) String sessionToken,@RequestBody String data ,HttpServletResponse response) throws IOException{
+		
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		itemService.manageReports(action,reportName,data,errorMap);
 		return getModels(errorMap);

@@ -12,10 +12,7 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -24,11 +21,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
-import org.gooru.insights.constants.CassandraConstants.columnFamilies;
-import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ESConstants.esConfigs;
-import org.gooru.insights.models.User;
-import org.gooru.insights.security.AuthorizeOperations;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
@@ -37,10 +30,7 @@ import org.restlet.resource.ClientResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -62,6 +52,7 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 public class BaseConnectionServiceImpl implements BaseConnectionService,CassandraConstants,APIConstants {
 
 	Logger loggerFactory = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
+	
 	private static Client devClient;
 	
 	private static Client prodClient;

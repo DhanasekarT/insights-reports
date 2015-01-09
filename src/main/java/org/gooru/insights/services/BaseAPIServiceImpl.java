@@ -406,11 +406,11 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		processedData.put("hasSortOrder", false);
 		processedData.put("hasGranularity", false);
 		processedData.put("hasPagination", false);
+
 		if (checkNull(requestParamsDTO.getFields())) {
 			processedData.put("hasFields", true);
 		}
 		if (checkNull(requestParamsDTO.getDataSource())) {
-			// System.out.println("has dataSource"+requestParamsDTO.getDataSource());
 			processedData.put("hasDataSource", true);
 		}
 		if (checkNull(requestParamsDTO.getGroupBy())) {
@@ -422,8 +422,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		if (checkNull(requestParamsDTO.getGranularity())) {
 			processedData.put("hasGranularity", true);
 		}
-		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0)) && checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix()) && checkNull(requestParamsDTO.getFilter().get(0).getFields())
-				&& checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))) {
+		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0)) && checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix())
+				&& checkNull(requestParamsDTO.getFilter().get(0).getFields()) && checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))) {
 			processedData.put("hasFilter", true);
 		}
 		if (checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")) {
@@ -656,5 +656,21 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
                  }
          }
          return requestFieldNameValue;
+	}
+
+	public void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap){
+		try {
+		if (requestParamsDTO.isSaveQuery() != null) {
+			if (requestParamsDTO.isSaveQuery()) {
+				JSONObject jsonObject = new JSONObject();
+					jsonObject.put("data",jsonArray.toString());
+				jsonObject.put("message",dataMap);
+				String queryId = putRedisCache(data,userMap, jsonObject);
+				dataMap.put("queryId", queryId);
+			}
+		}
+		} catch (org.json.JSONException e) {
+			e.printStackTrace();
+		}
 	}
 }
