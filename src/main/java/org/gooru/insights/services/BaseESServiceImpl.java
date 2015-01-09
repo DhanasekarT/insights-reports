@@ -233,16 +233,17 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
-		searchRequestBuilder.setNoFields();
 		searchRequestBuilder.setSize(1);
 
 		if (validatedData.get(hasdata.HAS_GRANULARITY.check())) {
 			
+			searchRequestBuilder.setNoFields();
 			businessLogicService.performGranularityAggregation(indices[0],requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 
 		}else if (validatedData.get(hasdata.HAS_GROUPBY.check())) {
 
+			searchRequestBuilder.setNoFields();
 			businessLogicService.performAggregation(indices[0],requestParamsDTO, searchRequestBuilder,metricsName);
 			hasAggregate = true;
 		
