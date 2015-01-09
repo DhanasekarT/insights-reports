@@ -40,7 +40,7 @@ public class ItemController extends BaseController implements APIConstants{
 
 	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getEventDetail(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			@RequestParam(value = "sessionToken", required = true) String sessionToken, HttpServletResponse response) throws IOException {
 
 		Map<Integer, String> errorMap = new HashMap<Integer, String>();
@@ -60,9 +60,7 @@ public class ItemController extends BaseController implements APIConstants{
 			sendError(response, errorMap);
 			return null;
 		}
-
 		return getModel(jsonArray, dataMap);
-
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
@@ -71,8 +69,10 @@ public class ItemController extends BaseController implements APIConstants{
 		
 		Map<Integer,String> errorMap = new HashMap<Integer,String>();
 		itemService.manageReports(action,reportName,data,errorMap);
+		
 		return getModels(errorMap);
 	}
+	
 	@RequestMapping(value="/report/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getPartyReports(HttpServletRequest request,@PathVariable(value="reportType") String reportType,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws IOException{
@@ -94,6 +94,7 @@ public class ItemController extends BaseController implements APIConstants{
 	
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response){
+	
 		Map<String,String> dataMap = new HashMap<String,String>();
 		if(itemService.clearQuery(queryId)){
 			if(queryId != null && !queryId.isEmpty()){

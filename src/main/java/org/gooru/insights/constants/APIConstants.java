@@ -142,7 +142,7 @@ public interface APIConstants {
 		
 		FORMULA("formula"),REQUEST_VALUES("requestValues"),METRICS("metrics"),NAME("name"),
 		AGGREGATIONS("aggregations"),FIELD("field"),BUCKETS("buckets"),TOTAL_ROWS("totalRows"),
-		KEY("KEY"),DOC_COUNT("doc_count"),KEY_AS_STRING("key_as_string"),SOURCE("_source"),HITS("hits"),
+		KEY("key"),DOC_COUNT("doc_count"),KEY_AS_STRING("key_as_string"),SOURCE("_source"),HITS("hits"),
 		TOTAL("total"),FIELDS("fields"),FILTERS("filters");
 
 		private String field;
