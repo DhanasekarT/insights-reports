@@ -280,14 +280,15 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		
 		if(hasAggregate){
 			
-			int limit = 0;
+			int limit = 10;
 			if(validatedData.get(hasdata.HAS_PAGINATION.check())){
 			
-				if(validatedData.get(hasdata.HAS_LIMIT.check()))
+				if(validatedData.get(hasdata.HAS_LIMIT.check())){
 				limit = requestParamsDTO.getPagination().getLimit();
 				
 				if(validatedData.get(hasdata.HAS_Offset.check()) && requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit() != 0){
 					limit = requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit();
+				}
 				}
 			}
 				
