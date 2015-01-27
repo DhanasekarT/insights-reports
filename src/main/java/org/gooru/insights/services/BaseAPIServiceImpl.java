@@ -31,6 +31,9 @@ import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.RequestParamsFilterDetailDTO;
+import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -369,6 +372,27 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return requestData;
 	}
 
+	public static void main(String[] args){
+		String data="abc";
+		//abc,bca,cba,acb,cab,bac,
+		StringBuffer result = new StringBuffer();
+		int counter =0;
+		int replacer=0;
+		while((data.length() * data.length()) != counter){
+		for(int i=replacer;i< data.length();i++){
+			result.append(data.charAt(i));
+			if(replacer >= data.length()){
+				i =0;
+			}
+		}
+		if(result.length() > 0){
+			result.append(",");
+		}
+		replacer++;
+		counter++;
+		}
+		System.out.println(result.toString());
+	}
 	public JSONArray formatKeyValueJson(List<Map<String, Object>> dataMap, String key) throws org.json.JSONException {
 
 		JSONArray jsonArray = new JSONArray();
@@ -391,7 +415,185 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		}
 		return jsonArray;
 	}
+	
+	public boolean validateRequest(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData){
+		
+		return false;
+	}
+	 
+	public boolean checkPoint(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData,Map<Integer,String> errorData){
+		
+		processedData.put("hasFields", false);
+		processedData.put("hasDataSource", false);
+		processedData.put("hasGroupBy", false);
+		processedData.put("hasFilter", false);
+		processedData.put("hasAggregate", false);
+		processedData.put("hasLimit", false);
+		processedData.put("hasOffset", false);
+		processedData.put("hasSortBy", false);
+		processedData.put("hasSortOrder", false);
+		processedData.put("hasGranularity", false);
+		processedData.put("hasPagination", false);
+		Set<String> fieldData = new HashSet<String>();
+		
+		if (checkNull(requestParamsDTO.getDataSource())) {
+			for(String dataSource : requestParamsDTO.getDataSource().split(",")){
+			if(!baseConnectionService.getIndexMap().containsKey(dataSource)){
+				errorData.put(400, E1021+dataSource);
+				return false;
+			}else{
+				if(baseConnectionService.getFields().containsKey(baseConnectionService.getIndexMap().get(dataSource))){	
+					fieldData.addAll(baseConnectionService.getFields().get(baseConnectionService.getIndexMap().get(dataSource)).keySet());
+				}
+				}
+			}
+			processedData.put("hasDataSource", true);
+		}
 
+		if (checkNull(requestParamsDTO.getFields())) {
+			StringBuffer errorField = new StringBuffer();
+			for(String field : requestParamsDTO.getFields().split(COMMA)){
+				if(!fieldData.contains(field)){
+					errorField.append(field);
+				}
+				if(errorField.length() > 0){
+					errorField.append(COMMA);
+				}
+			}
+			if(errorField.length() > 0){
+				errorData.put(400, E1022+errorField.toString());
+				return false;
+			}
+			processedData.put("hasFields", true);
+		}
+		
+		if (checkNull(requestParamsDTO.getGroupBy())) {
+			StringBuffer errorField = new StringBuffer();
+			for(String field : requestParamsDTO.getGroupBy().split(COMMA)){
+				if(!fieldData.contains(field)){
+					errorField.append(field);
+				}
+				if(errorField.length() > 0){
+					errorField.append(COMMA);
+				}
+			}
+			if(errorField.length() > 0){
+				errorData.put(400, E1023+errorField.toString());
+				return false;
+			}
+			processedData.put("hasGroupBy", true);
+		}
+		
+		if (checkNull(requestParamsDTO.getGranularity())) {
+			for(String granularity : APIConstants.GRANULARITY){
+				if(!requestParamsDTO.getGranularity().endsWith(granularity)){
+					errorData.put(400, E1024+requestParamsDTO.getGranularity());
+					return false;
+				}
+				
+			}
+			processedData.put("hasGranularity", true);
+		}
+		
+		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0))) {
+			for(RequestParamsFilterDetailDTO logicalOperations : requestParamsDTO.getFilter()){
+				
+				if(!checkNull(logicalOperations.getLogicalOperatorPrefix())){
+					errorData.put(400, E1025+logicalOperations.getLogicalOperatorPrefix());
+					return false;
+				}
+				
+				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix())){
+					errorData.put(400, E1026+logicalOperations.getLogicalOperatorPrefix());
+					return false;
+				}
+				
+				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
+					if(!fieldData.contains(filters.getFieldName())){
+						errorData.put(400, E1027+filters.getFieldName());
+						return false;
+					}
+					
+					if(!baseConnectionService.getEsOperations().contains(filters.getOperator())){
+						errorData.put(400, E1027+filters.getOperator());
+						return false;
+					}else{
+						for(String esOperator : baseConnectionService.getEsOperations()){
+							if(!filters.getOperator().equalsIgnoreCase(esOperator)){
+								errorData.put(400, E1027+filters.getOperator());
+								return false;
+							}
+						}
+					}
+					if(!checkNull(filters.getType()) && !filters.getType().equalsIgnoreCase("selector")){
+						errorData.put(400, E1027+filters.getType());
+						return false;
+					}
+					if(!checkNull(filters.getValueType())){
+						errorData.put(400, E1027+filters.getValueType());
+						return false;
+					}
+					
+					if(!checkNull(filters.getValue())){
+						errorData.put(400, E1027+filters.getValue());
+						return false;
+					}
+				}
+			}
+			processedData.put("hasFilter", true);
+		}
+		
+		if (checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")) {
+			for(Map<String, String> aggregation : requestParamsDTO.getAggregations()){
+				if(!aggregation.containsKey("requestValues")){
+					errorData.put(400, E1028+"requestValues");
+					return false;
+				}
+				
+				if(!aggregation.containsKey("formula")){
+					errorData.put(400, E1028+"formula");
+					return false;
+				}
+				
+				if(!aggregation.containsKey(aggregation.get("requestValues"))){
+					errorData.put(400, E1028+aggregation.get("requestValues"));
+					return false;
+				}
+			}
+			processedData.put("hasAggregate", true);
+		}
+		
+		if (checkNull(requestParamsDTO.getPagination())) {
+			processedData.put("hasPagination", true);
+			if (checkNull(requestParamsDTO.getPagination().getLimit())) {
+				processedData.put("hasLimit", true);
+			}
+			if (checkNull(requestParamsDTO.getPagination().getOffset())) {
+				processedData.put("hasOffset", true);
+			}
+			if (checkNull(requestParamsDTO.getPagination().getOrder())) {
+				for(RequestParamsSortDTO orderData : requestParamsDTO.getPagination().getOrder()){
+					
+					if(!checkNull(orderData.getSortBy())){
+						errorData.put(400, E1029+orderData.getSortBy());
+						return false;
+					}
+					
+					if(!fieldData.contains(orderData.getSortBy())){
+						errorData.put(400, E1029+orderData.getSortBy());
+						return false;
+					}
+					
+					if (checkNull(orderData.getSortOrder())) {
+						processedData.put("hasSortOrder", true);
+					}
+					processedData.put("hasSortBy", true);
+				}
+			}
+		}
+		return false;
+	}
+	
 	public Map<String, Boolean> validateData(RequestParamsDTO requestParamsDTO) {
 		Map<String, Boolean> processedData = new HashMap<String, Boolean>();
 		processedData.put("hasFields", false);
@@ -452,10 +654,12 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 	public String[] getIndices(String names) {
 		String[] indices = new String[names.split(",").length];
-		String[] requestNames = names.split(",");
-		for (int i = 0; i < indices.length; i++) {
-			if (baseConnectionService.getIndexMap().containsKey(requestNames[i]))
-				indices[i] = baseConnectionService.getIndexMap().get(requestNames[i]);
+		int index = 0;
+		for (String name : names.split(",")) {
+			if (baseConnectionService.getIndexMap().containsKey(name)){
+				indices[index] = baseConnectionService.getIndexMap().get(name);
+				index++;
+			}
 		}
 		return indices;
 	}

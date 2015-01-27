@@ -1,6 +1,7 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -174,8 +175,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	}
 	
 	public JSONArray generateQuery(String data, Map<String, Object> messageData, Map<String, Object> userMap, Map<Integer, String> errorData) {
+		
 		RequestParamsDTO requestParamsDTO = null;
-
 		try {
 			requestParamsDTO = baseAPIService.buildRequestParameters(data);
 		} catch (Exception e) {
@@ -183,10 +184,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			return new JSONArray();
 		}
 		
-		Map<String, Boolean> checkPoint = baseAPIService.validateData(requestParamsDTO);
-
-		if (!checkPoint.get(hasdata.HAS_DATASOURCE.check())) {
-			errorData.put(400,E1016);
+		//Map<String, Boolean> checkPoint = baseAPIService.validateData(requestParamsDTO);
+		Map<String, Boolean> checkPoint = new HashMap<String, Boolean>();
+		
+		if (!baseAPIService.checkPoint(requestParamsDTO, checkPoint, errorData)) {
 			return new JSONArray();
 		}
 
@@ -201,7 +202,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		List<Map<String, Object>> resultList = esService.generateQuery(requestParamsDTO, indices, checkPoint, messageData, errorData);
-
+		
 		try {
 			JSONArray jsonArray = businessLogicService.buildAggregateJSON(resultList);
 			

@@ -13,6 +13,10 @@ public interface APIConstants {
 	
 	public static String EMPTY= "";
 	
+	public static String PIPE = "|";
+	
+	public static String EMPTY_JSON_ARRAY = "[{}]";
+	
 	public static String DESC = "DESC";
 	
 	public static String CACHE_PREFIX ="insights";
@@ -95,6 +99,7 @@ public interface APIConstants {
 	
 	public String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
 	
+	public String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","D","W","M","Y","year","month","quator","week","day"};
 	public enum hasdata{
 		HAS_FEILDS("hasFields"),HAS_DATASOURCE("hasDataSource"),HAS_GRANULARITY("hasGranularity"),HAS_GROUPBY("hasGroupBy"),HAS_INTERVALS("hasIntervals"),
 		HAS_FILTER("hasFilter"),HAS_AGGREGATE("hasAggregate"),HAS_PAGINATION("hasPagination"),HAS_LIMIT("hasLimit"),HAS_Offset("hasOffset"),HAS_SORTBY("hasSortBy"),HAS_SORTORDER("hasSortOrder");
@@ -124,6 +129,20 @@ public interface APIConstants {
 		
 	}
 
+	public enum dateHistory{
+		
+		D_CHECKER("(.*)D|(.*)d"),W_CHECKER("(.*)W|(.*)w"),H_CHECKER("(.*)H|(.*)h"),K_CHECKER("(.*)K|(.*)k"),S_CHECKER("(.*)S|(.*)s"),
+		D_REPLACER("D|d"),W_REPLACER("W|w"),H_REPLACER("H|h"),K_REPLACER("K|k"),S_REPLACER("S|s");
+		
+		private String replacer;
+		public String replace(){
+			return replacer;
+		}
+		private dateHistory(String replacer){
+			this.replacer = replacer;
+		}
+	}
+	
 	public enum dateFormats{
 	
 		DEFAULT("yyyy-MM-dd hh:kk:ss"),YEAR("yyyy"),QUARTER("yyyy-MM-dd"),MONTH("yyyy-MM"),WEEK("yyyy-MM-dd"),DAY("yyyy-MM-dd"),HOUR("yyyy-MM-dd hh"),MINUTE("yyyy-MM-dd hh:kk"),SECOND("yyyy-MM-dd hh:kk:ss"),

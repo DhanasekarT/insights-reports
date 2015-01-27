@@ -41,4 +41,22 @@ public interface ErrorCodes {
 	public String E1019 = "Successfully added!";
 	
 	public String E1020 = "Oops!Report already available!!";
+	
+	public String E1021 = "Oops! Invalid DataSource: ";
+
+	public String E1022 = "Oops! Please pass valid fields: ";
+	
+	public String E1023 = "Oops! Please pass valid groupBy: ";
+	
+	public String E1024 = "Oops! Please pass valid granularity: ";
+	
+	public String E1025 = "Oops! Please pass logical operator in filters";
+	
+	public String E1026 = "Oops! Please pass valid logical operator in filters: ";
+	
+	public String E1027 = "Oops! Please pass valid fieldName,Operator,type,value and valueType in filters: ";
+	
+	public String E1028 = "Oops! Please pass valid fields in aggregation: ";
+	
+	public String E1029 = "Oops! Please pass valid fields in pagination: ";
 }

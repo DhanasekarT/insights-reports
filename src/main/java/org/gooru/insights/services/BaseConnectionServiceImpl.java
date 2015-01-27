@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import antlr.StringUtils;
+
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.NodeDiscoveryType;
@@ -77,7 +79,13 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	private static Map<String,String> indexMap;
 	
+	private static Map<String,String> defaultFields;
+	
 	private ColumnList<String> endPoint = null;
+	
+	private static Set<String> logicalOperations;
+	
+	private static Set<String> esOperations;
 	
 	protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
 	 
@@ -100,6 +108,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	@PostConstruct
 	public void initConnect(){
 		
+		putLogicalOperations();
+		putEsOperations();
 		if(!baseAPIService.checkNull(insightsKeyspace) || !baseAPIService.checkNull(searchKeyspace)){
 		initCassandraConnection();
 		
@@ -288,7 +298,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		}
 		return searchKeyspace;
 	}
-	
+		
 	public void fieldDataType(){
 		
 		fieldsDataTypeCache = new HashMap<String, String>();
@@ -318,7 +328,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 		fieldsConfigCache = new HashMap<String, Map<String,String>>();
 		fieldsCache = new HashMap<String,Map<String,String>>();
 		fieldsCustomDataTypeCache = new HashMap<String,Map<String,String>>();
-
+		defaultFields = new HashMap<String,String>();
+		
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(keyspaces.INSIGHTS.keyspace(), columnFamilies.CONFIG_SETTINGS.columnFamily(),indexList(),new ArrayList<String>());
 		Rows<String, String> rows = operationalResult.getResult();
 		
@@ -326,8 +337,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 			Map<String,String> configMap = new HashMap<String, String>();
 			Map<String,String> fieldsMap = new HashMap<String, String>();
 			Map<String,String> fieldsDataTypeMap = new HashMap<String, String>();
-			if(row.getColumns().getColumnByName("common_fields") != null && row.getColumns().getColumnByName("fetch_fields") != null){
-			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields").getStringValue());
+			if(row.getColumns().getColumnByName("common_fields") != null ){
+			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
+			defaultFields.put(row.getKey(),row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
 			}
 			for(Column<String> column : row.getColumns()){
 				fieldsMap.put(column.getName(),column.getStringValue());
@@ -521,6 +533,52 @@ public class BaseConnectionServiceImpl implements BaseConnectionService,Cassandr
 	
 	}
 
+	public void putLogicalOperations(){
+		logicalOperations = new HashSet<String>();
+		logicalOperations.add("AND");
+		logicalOperations.add("OR");
+		logicalOperations.add("NOT");
+		logicalOperations.add("and");
+		logicalOperations.add("or");
+		logicalOperations.add("not");
+	}
+	
+	public void putEsOperations(){
+		esOperations = new HashSet<String>();
+		esOperations.add("GT");
+		esOperations.add("RG");
+		esOperations.add("NRG");
+		esOperations.add("EQ");
+		esOperations.add("LK");
+		esOperations.add("EX");
+		esOperations.add("IN");
+		esOperations.add("LE");
+		esOperations.add("GE");
+		esOperations.add("LT");
+		esOperations.add("gt");
+		esOperations.add("rg");
+		esOperations.add("nrg");
+		esOperations.add("eq");
+		esOperations.add("lk");
+		esOperations.add("ex");
+		esOperations.add("in");
+		esOperations.add("le");
+		esOperations.add("ge");
+		esOperations.add("lt");
+	}
+	
+	public Set<String> getLogicalOperations(){
+		return logicalOperations; 
+	}
+	
+	public Set<String> getEsOperations(){
+		return esOperations; 
+	}
+	
+	public Map<String,String> getDefaultFields(){
+		return defaultFields;
+	}
+	
 	public String getArrayHandler() {
 		
 		if(arrayHandler == null || arrayHandler.isEmpty()){

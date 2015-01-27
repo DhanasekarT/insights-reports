@@ -4,6 +4,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 
 public interface ItemService {
@@ -31,4 +32,5 @@ public interface ItemService {
 	Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap);
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
+
 }

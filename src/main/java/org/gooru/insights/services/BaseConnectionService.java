@@ -2,6 +2,7 @@ package org.gooru.insights.services;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.client.Client;
 
@@ -40,4 +41,10 @@ public interface BaseConnectionService {
 	Map<String, String> getFieldArrayHandler();
 	
 	String getArrayHandler();
+	
+	Set<String> getLogicalOperations();
+	
+	Set<String> getEsOperations();
+	
+	Map<String,String> getDefaultFields();
 }

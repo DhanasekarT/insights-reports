@@ -76,58 +76,65 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 
 			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,new String[]{ indices[i]}, new String[]{}, checkPoint,filterData,errorData,dataList.size(),usedFilter);
 			
+			if(!errorData.isEmpty()){
+				return dataList;			
+			}
+			
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filterData.putAll(innerFilterMap);
 			
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
-
-			Set<String> groupConcatFields = new HashSet<String>(); 
-			for(String data : usedFilter){
-			if(baseConnectionService.getArrayHandler().contains(data)){
-				groupConcatFields.add(data);
-			}
-			}
-			if(!groupConcatFields.isEmpty()){
-				List<Map<String,Object>> tempList = new ArrayList<Map<String,Object>>();
-				for(Map<String,Object> dataEntry : dataList){
-					Map<String,Object> tempMap = new HashMap<String, Object>();
-					for(String groupConcatField : groupConcatFields){
-						String groupConcatFieldName = baseConnectionService.getFieldArrayHandler().get(groupConcatField);
-						tempMap.putAll(dataEntry);
-					try{
-					Set<Object> courseIds = (Set<Object>) dataEntry.get(groupConcatField);
-					StringBuffer stringBuffer = new StringBuffer();
-					for(Object courseId : courseIds){
-						for(Map<String,Object> resultMap : resultList){
-							if(resultMap.containsKey(groupConcatField) && resultMap.containsKey(groupConcatFieldName) && resultMap.get(groupConcatField).toString().equalsIgnoreCase(courseId.toString())){
-								if(stringBuffer.length() > 0){
-									stringBuffer.append("|");
-								}
-								stringBuffer.append(resultMap.get(groupConcatFieldName));
-							}
-						}
-					}
-					tempMap.put(groupConcatFieldName, stringBuffer.toString());
-					}catch(Exception e){
-					}
-					}
-					tempList.add(tempMap);
-				}
-				dataList = tempList;
-			}
+			groupConcat(dataList, resultList, usedFilter);
 		}
 		
 		if(checkPoint.get(hasdata.HAS_GROUPBY.check()) && checkPoint.get(hasdata.HAS_GRANULARITY.check())){
 		try {
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			dataList = businessLogicService.formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
+			dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, checkPoint);		
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, checkPoint);		
 		}
 		
 	return dataList;
+	}
+	
+	private void groupConcat(List<Map<String,Object>> dataList,List<Map<String,Object>> resultList,Set<String> usedFilter){
+		Set<String> groupConcatFields = new HashSet<String>(); 
+		for(String data : usedFilter){
+		if(baseConnectionService.getArrayHandler().contains(data)){
+			groupConcatFields.add(data);
+		}
+		}
+		if(!groupConcatFields.isEmpty()){
+			List<Map<String,Object>> tempList = new ArrayList<Map<String,Object>>();
+			for(Map<String,Object> dataEntry : dataList){
+				Map<String,Object> tempMap = new HashMap<String, Object>();
+				for(String groupConcatField : groupConcatFields){
+					String groupConcatFieldName = baseConnectionService.getFieldArrayHandler().get(groupConcatField);
+					tempMap.putAll(dataEntry);
+				try{
+				Set<Object> courseIds = (Set<Object>) dataEntry.get(groupConcatField);
+				StringBuffer stringBuffer = new StringBuffer();
+				for(Object courseId : courseIds){
+					for(Map<String,Object> resultMap : resultList){
+						if(resultMap.containsKey(groupConcatField) && resultMap.containsKey(groupConcatFieldName) && resultMap.get(groupConcatField).toString().equalsIgnoreCase(courseId.toString())){
+							if(stringBuffer.length() > 0){
+								stringBuffer.append(PIPE);
+							}
+							stringBuffer.append(resultMap.get(groupConcatFieldName));
+						}
+					}
+				}
+				tempMap.put(groupConcatFieldName, stringBuffer.toString());
+				}catch(Exception e){
+				}
+				}
+				tempList.add(tempMap);
+			}
+			dataList = tempList;
+		}
 	}
 	
 	public List<Map<String,Object>> getItem(RequestParamsDTO requestParamsDTO,
@@ -165,17 +172,28 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		String result ="[{}]";
 		String dataKey=esSources.SOURCE.esSource();
-		String fields = esFields(indices[0],requestParamsDTO.getFields());
-		
-		if(fields.contains("code_id") || fields.contains("label")){
-		fields = fields+COMMA+"depth";	
-		}
+
 		if (validatedData.get(hasdata.HAS_FEILDS.check())) {
-			for (String field : fields.split(COMMA)) {
+			Set<String> filterFields = new HashSet<String>();
+			if(!requestParamsDTO.getFields().equalsIgnoreCase(WILD_CARD)){
+			String fields = esFields(indices[0],requestParamsDTO.getFields());
+		
+			if(fields.contains("code_id") || fields.contains("label")){
+				fields = fields+COMMA+"depth";	
+				}
+
+			filterFields = baseAPIService.convertStringtoSet(fields);
+			}else{
+					for(String field : baseConnectionService.getDefaultFields().get(indices[0]).split(COMMA)){
+						searchRequestBuilder.addField(field);	
+					}
+		}
+			for (String field : filterFields) {
 				searchRequestBuilder.addField(field);
 			}
 			dataKey=esSources.FIELDS.esSource();
-		}
+			}
+		
 		if(!filterMap.isEmpty()){
 			BoolFilterBuilder filterData = businessLogicService.customFilter(indices[0],filterMap,usedFilter);
 			if(filterData.hasClauses())
@@ -225,10 +243,10 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			String[] indices,
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord,Map<String,Object> filterMap) {
 		
-		String result ="[{}]";
+		String result = EMPTY_JSON_ARRAY;
 		boolean hasAggregate = false;
 		Map<String,String> metricsName = new HashMap<String,String>();
-		String dataKey=esSources.SOURCE.esSource();
+		String dataKey = esSources.SOURCE.esSource();
 
 		SearchRequestBuilder searchRequestBuilder = getClient(requestParamsDTO.getSourceIndex()).prepareSearch(
 					indices).setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
@@ -247,14 +265,22 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			businessLogicService.performAggregation(indices[0],requestParamsDTO, searchRequestBuilder,metricsName);
 			hasAggregate = true;
 		
-		}else if(validatedData.get(hasdata.HAS_FEILDS.check())) {
-
+		}else  {
+			Set<String> filterFields = new HashSet<String>();
+			if(validatedData.get(hasdata.HAS_FEILDS.check())){
+				if(!requestParamsDTO.getFields().equalsIgnoreCase(WILD_CARD)){
 			dataKey=esSources.FIELDS.esSource();
 			String fields = esFields(indices[0],requestParamsDTO.getFields());
-			Set<String> filterFields = baseAPIService.convertStringtoSet(fields);
+			filterFields = baseAPIService.convertStringtoSet(fields);
+			}else{
+					for(String field : baseConnectionService.getDefaultFields().get(indices[0]).split(COMMA)){
+						searchRequestBuilder.addField(field);	
+					}
+			}
 			for (String field : filterFields) {
 				searchRequestBuilder.addField(field);
 			}
+		}
 		}
 		
 		if(!hasAggregate){
@@ -285,19 +311,18 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 			
 				if(validatedData.get(hasdata.HAS_LIMIT.check())){
 				limit = requestParamsDTO.getPagination().getLimit();
-				
-				if(validatedData.get(hasdata.HAS_Offset.check()) && requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit() != 0){
-					limit = requestParamsDTO.getPagination().getOffset() * requestParamsDTO.getPagination().getLimit();
-				}
+				limit = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 				}
 			}
 				
 			String groupBy[] = requestParamsDTO.getGroupBy().split(COMMA);
 			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(groupBy, result, metricsName, validatedData.get(hasdata.HAS_FILTER.check()),dataMap,limit);
-			queryResult = businessLogicService.customSort(requestParamsDTO.getPagination(), queryResult, validatedData);
 			
-			if(!validatedData.get(hasdata.HAS_GRANULARITY.check()))
+			if(!validatedData.get(hasdata.HAS_GRANULARITY.check())){
 				queryResult = businessLogicService.customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
+			}else{
+				queryResult = businessLogicService.customSort(requestParamsDTO.getPagination(), queryResult, validatedData);
+			}
 			
 			return queryResult;
 		}else{

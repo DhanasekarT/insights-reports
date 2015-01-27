@@ -1,5 +1,6 @@
 package org.gooru.insights.services;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -62,11 +63,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				String fieldName =esFields(index,groupBy[i]);
 				TermsBuilder tempBuilder = null;
 				if(termBuilder != null){
-						tempBuilder = AggregationBuilders.terms(logicalConstants.FIELD.value()+i).field(fieldName);
+						tempBuilder = AggregationBuilders.terms(groupBy[i]).field(fieldName);
 						tempBuilder.subAggregation(termBuilder);
 						termBuilder = tempBuilder;
 				}else{
-					termBuilder = AggregationBuilders.terms(logicalConstants.FIELD.value()+i).field(fieldName);
+					termBuilder = AggregationBuilders.terms(groupBy[i]).field(fieldName);
 				}
 				if( i == groupBy.length-1){
 					includeAggregation(index,requestParamsDTO, termBuilder,metricsName);
@@ -109,14 +110,14 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				String groupByName = esFields(index,groupBy[i]);
 				if(baseConnectionService.getFieldsDataType().containsKey(groupBy[i]) && baseConnectionService.getFieldsDataType().get(groupBy[i]).equalsIgnoreCase(logicalConstants.DATE.value())){
 					isFirstDateHistogram =true;
-					dateHistogram = generateDateHistogram(requestParamsDTO.getGranularity(),logicalConstants.FIELD.value()+i,groupByName);
+					dateHistogram = generateDateHistogram(requestParamsDTO.getGranularity(),groupBy[i],groupByName);
 					if(termBuilder != null){
 						dateHistogram.subAggregation(termBuilder);
 						termBuilder = null;
 						}
 				}else{
 						if(termBuilder != null){
-						tempBuilder = AggregationBuilders.terms(logicalConstants.FIELD.value()+i).field(groupByName);
+						tempBuilder = AggregationBuilders.terms(groupBy[i]).field(groupByName);
 						if(dateHistogram != null){
 							if(termBuilder != null){
 								dateHistogram.subAggregation(termBuilder);
@@ -126,7 +127,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 						}
 						termBuilder = tempBuilder;
 						}else{
-							termBuilder = AggregationBuilders.terms(logicalConstants.FIELD.value()+i).field(groupByName);
+							termBuilder = AggregationBuilders.terms(groupBy[i]).field(groupByName);
 						}
 						if(dateHistogram != null){
 							termBuilder.subAggregation(dateHistogram);
@@ -205,21 +206,17 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 		
 			JSONObject jsonObject;
 			jsonObject = new JSONObject(jsonArray.get(i).toString());
-			if (!jsonObject.has(formulaFields.FORMULA.field()) && !jsonObject.has(formulaFields.REQUEST_VALUES.field())) {
+			
+			/*
+			 * going to comment this line once we implement the error throw logic
+			 */
+			if (!jsonObject.has(formulaFields.FORMULA.field()) && !baseAPIService.checkNull(jsonObject.get(formulaFields.FORMULA.field())) && !jsonObject.has(formulaFields.REQUEST_VALUES.field()) && !jsonObject.has(jsonObject.getString(formulaFields.REQUEST_VALUES.field()))) {
 				continue;
 			}
-			if (baseAPIService.checkNull(jsonObject.get(formulaFields.FORMULA.field()))) {
-				String requestValues = jsonObject.get(formulaFields.REQUEST_VALUES.field()).toString();
-				String metricField[] =requestValues.split(COMMA);
-				for (int j=0;j<metricField.length;j++) {
-					if (!jsonObject.has(metricField[j])) {
-								continue;
-					}
-					String fieldName = esFields(index,jsonObject.get(metricField[j]).toString());
-					performAggregation(termBuilder,jsonObject,jsonObject.getString(formulaFields.FORMULA.field()), formulaFields.METRICS.field()+i,fieldName);
-					metricsName.put(jsonObject.getString(formulaFields.NAME.field()) != null ? jsonObject.getString(formulaFields.NAME.field()) : fieldName, formulaFields.METRICS.field()+i);
-					}
-				}
+				String requestValue = jsonObject.get(formulaFields.REQUEST_VALUES.field()).toString();
+				String fieldName = esFields(index,jsonObject.get(requestValue).toString());
+				performAggregation(termBuilder,jsonObject,jsonObject.getString(formulaFields.FORMULA.field()), requestValue,fieldName);
+				metricsName.put(jsonObject.getString(formulaFields.NAME.field()) != null ? jsonObject.getString(formulaFields.NAME.field()) : fieldName, requestValue);
 			}
 		}catch(Exception e){
 			e.printStackTrace();
@@ -238,21 +235,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			for (int i = 0; i < jsonArray.length(); i++) {
 				JSONObject jsonObject;
 				jsonObject = new JSONObject(jsonArray.get(i).toString());
-				if (!jsonObject.has(formulaFields.FORMULA.field())&& !jsonObject.has(formulaFields.REQUEST_VALUES.field())) {
+				if (!jsonObject.has(formulaFields.FORMULA.field()) && !baseAPIService.checkNull(jsonObject.get(formulaFields.FORMULA.field())) && !jsonObject.has(formulaFields.REQUEST_VALUES.field()) && !baseAPIService.checkNull(jsonObject.get(formulaFields.REQUEST_VALUES.field()))) {
 					continue;
 				}
-				if (baseAPIService.checkNull(jsonObject.get(formulaFields.FORMULA.field()))) {
 					String requestValues = jsonObject.get(formulaFields.REQUEST_VALUES.field()).toString();
-					String aggregateName[] = requestValues.split(COMMA);
-					for (int j=0;j<aggregateName.length;j++) {
-						if (!jsonObject.has(aggregateName[j])) {
-							continue;
-							}
-						String fieldName = esFields(index,jsonObject.get(aggregateName[j]).toString());
-						performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString(formulaFields.FORMULA.field()), formulaFields.METRICS.field()+i,fieldName);
-						metricsName.put(jsonObject.getString(formulaFields.NAME.field()) != null ? jsonObject.getString(formulaFields.NAME.field()) : fieldName, formulaFields.METRICS.field()+i);
-						}
-					}
+					String fieldName = esFields(index,jsonObject.get(requestValues).toString());
+					performAggregation(dateHistogramBuilder,jsonObject,jsonObject.getString(formulaFields.FORMULA.field()), requestValues, fieldName);
+					metricsName.put(jsonObject.getString(formulaFields.NAME.field()) != null ? jsonObject.getString(formulaFields.NAME.field()) : fieldName, requestValues);
 				}
 			}catch(Exception e){
 				e.printStackTrace();
@@ -423,32 +412,42 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				FilterBuilder filter = null;
 				String fieldName = esFields(index,fieldsDetails.getFieldName());
 				if (esFilterFields.SELECTOR.field().equalsIgnoreCase(fieldsDetails.getType())) {
+					
 					if (esFilterFields.RG.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.rangeFilter(fieldName).from(checkDataType(fieldsDetails.getFrom(),fieldsDetails.getValueType(),fieldsDetails.getFormat()))
 									.to(checkDataType(fieldsDetails.getTo(),fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					
 					} else if (esFilterFields.NRG.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.notFilter(FilterBuilders.rangeFilter(fieldName).from(checkDataType(fieldsDetails.getFrom(),fieldsDetails.getValueType(),fieldsDetails.getFormat()))
 									.to(checkDataType(fieldsDetails.getTo(),fieldsDetails.getValueType(),fieldsDetails.getFormat())));
+					
 					} else if (esFilterFields.EQ.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.termFilter(fieldName,checkDataType(fieldsDetails.getValue(),
 									fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					
 					} else if (esFilterFields.LK.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter =  FilterBuilders.prefixFilter(fieldName,checkDataType(fieldsDetails.getValue(),
 									fieldsDetails.getValueType(),fieldsDetails.getFormat()).toString());
+					
 					} else if (esFilterFields.EX.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.existsFilter(checkDataType(fieldsDetails.getValue(),
 									fieldsDetails.getValueType(),fieldsDetails.getFormat()).toString());
+					
 					}   else if (esFilterFields.IN.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
-						filter = FilterBuilders.inFilter(fieldName,fieldsDetails.getValue().split(","));
+						filter = FilterBuilders.inFilter(fieldName,fieldsDetails.getValue().split(COMMA));
+					
 					} else if (esFilterFields.LE.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.rangeFilter(fieldName).lte(
 								checkDataType(fieldsDetails.getValue(),fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					
 					} else if (esFilterFields.GE.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.rangeFilter(fieldName).gte(checkDataType(fieldsDetails.getValue(),
 								fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					
 					} else if (esFilterFields.LT.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.rangeFilter(
 								fieldName).lt(checkDataType(fieldsDetails.getValue(),fieldsDetails.getValueType(),fieldsDetails.getFormat()));
+					
 					} else if (esFilterFields.GT.field().equalsIgnoreCase(fieldsDetails.getOperator())) {
 						filter = FilterBuilders.rangeFilter(fieldName).gt(checkDataType(fieldsDetails.getValue(),
 								fieldsDetails.getValueType(),fieldsDetails.getFormat()));
@@ -542,6 +541,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			
 			String format =dateFormats.DEFAULT.format();
 			if(baseAPIService.checkNull(granularity)){
+				granularity = granularity.toUpperCase();
 				org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram.Interval interval = DateHistogram.Interval.DAY;
 				if(dateFormats.YEAR.name().equalsIgnoreCase(granularity)){
 					interval = DateHistogram.Interval.YEAR;
@@ -566,24 +566,24 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				}else if(dateFormats.WEEK.name().equalsIgnoreCase(granularity)){
 					format =dateFormats.WEEK.format();
 					interval = DateHistogram.Interval.WEEK;
-				}else if(granularity.endsWith(dateFormats.D.name())){
-					int days = new Integer(granularity.replace(dateFormats.D.name(),""));
+				}else if(granularity.matches(dateHistory.D_CHECKER.replace())){
+					int days = new Integer(granularity.replaceFirst(dateHistory.D_REPLACER.replace(),EMPTY));
 					format =dateFormats.D.format();
 					interval = DateHistogram.Interval.days(days);
-				}else if(granularity.endsWith(dateFormats.W.name())){
-					int weeks = new Integer(granularity.replace(dateFormats.W.name(),""));
+				}else if(granularity.matches(dateHistory.W_CHECKER.replace())){
+					int weeks = new Integer(granularity.replaceFirst(dateHistory.W_REPLACER.replace(),EMPTY));
 					format =dateFormats.W.name();
 					interval = DateHistogram.Interval.weeks(weeks);
-				}else if(granularity.endsWith(dateFormats.H.name())){
-					int hours = new Integer(granularity.replace(dateFormats.H.name(),""));
+				}else if(granularity.matches(dateHistory.H_CHECKER.replace())){
+					int hours = new Integer(granularity.replaceFirst(dateHistory.H_REPLACER.replace(),EMPTY));
 					format =dateFormats.H.name();
 					interval = DateHistogram.Interval.hours(hours);
-				}else if(granularity.endsWith(dateFormats.K.name())){
-					int minutes = new Integer(granularity.replace(dateFormats.K.name(),""));
+				}else if(granularity.matches(dateHistory.K_CHECKER.replace())){
+					int minutes = new Integer(granularity.replaceFirst(dateHistory.K_REPLACER.replace(),EMPTY));
 					format =dateFormats.K.format();
 					interval = DateHistogram.Interval.minutes(minutes);
-				}else if(granularity.endsWith(dateFormats.S.name())){
-					int seconds = new Integer(granularity.replace(dateFormats.S.name(),""));
+				}else if(granularity.matches(dateHistory.S_CHECKER.replace())){
+					int seconds = new Integer(granularity.replaceFirst(dateHistory.S_REPLACER.replace(),EMPTY));
 					interval = DateHistogram.Interval.seconds(seconds);
 				}
 				DateHistogramBuilder dateHistogram = AggregationBuilders.dateHistogram(fieldName).field(field).interval(interval).format(format);
@@ -606,7 +606,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					
 					while(counter < groupBy.length){
 		        	   if(json.length() > 0){
-		               JSONObject requestJSON = new JSONObject(json.get(formulaFields.FIELD.field()+counter).toString());
+		               JSONObject requestJSON = new JSONObject(json.get(groupBy[counter]).toString());
 		           JSONArray jsonArray = new JSONArray(requestJSON.get(formulaFields.BUCKETS.field()).toString());
 		           if(counter == 0){
 		        	   totalRows = jsonArray.length();
@@ -623,54 +623,20 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 		               if(counter == 0 && limit == i){
 		            	   break;
 		               }
-		               
 		               if(counter+1 == (groupBy.length)){
-		            	   Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
-		                   for(Map.Entry<String,String> entry : metrics.entrySet()){
-		                       if(newJson.has(entry.getValue())){
-		                           resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
-		                           resultMap.put(groupBy[counter], newJson.get(formulaFields.KEY.field()));
-		                           newJson.remove(entry.getValue());    
-		                       }
-		                       }
-		                   newJson.remove(formulaFields.DOC_COUNT.field());
-		                   newJson.remove(formulaFields.KEY_AS_STRING.field());
-		                   newJson.remove(formulaFields.BUCKETS.field());
-		                   newJson.remove(formulaFields.KEY.field());
-		                   Iterator<String> rowKeys = newJson.sortedKeys();
-		                   while(rowKeys.hasNext()){
-		                	   String rowKey = rowKeys.next();
-		                	   resultMap.put(rowKey, newJson.get(rowKey));
-		                   }
-		                   dataList.add(resultMap);
+		            	   fetchMetrics(newJson, dataList, metrics, groupBy, counter);
 		               }else{
-		                   JSONArray tempArray = new JSONArray();
-		                   JSONObject dataJson = new JSONObject(newJson.get(formulaFields.FIELD.field()+(counter+1)).toString());
-		                   tempArray = new JSONArray(dataJson.get(formulaFields.BUCKETS.field()).toString());
-		                   hasSubAggregate = true;
-		                   for(int j=0;j<tempArray.length();j++){
-		                       JSONObject subJson = new JSONObject(tempArray.get(j).toString());
-		                       subJson.put(groupBy[counter], key);
-		                       newJson.remove(formulaFields.FIELD.field()+(counter+1));
-		                       newJson.remove(formulaFields.DOC_COUNT.field());
-			                   newJson.remove(formulaFields.KEY_AS_STRING.field());
-			                   newJson.remove(formulaFields.KEY.field());
-			                   newJson.remove(formulaFields.BUCKETS.field());
-		                       Iterator<String> dataKeys = newJson.sortedKeys();
-		                       while(dataKeys.hasNext()){
-		                       String dataKey = dataKeys.next();
-		                       subJson.put(dataKey, newJson.get(dataKey));
-		                        }
-
-		                       subJsonArray.put(subJson);
-		                   }
+		            	   hasSubAggregate = true;
+		            	   iterateInternalObject(newJson, subJsonArray, groupBy, counter, key);
 		               }
 		           }
+		           
 		           if(hasSubAggregate){
 		               json = new JSONObject();
 		               requestJSON.put(formulaFields.BUCKETS.field(), subJsonArray);
-		               json.put(formulaFields.FIELD.field()+(counter+1), requestJSON);
+		               json.put(groupBy[counter+1], requestJSON);
 		           }
+		           
 		        	   }
 		           counter++;
 		           }
@@ -680,7 +646,50 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 		       return dataList;
 		}
 		
-		  public List<Map<String,Object>> formDataList(Map<Integer,Map<String,Object>> requestMap){
+		void fetchMetrics(JSONObject newJson,List<Map<String,Object>> dataList,Map<String,String> metrics,String[] groupBy,Integer counter) throws JSONException{
+     	   Map<String,Object> resultMap = new LinkedHashMap<String,Object>();
+           for(Map.Entry<String,String> entry : metrics.entrySet()){
+               if(newJson.has(entry.getValue())){
+                   resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+                   resultMap.put(groupBy[counter], newJson.get(formulaFields.KEY.field()));
+                   newJson.remove(entry.getValue());    
+               }
+               }
+           newJson.remove(formulaFields.DOC_COUNT.field());
+           newJson.remove(formulaFields.KEY_AS_STRING.field());
+           newJson.remove(formulaFields.KEY.field());
+           newJson.remove(formulaFields.BUCKETS.field());
+           Iterator<String> dataKeys = newJson.sortedKeys();
+           while(dataKeys.hasNext()){
+        	   String dataKey = dataKeys.next();
+        	   resultMap.put(dataKey, newJson.get(dataKey));
+           }
+           dataList.add(resultMap);
+		}
+		
+		void iterateInternalObject(JSONObject newJson,JSONArray subJsonArray,String[] groupBy,Integer counter,Object key) throws JSONException{
+            JSONArray tempArray = new JSONArray();
+            JSONObject dataJson = new JSONObject(newJson.get(groupBy[counter+1]).toString());
+            tempArray = new JSONArray(dataJson.get(formulaFields.BUCKETS.field()).toString());
+            for(int j=0;j<tempArray.length();j++){
+                JSONObject subJson = new JSONObject(tempArray.get(j).toString());
+                subJson.put(groupBy[counter], key);
+                newJson.remove(groupBy[counter+1]);
+                newJson.remove(formulaFields.DOC_COUNT.field());
+                newJson.remove(formulaFields.KEY_AS_STRING.field());
+                newJson.remove(formulaFields.KEY.field());
+                newJson.remove(formulaFields.BUCKETS.field());
+                Iterator<String> dataKeys = newJson.sortedKeys();
+                while(dataKeys.hasNext()){
+                String dataKey = dataKeys.next();
+                subJson.put(dataKey, newJson.get(dataKey));
+                 }
+
+                subJsonArray.put(subJson);
+            }
+		}
+		
+		public List<Map<String,Object>> formDataList(Map<Integer,Map<String,Object>> requestMap){
 		       List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		       for(Map.Entry<Integer,Map<String,Object>> entry : requestMap.entrySet()){
 		           resultList.add(entry.getValue());
@@ -862,34 +871,38 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					for(String keySet : keySets){
 					for(String key : keySet.split(COMMA)){
 						if(dataMap.containsKey(key)){
-							if(!filters.isEmpty() && filters.containsKey(key)){
-								Set<Object> filterValue = (Set<Object>) filters.get(key);
-								try{
-									Set<Object> datas = (Set<Object>) dataMap.get(key);
-									for(Object data : datas){
-										filterValue.add(data);
-									}
-								}catch(Exception e){
-									filterValue.add(dataMap.get(key));
-								}						
-								filters.put(key, filterValue);
-							}else{
-								Set<Object> filterValue = new HashSet<Object>();
-								try{
-									Set<Object> datas = (Set<Object>) dataMap.get(key);
-									for(Object data : datas){
-										filterValue.add(data);
-									}
-								}catch(Exception e){
-									filterValue.add(dataMap.get(key));
-								}
-								filters.put(key, filterValue);
-							}
+							buildFilter(dataMap, filters, key);	
 						}
 					}
 					}
 				}
 				return filters;
+		}
+		
+		private void buildFilter(Map<String,Object> dataMap,Map<String,Object> filters,String key){
+			if(!filters.isEmpty() && filters.containsKey(key)){
+				Set<Object> filterValue = (Set<Object>) filters.get(key);
+				try{
+					Set<Object> datas = (Set<Object>) dataMap.get(key);
+					for(Object data : datas){
+						filterValue.add(data);
+					}
+				}catch(Exception e){
+					filterValue.add(dataMap.get(key));
+				}						
+				filters.put(key, filterValue);
+			}else{
+				Set<Object> filterValue = new HashSet<Object>();
+				try{
+					Set<Object> datas = (Set<Object>) dataMap.get(key);
+					for(Object data : datas){
+						filterValue.add(data);
+					}
+				}catch(Exception e){
+					filterValue.add(dataMap.get(key));
+				}
+				filters.put(key, filterValue);
+			}
 		}
 		
 		public JSONArray convertJSONArray(List<Map<String,Object>> data){

@@ -78,5 +78,7 @@ public interface BaseAPIService {
 	
 	boolean insertKey(String data);
 
+	boolean checkPoint(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData,Map<Integer,String> errorData);
+	
 	void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap);
 }
