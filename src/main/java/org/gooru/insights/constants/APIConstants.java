@@ -100,6 +100,9 @@ public interface APIConstants {
 	public String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
 	
 	public String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","D","W","M","Y","year","month","quator","week","day"};
+	
+	public String ANONYMOUSUSERDATASOURCE = "anonymoususerdata";
+	
 	public enum hasdata{
 		HAS_FEILDS("hasFields"),HAS_DATASOURCE("hasDataSource"),HAS_GRANULARITY("hasGranularity"),HAS_GROUPBY("hasGroupBy"),HAS_INTERVALS("hasIntervals"),
 		HAS_FILTER("hasFilter"),HAS_AGGREGATE("hasAggregate"),HAS_PAGINATION("hasPagination"),HAS_LIMIT("hasLimit"),HAS_Offset("hasOffset"),HAS_SORTBY("hasSortBy"),HAS_SORTORDER("hasSortOrder");

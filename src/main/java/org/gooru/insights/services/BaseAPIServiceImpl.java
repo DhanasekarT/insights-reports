@@ -591,7 +591,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 				}
 			}
 		}
-		return false;
+		return true;
 	}
 	
 	public Map<String, Boolean> validateData(RequestParamsDTO requestParamsDTO) {
@@ -730,8 +730,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) 
 				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)))) {
-				errorMap.put(403, E1003);
-				return requestParamsDTO;
+//				errorMap.put(403, E1003);
+				return this.changeDataSourceUserToAnonymousUser(requestParamsDTO);
 		}
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
 				errorMap.put(403, E1004);
@@ -876,5 +876,22 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		} catch (org.json.JSONException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@Override
+	public RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO) {
+		String dataSources = "";
+		for(String dataSource : requestParamsDTO.getDataSource().split(",")){
+			if(dataSources.length() > 0) {
+				dataSources += ",";
+			}
+			if(dataSource.matches(USERDATASOURCES)) {
+				dataSources += ANONYMOUSUSERDATASOURCE;
+			} else {
+				dataSources += dataSource;
+			}
+		}
+		requestParamsDTO.setDataSource(dataSources);
+		return requestParamsDTO;
 	}
 }

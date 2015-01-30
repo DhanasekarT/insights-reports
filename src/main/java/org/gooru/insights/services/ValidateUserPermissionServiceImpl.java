@@ -13,11 +13,15 @@ import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService, APIConstants, ErrorCodes {
 
+	@Autowired
+	private BaseAPIService baseApiService;
+	
 	public Map<String, Object> getUserFilters(String gooruUId) {
 
 		final Map<String, Object> allowedFilters = new HashMap<String, Object>();
@@ -114,8 +118,8 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		for (String userFilterOrgValue : userFilterOrgValues) {
 			if (requestParamsDTO.getDataSource().matches(USERDATASOURCES)) {
 				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_PII))) {
-					errorMap.put(403, E1003);
-					return requestParamsDTO;
+//					errorMap.put(403, E1003);
+					return baseApiService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
 				}
 			} else if ((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)) {
 				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_PII))) {
