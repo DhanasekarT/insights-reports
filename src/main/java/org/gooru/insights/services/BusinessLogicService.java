@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
@@ -14,15 +15,15 @@ import org.json.JSONException;
 
 public interface BusinessLogicService {
 
-	boolean performAggregation(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName);
+	void buildBuckets(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName);
 
-	boolean performGranularityAggregation(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData);
+	void buildGranularityBuckets(String index,RequestParamsDTO requestParamsDTO,SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String,Boolean> validatedData);
 
 	Map<Integer,Map<String,Object>> processAggregateJSON(String groupBy,String resultData,Map<String,String> metrics,boolean hasFilter);
 
-	BoolFilterBuilder includeFilter(String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
+	BoolFilterBuilder includeBucketFilter(String index,List<RequestParamsFilterDetailDTO> requestParamsFiltersDetailDTO);
 	
-	List<Map<String,Object>> customizeJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,Map<String,Object> dataMap,int limit);
+	List<Map<String,Object>> customizeJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,ResponseParamDTO<Map<String,Object>> responseParamDTO,int limit);
 
 	BoolFilterBuilder customFilter(String index,Map<String,Object> filterMap,Set<String> userFilter);
 
@@ -54,7 +55,7 @@ public interface BusinessLogicService {
 		
 	List<Map<String,Object>> customSort(RequestParamsPaginationDTO requestParamsPaginationDTO,List<Map<String,Object>> data,Map<String,Boolean> validatedData);
 
-	List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey,Map<String,Object> dataMap);
+	List<Map<String,Object>> getRecords(String indices,ResponseParamDTO<Map<String,Object>> responseParamDTO,String data, String dataKey)throws Exception;
 	
 	List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
 }

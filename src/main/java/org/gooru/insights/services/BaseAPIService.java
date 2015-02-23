@@ -7,6 +7,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
@@ -32,7 +33,7 @@ public interface BaseAPIService {
 	
 	Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO);
 	
-	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
 	
 	String[] getIndices(String names);
 	
@@ -78,7 +79,9 @@ public interface BaseAPIService {
 	
 	boolean insertKey(String data);
 
-	boolean checkPoint(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData,Map<Integer,String> errorData);
+	Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO);
 	
-	void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap);
+	void saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap);
+
+	<T> T deserialize(String json, Class<T> clazz);
 }

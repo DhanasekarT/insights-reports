@@ -4,9 +4,12 @@ import java.util.Collection;
 
 import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.constants.CassandraConstants;
+import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.exception.handlers.ReportGenerationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.MutationBatch;
@@ -18,15 +21,13 @@ import com.netflix.astyanax.model.ColumnList;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.model.Rows;
 import com.netflix.astyanax.query.AllRowsQuery;
-import com.netflix.astyanax.query.ColumnFamilyQuery;
-import com.netflix.astyanax.query.IndexQuery;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.query.RowSliceQuery;
 import com.netflix.astyanax.retry.ConstantBackoff;
 import com.netflix.astyanax.serializers.StringSerializer;
 
 @Component
-public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraConstants{
+public class BaseCassandraServiceImpl implements BaseCassandraService{
 
 	@Autowired
 	BaseConnectionService connector;
@@ -34,54 +35,40 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 	@Autowired
 	BaseAPIService baseAPIService;
 
-	 protected static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	 private static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	 
+	 private static final int SLEEP_TIME_MS = 2000;
+	 
+	 private static final int LOOP_COUNT = 5;
+	 
+	 
+	 Logger logger = LoggerFactory.getLogger(BaseCassandraServiceImpl.class);
 	 
 	
 	public OperationResult<ColumnList<String>> readColumns(String keyspace, String columnFamilyName, String rowKey,Collection<String> columns) {
 
-			Keyspace queryKeyspace = null;
-			if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-				queryKeyspace = connector.connectInsights();
-			} else {
-				queryKeyspace = connector.connectSearch();
-			}
 			try {
-				RowQuery<String, String> rowQuery = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getKey(rowKey);
-			
+				RowQuery<String, String> rowQuery = connector.connectInsights().prepareQuery(accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(SLEEP_TIME_MS, LOOP_COUNT)).getKey(rowKey);
 				if(baseAPIService.checkNull(columns)){
 					rowQuery.withColumnSlice(columns);
 				}
 				return rowQuery.execute();
-			} catch (ConnectionException e) {
-
-				e.printStackTrace();
-				System.out.println("Query execution exeption");
+			} catch (Exception e) {
+				throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
 			}
-			return null;
-
 		}
 	
 	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamilyName, Collection<String> keys, Collection<String> columns) {
 
 		OperationResult<Rows<String, String>> queryResult = null;
-
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connector.connectInsights();
-		} else {
-			queryKeyspace = connector.connectSearch();
-		}
 		try {
-			RowSliceQuery<String, String> Query = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getKeySlice(keys);
+			RowSliceQuery<String, String> Query = connector.connectInsights().prepareQuery(this.accessColumnFamily(columnFamilyName)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(SLEEP_TIME_MS, LOOP_COUNT)).getKeySlice(keys);
 			if (!columns.isEmpty()) {
 				Query.withColumnSlice(columns);
 			}
 			queryResult = Query.execute();
-
-		} catch (ConnectionException e) {
-
-			e.printStackTrace();
-			System.out.println("Query execution exeption");
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
 		}
 		return queryResult;
 
@@ -89,22 +76,16 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 	
 	public ColumnList<String> read(String keyspace,String cfName,String key){
 		ColumnList<String> result = null;
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connector.connectInsights();
-		} else {
-			queryKeyspace = connector.connectSearch();
-		}
 		try {
-              result = queryKeyspace.prepareQuery(this.accessColumnFamily(cfName))
-                    .setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(2000, 5))
+              result = connector.connectInsights().prepareQuery(this.accessColumnFamily(cfName))
+                    .setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(SLEEP_TIME_MS, LOOP_COUNT))
                     .getKey(key)
                     .execute()
                     .getResult()
                     ;
 
-        } catch (ConnectionException e) {
-        		e.printStackTrace();
+        } catch (Exception e) {
+        	throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
         }
     	
     	return result;
@@ -112,22 +93,16 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
 
 	public Column<String> readColumnValue(String keyspace,String cfName,String key,String columnName){
 		ColumnList<String> result = null;
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connector.connectInsights();
-		} else {
-			queryKeyspace = connector.connectSearch();
-		}
 		try {
-              result = queryKeyspace.prepareQuery(this.accessColumnFamily(cfName))
-                    .setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(2000, 5))
+              result = connector.connectInsights().prepareQuery(this.accessColumnFamily(cfName))
+                    .setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(SLEEP_TIME_MS, LOOP_COUNT))
                     .getKey(key)
                     .execute()
                     .getResult()
                     ;
 
-        } catch (ConnectionException e) {
-        		e.printStackTrace();
+        } catch (Exception e) {
+        	throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
         }
     	if(!StringUtils.isBlank(columnName)){
     		return result.getColumnByName(columnName);
@@ -137,61 +112,35 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
     
 	public void saveStringValue(String keyspace,String cfName, String key,String columnName,String value) {
 	
-		Keyspace queryKeyspace = null;
-		
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connector.connectInsights();
-		} else {
-			queryKeyspace = connector.connectSearch();
-		}
-        MutationBatch m = queryKeyspace.prepareMutationBatch().setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(2000, 5));
-
+        MutationBatch m = connector.connectInsights().prepareMutationBatch().setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(SLEEP_TIME_MS, LOOP_COUNT));
         m.withRow(this.accessColumnFamily(cfName), key).putColumnIfNotNull(columnName, value, null);
-
         try {
             m.execute();
-        } catch (ConnectionException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+        	throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
         }
     }
     
 	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns) {
 		OperationResult<Rows<String, String>> queryResult = null;
 		AllRowsQuery<String, String> allRowQuery = null;
-		Keyspace queryKeyspace = null;
-		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
-			queryKeyspace = connector.connectInsights();
-		} else {
-			queryKeyspace = connector.connectSearch();
-		}
 		try {
-
-			allRowQuery  = queryKeyspace.prepareQuery(this.accessColumnFamily(columnFamily)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getAllRows();
-
+			allRowQuery  = connector.connectInsights().prepareQuery(this.accessColumnFamily(columnFamily)).setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).getAllRows();
 			if (!columns.isEmpty()) {
-				System.out.println("entered column fetcher ");
 				allRowQuery.withColumnSlice(columns);
 			}
-			
 			queryResult = allRowQuery.execute();
 
-		} catch (ConnectionException e) {
-			e.printStackTrace();
-			System.out.println("Query execution exeption");
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+e);
 		}
 		return queryResult;
 	}
 	
-	public ColumnFamily<String, String> accessColumnFamily(String columnFamilyName) {
+	private ColumnFamily<String, String> accessColumnFamily(String columnFamilyName) {
 
-		ColumnFamily<String, String> columnFamily;
-
-		columnFamily = new ColumnFamily<String, String>(columnFamilyName, StringSerializer.get(), StringSerializer.get());
-
+		ColumnFamily<String, String> columnFamily = new ColumnFamily<String, String>(columnFamilyName, StringSerializer.get(), StringSerializer.get());
 		return columnFamily;
-	}
-	public static void main(String[] args){
-		System.out.print("hgdhfg kjhKhxkjhvdk");
 	}
 }
 

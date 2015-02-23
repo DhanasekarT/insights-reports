@@ -1,4 +1,4 @@
-package org.gooru.insights.services;
+package org.gooru.insights.builders.utils;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.APIConstants.DateFormats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -16,11 +17,11 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RedisServiceImpl implements APIConstants,RedisService {
+public class RedisServiceImpl implements RedisService {
 
-	final StringRedisSerializer STRING_SERIALIZER = new StringRedisSerializer();
+	private static final StringRedisSerializer STRING_SERIALIZER = new StringRedisSerializer();
 	
-	final LongSerializer LONG_SERIALIZER  = LongSerializer.INSTANCE;
+	private static final LongSerializer LONG_SERIALIZER  = LongSerializer.INSTANCE;
 	
 	@Autowired(required = false)
 	private RedisTemplate<String, Long> redisLongTemplate = new RedisTemplate() ;
@@ -53,12 +54,12 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public void putRedisLongValue(String key,Long value){
-		redisLongOperation().set(CACHE_PREFIX+SEPARATOR+key, value);
+		redisLongOperation().set(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key, value);
 	}
 	
 	public String putRedisStringValue(String key,String value){
-		if(!redisStringOperation().setIfAbsent(CACHE_PREFIX+SEPARATOR+key, value)){
-			return redisStringOperation().get(CACHE_PREFIX+SEPARATOR+key);
+		if(!redisStringOperation().setIfAbsent(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key, value)){
+			return redisStringOperation().get(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key);
 		}
 		return null;
 	}
@@ -71,7 +72,7 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public boolean hasRedisKey(String key){
-		if(redisStringTemplate.hasKey(CACHE_PREFIX+SEPARATOR+key)){
+		if(redisStringTemplate.hasKey(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key)){
 			return true;
 		}else{
 			return false;
@@ -79,7 +80,7 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public String getRedisValue(String key){
-			return redisStringOperation().get(CACHE_PREFIX+SEPARATOR+key);
+			return redisStringOperation().get(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key);
 	}
 	
 	public String getRedisRawValue(String key){
@@ -89,7 +90,7 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	
 	public boolean removeRedisKey(String key){
 		try{
-		redisStringTemplate.delete(CACHE_PREFIX+SEPARATOR+key);
+		redisStringTemplate.delete(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key);
 		return true;
 		}catch(Exception e){
 			return false;
@@ -98,7 +99,7 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	
 	public boolean removeRedisKeys(){
 		try{
-			Set<String> keys = redisStringTemplate.keys(CACHE_PREFIX+SEPARATOR+WILD_CARD);
+			Set<String> keys = redisStringTemplate.keys(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+APIConstants.WILD_CARD);
 			Iterator<String> itr = keys.iterator();
 			while(itr.hasNext()){
 		redisStringTemplate.delete(itr.next());
@@ -111,11 +112,11 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public Set<String> getKeys(){
-		return redisStringTemplate.keys(CACHE_PREFIX+SEPARATOR+WILD_CARD);
+		return redisStringTemplate.keys(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+APIConstants.WILD_CARD);
 	}
 	public boolean removeRedisKeys(String[] key){
 		try{
-		redisStringTemplate.delete(CACHE_PREFIX+SEPARATOR+key);
+		redisStringTemplate.delete(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key);
 		return true;
 		}catch(Exception e){
 			return false;
@@ -123,26 +124,26 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 	}
 	
 	public void putRedisLongValue(String key,Long value,Long ttl,String timeFormat){
-		redisLongOperation().set(CACHE_PREFIX+SEPARATOR+key, value,ttl,checkTime(timeFormat));
+		redisLongOperation().set(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key, value,ttl,checkTime(timeFormat));
 	}
 	
 	public void putRedisStringValue(String key,String value,Long ttl,String timeFormat){
-		redisStringOperation().set(CACHE_PREFIX+SEPARATOR+key, value,ttl,checkTime(timeFormat));
+		redisStringOperation().set(APIConstants.CACHE_PREFIX+APIConstants.SEPARATOR+key, value,ttl,checkTime(timeFormat));
 	}
 	
 	public TimeUnit checkTime(String timeFormat) {
 		if (timeFormat != null && !timeFormat.isEmpty()) {
-			if ("HOUR".equalsIgnoreCase(timeFormat)) {
+			if (DateFormats.HOUR.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.HOURS;
-			} else if ("MINUTE".equalsIgnoreCase(timeFormat)) {
+			} else if (DateFormats.MINUTE.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.MINUTES;
-			} else if ("SECOND".equalsIgnoreCase(timeFormat)) {
+			} else if (DateFormats.SECOND.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.SECONDS;
-			} else if ("MILLISECOND".equalsIgnoreCase(timeFormat)) {
+			} else if (DateFormats.MILLISECOND.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.MILLISECONDS;
-			} else if ("DAY".equalsIgnoreCase(timeFormat)) {
+			} else if (DateFormats.DAY.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.DAYS;
-			} else if ("NANOSECOND".equalsIgnoreCase(timeFormat)) {
+			} else if (DateFormats.NANOSECOND.name().equalsIgnoreCase(timeFormat)) {
 				return TimeUnit.NANOSECONDS;
 			} else {
 				return TimeUnit.SECONDS;
@@ -152,13 +153,10 @@ public class RedisServiceImpl implements APIConstants,RedisService {
 		}
 	}
 	
-	public RedisTemplate<String, String> getRedisStringOperationTemplate(){
+	private RedisTemplate<String, String> getRedisStringOperationTemplate(){
 		return redisStringTemplate;
 	}
 	
-
-	
-
 	private enum LongSerializer implements RedisSerializer<Long> {
 
 	INSTANCE;

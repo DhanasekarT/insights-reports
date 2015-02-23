@@ -9,16 +9,21 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.gooru.insights.builders.utils.MessageHandler;
+import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.constants.ResponseParamDTO;
+import org.gooru.insights.exception.handlers.NotFoundException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mortbay.util.ajax.JSON;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
 
-@Controller
-public class BaseController {
+import flexjson.JSONSerializer;
 
+public class BaseController extends APIConstants{
+
+	
 	protected ModelAndView getModel(JSONArray data,Map<String,Object> messageData){
 		return  this.resultSet(data,messageData);
 	}
@@ -30,6 +35,30 @@ public class BaseController {
 	public ModelAndView getModel(Map<String,String> data){
 		return  this.resultSet(data);
 	}
+	
+	public <M> ModelAndView getModel(ResponseParamDTO<M> data) {
+
+		ModelAndView model = new ModelAndView(MessageHandler.getMessage(APIConstants.VIEW_NAME));
+		model.addObject(MessageHandler.getMessage(APIConstants.RESPONSE_NAME), new JSONSerializer().exclude(EXCLUDE_CLASSES).serialize(data));
+		return model;
+	}
+	
+	public ModelAndView getModel(String data) {
+		
+		ModelAndView model = new ModelAndView(MessageHandler.getMessage(APIConstants.VIEW_NAME));
+		try {
+			
+			JSONObject resultMap = new JSONObject();
+			resultMap.put(MessageHandler.getMessage(APIConstants.VIEW_NAME), data);
+			resultMap.put("message", new JSONObject());
+			resultMap.put("paginate", new JSONObject());
+			model.addObject(MessageHandler.getMessage(APIConstants.RESPONSE_NAME), resultMap);
+		} catch (JSONException e) {
+			throw new NotFoundException(ErrorConstants.VIEW + ErrorConstants.E100);
+		}
+			return model;
+	}
+	
 	public ModelAndView getModels(Map<Integer,String> data){
 		return  this.resultSets(data);
 	}

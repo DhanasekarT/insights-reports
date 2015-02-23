@@ -1,4 +1,4 @@
-package org.gooru.insights.services;
+package org.gooru.insights.builders.utils;
 
 import java.util.Set;
 

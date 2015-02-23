@@ -24,27 +24,29 @@
 package org.gooru.insights.security;
 
 import java.util.ArrayList;
-import java.util.Properties;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.apache.log4j.spi.LoggerFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.gooru.insights.constants.CassandraConstants.columnFamilies;
-import org.gooru.insights.constants.CassandraConstants.keyspaces;
+import org.gooru.insights.builders.utils.RedisService;
+import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.CassandraConstants;
+import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.User;
 import org.gooru.insights.services.BaseCassandraService;
-import org.gooru.insights.services.RedisService;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ClientResource;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,16 +59,11 @@ import com.netflix.astyanax.model.ColumnList;
 @Aspect
 public class MethodAuthorizationAspect extends OperationAuthorizer {
 
-//	@Resource(name = "gooruConstants")
-//	private Properties gooruConstants;
-
-//	@Autowired
-//	CassandraService cassandraService;
-	
 	private ColumnList<String> endPoint = null;
-	
 	private static String GOORU_PREFIX = "authenticate_";
 	private ColumnList<String> entityOperationsRole = null;
+
+	private Logger log = org.slf4j.LoggerFactory.getLogger(MethodAuthorizationAspect.class);
 	
 	@Autowired
 	RedisService redisService;
@@ -76,8 +73,8 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	
 	@PostConstruct
 	public void init(){
-		 endPoint = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
-		 entityOperationsRole = baseCassandraService.readColumns(keyspaces.INSIGHTS.keyspace(), columnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"entity_role_opertaions", new ArrayList<String>()).getResult();
+		 endPoint = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
+		 entityOperationsRole = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"entity_role_opertaions", new ArrayList<String>()).getResult();
 	}
 	@Around("accessCheckPointcut() && @annotation(authorizeOperations) && @annotation(requestMapping)")
 	public Object operationsAuthorization(ProceedingJoinPoint pjp, AuthorizeOperations authorizeOperations, RequestMapping requestMapping) throws Throwable {
@@ -230,44 +227,43 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		}
 	}
 	
-	private boolean hasGooruAdminAuthority(AuthorizeOperations authorizeOperations,JSONObject jsonObj){
+	private boolean hasGooruAdminAuthority(AuthorizeOperations authorizeOperations, JSONObject jsonObj) {
 		boolean roleAuthority = false;
 		try {
 			String userRole = jsonObj.getString("userRoleSetString");
-			String operations =  authorizeOperations.operations();
-			for(String op :operations.split(",")){
-				if(userRole.contains("ROLE_GOORU_ADMIN") || userRole.contains("Content_Admin") || userRole.contains("Organization_Admin")){
+			String operations = authorizeOperations.operations();
+			for (String op : operations.split(",")) {
+				if (userRole.contains("ROLE_GOORU_ADMIN") || userRole.contains("Content_Admin") || userRole.contains("Organization_Admin")) {
 					roleAuthority = true;
 				}
 			}
 		} catch (JSONException e) {
-			System.out.print("Exception while JSON get"+e);
+			throw new ReportGenerationException(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON) + e);
 		}
 		return roleAuthority;
-		
+
 	}
 	
-	private boolean hasAuthority(AuthorizeOperations authorizeOperations,JSONObject jsonObj){
-			String userRole = null;
-			try {
-				userRole = jsonObj.getString("userRoleSetString");
-			} catch (JSONException e) {
-				System.out.print("Exception while json parsing"+ e);
-				return  false;
-			}
-			String operations =  authorizeOperations.operations();
-			for(String op : operations.split(",")){
-				String roles = entityOperationsRole.getColumnByName(op).getStringValue();
-				System.out.print("role : " +roles + "roleAuthority > :"+userRole.contains(roles));
-				for(String role : roles.split(",")){
-					if((userRole.contains(role))){
-						return true;
-					}
+	private boolean hasAuthority(AuthorizeOperations authorizeOperations, JSONObject jsonObj) {
+		String userRole = null;
+		try {
+			userRole = jsonObj.getString("userRoleSetString");
+		} catch (JSONException e) {
+			throw new ReportGenerationException(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON) + e);
+		}
+		String operations = authorizeOperations.operations();
+		for (String op : operations.split(APIConstants.COMMA)) {
+			String roles = entityOperationsRole.getColumnByName(op).getStringValue();
+			log.info(APIConstants.ROLES + roles + APIConstants.COLON + userRole.contains(roles));
+			for (String role : roles.split(",")) {
+				if ((userRole.contains(role))) {
+					return true;
 				}
 			}
-		 
+		}
+
 		return false;
-		
+
 	}
 	
 	public static void main(String args[]){

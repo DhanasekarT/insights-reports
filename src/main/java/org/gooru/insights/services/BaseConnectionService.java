@@ -1,7 +1,7 @@
 package org.gooru.insights.services;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.elasticsearch.client.Client;
@@ -11,8 +11,6 @@ import com.netflix.astyanax.Keyspace;
 public interface BaseConnectionService {
 
 	Keyspace connectInsights();
-	
-	Keyspace connectSearch();
 	
 	Client getDevClient();
 	
@@ -30,13 +28,13 @@ public interface BaseConnectionService {
 	
 	Map<String, Map<String, String>>  getFieldsCustomDataType();
 	
-	boolean clearDataCache();
+	void clearDataCache();
 	
 	void clearConnectionCache();
 	
-	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
+	Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
 	
-	Map<String,Object> getUserObjectData(String sessionToken ,Map<Integer,String> errorMap);
+	Map<String,Object> getUserObjectData(String sessionToken);
 	
 	Map<String, String> getFieldArrayHandler();
 	
@@ -47,4 +45,6 @@ public interface BaseConnectionService {
 	Set<String> getEsOperations();
 	
 	Map<String,String> getDefaultFields();
+	
+	Properties getFileProperties();
 }

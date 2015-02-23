@@ -8,25 +8,30 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
-import org.gooru.insights.constants.ErrorCodes;
+import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService, APIConstants, ErrorCodes {
+public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService {
 
+	Logger log = org.slf4j.LoggerFactory.getLogger(ValidateUserPermissionServiceImpl.class);
+	
 	public Map<String, Object> getUserFilters(String gooruUId) {
 
 		final Map<String, Object> allowedFilters = new HashMap<String, Object>();
 
-		allowedFilters.put(CREATORUID, gooruUId);
-		allowedFilters.put(GOORUUID, gooruUId);
-		allowedFilters.put(CREATOR_UID, gooruUId);
-		allowedFilters.put(GOORU_UID, gooruUId);
-		allowedFilters.put(USERUID, gooruUId);
+		allowedFilters.put(APIConstants.CREATORUID, gooruUId);
+		allowedFilters.put(APIConstants.GOORUUID, gooruUId);
+		allowedFilters.put(APIConstants.CREATOR_UID, gooruUId);
+		allowedFilters.put(APIConstants.GOORU_UID, gooruUId);
+		allowedFilters.put(APIConstants.USERUID, gooruUId);
 
 		return allowedFilters;
 	}
@@ -46,11 +51,13 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 						values.add(value);
 						userFiltersValue.put(fieldsDetails.getFieldName(), values);
 
-						if (fieldsDetails.getFieldName().equalsIgnoreCase(CONTENTORGUID) || fieldsDetails.getFieldName().equalsIgnoreCase(CONTENT_ORG_UID) || fieldsDetails.getFieldName().equalsIgnoreCase(USERORGID) || fieldsDetails.getFieldName().equalsIgnoreCase(USER_ORG_UID)) {
+						if (fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.CONTENTORGUID) || fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.CONTENT_ORG_UID)
+								|| fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.USERORGID) || fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.USER_ORG_UID)) {
 							orgValue.add(value);
 						}
-						if (fieldsDetails.getFieldName().equalsIgnoreCase(CREATORUID) || fieldsDetails.getFieldName().equalsIgnoreCase(CREATOR_UID) || fieldsDetails.getFieldName().equalsIgnoreCase(GOORUUID) || fieldsDetails.getFieldName().equalsIgnoreCase(GOORU_UID)
-								|| fieldsDetails.getFieldName().equalsIgnoreCase(USERUID)) {
+						if (fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.CREATORUID) || fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.CREATOR_UID)
+								|| fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.GOORUUID) || fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.GOORU_UID)
+								|| fieldsDetails.getFieldName().equalsIgnoreCase(APIConstants.USERUID)) {
 							userValue.add(value);
 						}
 					}
@@ -78,59 +85,55 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 					for (Object val : (Set<Object>) entry.getValue()) {
 						if (!values.contains(val)) {
 							notAllow = true;
-							break;						
+							break;
 						}
 					}
 				}
 			}
 		}
-		if(notAllow){
-			errorMap.put(403, E1009);
+		if (notAllow) {
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, APIConstants.EMPTY));
 		}
-		if(isFilterAvailable && !notAllow){
-			errorMap.put(200, E1012);
-		}
+		/*
+		 * if(isFilterAvailable && !notAllow){ errorMap.put(200, E1012); }
+		 */
 		return errorMap;
 	}
 
-	public RequestParamsDTO userPreValidation(RequestParamsDTO requestParamsDTO, Set<String> userFilterUserValues, Map<String, Set<String>> partyPermissions, Map<Integer, String> errorMap) {
+	public RequestParamsDTO userPreValidation(RequestParamsDTO requestParamsDTO, Set<String> userFilterUserValues, Map<String, Set<String>> partyPermissions) {
 		for (String userFilterUserValue : userFilterUserValues) {
-			if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) {
-				if (!(partyPermissions.containsKey(userFilterUserValue) && partyPermissions.get(userFilterUserValue).contains(AP_PARTY_OWN_CONTENT_USAGE))) {
+			if (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES)) {
+				if (!(partyPermissions.containsKey(userFilterUserValue) && partyPermissions.get(userFilterUserValue).contains(APIConstants.AP_PARTY_OWN_CONTENT_USAGE))) {
 					return requestParamsDTO;
 				}
 			}
-			if ((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES) && !requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES))) {
-				if (!(partyPermissions.containsKey(userFilterUserValue) && partyPermissions.get(userFilterUserValue).contains(AP_PARTY_OWN_CONTENT_USAGE))) {
+			if ((requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) && !requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES))) {
+				if (!(partyPermissions.containsKey(userFilterUserValue) && partyPermissions.get(userFilterUserValue).contains(APIConstants.AP_PARTY_OWN_CONTENT_USAGE))) {
 					return requestParamsDTO;
 				}
 			}
 		}
-		errorMap.clear();
 		return requestParamsDTO;
 	}
 
 	public RequestParamsDTO validateOrganization(RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions, Map<Integer, String> errorMap, Set<String> userFilterOrgValues) {
 		for (String userFilterOrgValue : userFilterOrgValues) {
-			if (requestParamsDTO.getDataSource().matches(USERDATASOURCES)) {
-				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_PII))) {
-					errorMap.put(403, E1003);
-					return requestParamsDTO;
+			if (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) {
+				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_PII))) {
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				}
-			} else if ((requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)) {
-				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_PII))) {
-					errorMap.put(403, E1003);
-					return requestParamsDTO;
+			} else if ((requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES))
+					&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)) {
+				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_PII))) {
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				}
-			} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
-				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_ACTIVITY_RAW))) {
-					errorMap.put(403, E1004);
-					return requestParamsDTO;
+			} else if (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
+				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_ACTIVITY_RAW))) {
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
 				}
-			} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
-				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(AP_PARTY_ACTIVITY))) {
-					errorMap.put(403, E1005);
-					return requestParamsDTO;
+			} else if (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
+				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_ACTIVITY))) {
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_ACTIVITY));
 				}
 			}
 		}
@@ -138,12 +141,13 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public List<RequestParamsFilterDetailDTO> addSystemContentUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter, String userOrgUId) {
+		
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
 		userFilters.add(systemContentFields);
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", USERORGID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
 		userFilters.add(systemUserFields);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
@@ -151,13 +155,13 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public List<RequestParamsFilterDetailDTO> addSystemContentOrgFilter(List<RequestParamsFilterDetailDTO> userFilter, String userOrgUId) {
+	
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
 		userFilters.add(systemContentFields);
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		systeFilterDetails.setFields(userFilters);
-
 		userFilter.add(systeFilterDetails);
 		return userFilter;
 	}
@@ -166,11 +170,10 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", USERORGID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
 		userFilters.add(systemUserFields);
 		systeFilterDetails.setLogicalOperatorPrefix("OR");
 		systeFilterDetails.setFields(userFilters);
-
 		userFilter.add(systeFilterDetails);
 		return userFilter;
 	}
@@ -183,25 +186,25 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 				allowedOrg.append(entry.getKey().toString());
 			}
 		}
-		if (allowedOrg.length() == 0 && !permission.matches(RESTRICTEDPERMISSION)) {
-			allowedOrg.append(DEFAULTORGUID);
+		if (allowedOrg.length() == 0 && !permission.matches(APIConstants.RESTRICTEDPERMISSION)) {
+			allowedOrg.append(APIConstants.DEFAULTORGUID);
 		}
 
-		System.out.print("allowedOrg : " + allowedOrg.toString());
+		log.info(APIConstants.ALLOWED_ORG,allowedOrg.toString());
 		return allowedOrg.toString();
 	}
 
 	public String getAllowedParties(RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions) {
 		String allowedParty = null;
-		if ((requestParamsDTO.getDataSource().matches(USERDATASOURCES)) || (requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())
-				&& requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)) {
-			allowedParty = AP_PARTY_PII;
-		} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
-			allowedParty = AP_PARTY_ACTIVITY_RAW;
-		} else if (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES)) {
-			allowedParty = AP_PARTY_ACTIVITY;
-		} else if (requestParamsDTO.getDataSource().matches(CONTENTDATASOURCES)) {
-			allowedParty = AP_PARTY_OWN_CONTENT_USAGE;
+		if ((requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) || (requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())
+				&& requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)) {
+			allowedParty = APIConstants.AP_PARTY_PII;
+		} else if (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy())) {
+			allowedParty = APIConstants.AP_PARTY_ACTIVITY_RAW;
+		} else if (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES)) {
+			allowedParty = APIConstants.AP_PARTY_ACTIVITY;
+		} else if (requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES)) {
+			allowedParty = APIConstants.AP_PARTY_OWN_CONTENT_USAGE;
 		}
 		return getRoleBasedParty(partyPermissions, allowedParty);
 	}

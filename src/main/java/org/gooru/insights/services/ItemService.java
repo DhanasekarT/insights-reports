@@ -4,33 +4,37 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
+import org.json.JSONException;
 
 public interface ItemService {
 
-	JSONArray generateQuery(String data,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	ResponseParamDTO<Map<String,Object>> generateQuery(String data,Map<String,Object> userMap)throws Exception;
 	
-	JSONArray getPartyReport(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType,Map<String,Object> userMap)throws Exception;
 	
-	JSONArray processApi(String data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
+	ResponseParamDTO<Map<String, Object>> processApi(String data,Map<String,Object> dataMap)throws Exception;
 	
-	boolean clearDataCache();
+	ResponseParamDTO<Map<String,Object>> clearDataCache();
 	
-	void clearConnectionCache();
+	ResponseParamDTO<Map<String,Object>> clearConnectionCache();
 	
-	public  Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
+	Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
 	
-	Boolean clearQuery(String id);
+	ResponseParamDTO<Map<String, String>> clearQuery(String id);
 	
-	JSONArray getQuery(String prefix,String id,Map<String,Object> dataMap);
+	ResponseParamDTO<Map<String,Object>> getQuery(String id,Map<String,Object> dataMap);
 	
-	JSONArray getCacheData(String prefix,String id);
+	ResponseParamDTO<Map<String,Object>> getCacheData(String id,Map<String,Object> userMap);
 	
-	boolean insertKey(String data);
+	ResponseParamDTO<Map<String,String>> insertKey(String data);
 	
-	Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap);
+	Map<String, Object> getUserObjectData(String sessionToken);
 	
-	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
+	ResponseParamDTO<Map<Integer,String>> manageReports(String action,String reportName,String data);
+	
+	ResponseParamDTO<Map<String,Object>> serverStatus();
 
 }

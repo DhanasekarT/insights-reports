@@ -27,8 +27,15 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.gooru.insights.builders.utils.ExcludeNullTransformer;
+import org.gooru.insights.builders.utils.MessageHandler;
+import org.gooru.insights.builders.utils.RedisService;
 import org.gooru.insights.constants.APIConstants;
-import org.gooru.insights.constants.ErrorCodes;
+import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.constants.ResponseParamDTO;
+import org.gooru.insights.exception.handlers.AccessDeniedException;
+import org.gooru.insights.exception.handlers.BadRequestException;
+import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
@@ -36,6 +43,8 @@ import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,7 +55,9 @@ import flexjson.JSONException;
 import flexjson.JSONSerializer;
 
 @Service
-public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCodes {
+public class BaseAPIServiceImpl {
+	
+	Logger logger = LoggerFactory.getLogger(BaseAPIServiceImpl.class); 
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -62,10 +73,14 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		try {
 			return data != null ? deserialize(data, RequestParamsDTO.class) : null;
 		} catch (Exception e) {
-			throw new JSONException();
+			throw new BadRequestException(ErrorConstants.E102);
 		}
 	}
-
+	/**
+	 * 
+	 * @param data
+	 * @return
+	 */
 	public RequestParamsCoreDTO buildRequestParamsCoreDTO(String data) {
 
 		try {
@@ -77,13 +92,11 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 
 	public boolean checkNull(String parameter) {
 
-		if (parameter != null && parameter != "" && (!parameter.isEmpty())) {
+		if(StringUtils.isBlank(parameter)){
+			return false;
+		}else {
 
 			return true;
-
-		} else {
-
-			return false;
 		}
 	}
 
@@ -273,7 +286,6 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return resultData;
 	}
 
-	@Override
 	public String convertArraytoString(String[] datas) {
 		StringBuffer result = new StringBuffer();
 		for (String data : datas) {
@@ -421,8 +433,8 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return false;
 	}
 	 
-	public boolean checkPoint(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData,Map<Integer,String> errorData){
-		
+	public Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO){
+		Map<String, Boolean> processedData = new HashMap<String, Boolean>();
 		processedData.put("hasFields", false);
 		processedData.put("hasDataSource", false);
 		processedData.put("hasGroupBy", false);
@@ -436,11 +448,13 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		processedData.put("hasPagination", false);
 		Set<String> fieldData = new HashSet<String>();
 		
+		/**
+		 * DataSource should not be null and it should have valid dataSource.
+		 */
 		if (checkNull(requestParamsDTO.getDataSource())) {
 			for(String dataSource : requestParamsDTO.getDataSource().split(",")){
 			if(!baseConnectionService.getIndexMap().containsKey(dataSource)){
-				errorData.put(400, E1021+dataSource);
-				return false;
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.DATA_SOURCE,dataSource}));
 			}else{
 				if(baseConnectionService.getFields().containsKey(baseConnectionService.getIndexMap().get(dataSource))){	
 					fieldData.addAll(baseConnectionService.getFields().get(baseConnectionService.getIndexMap().get(dataSource)).keySet());
@@ -448,121 +462,124 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 				}
 			}
 			processedData.put("hasDataSource", true);
-		}
-
-		if (checkNull(requestParamsDTO.getFields())) {
-			StringBuffer errorField = new StringBuffer();
-			for(String field : requestParamsDTO.getFields().split(COMMA)){
-				if(!fieldData.contains(field)){
-					errorField.append(field);
-				}
-				if(errorField.length() > 0){
-					errorField.append(COMMA);
-				}
-			}
-			if(errorField.length() > 0){
-				errorData.put(400, E1022+errorField.toString());
-				return false;
-			}
-			processedData.put("hasFields", true);
+		}else{
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.DATA_SOURCE));
 		}
 		
-		if (checkNull(requestParamsDTO.getGroupBy())) {
-			StringBuffer errorField = new StringBuffer();
-			for(String field : requestParamsDTO.getGroupBy().split(COMMA)){
-				if(!fieldData.contains(field)){
-					errorField.append(field);
-				}
-				if(errorField.length() > 0){
-					errorField.append(COMMA);
-				}
-			}
-			if(errorField.length() > 0){
-				errorData.put(400, E1023+errorField.toString());
-				return false;
-			}
-			processedData.put("hasGroupBy", true);
-		}
-		
-		if (checkNull(requestParamsDTO.getGranularity())) {
-			for(String granularity : APIConstants.GRANULARITY){
-				if(!requestParamsDTO.getGranularity().endsWith(granularity)){
-					errorData.put(400, E1024+requestParamsDTO.getGranularity());
-					return false;
-				}
-				
-			}
-			processedData.put("hasGranularity", true);
-		}
-		
-		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0))) {
-			for(RequestParamsFilterDetailDTO logicalOperations : requestParamsDTO.getFilter()){
-				
-				if(!checkNull(logicalOperations.getLogicalOperatorPrefix())){
-					errorData.put(400, E1025+logicalOperations.getLogicalOperatorPrefix());
-					return false;
-				}
-				
-				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix())){
-					errorData.put(400, E1026+logicalOperations.getLogicalOperatorPrefix());
-					return false;
-				}
-				
-				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
-					if(!fieldData.contains(filters.getFieldName())){
-						errorData.put(400, E1027+filters.getFieldName());
-						return false;
+		/**
+		 * Aggregation mandatory fields need to be present and it's field name should be in database acceptable field
+		 */
+		if(checkNull(requestParamsDTO.getAggregations())){
+			for(Map<String,String> aggregate : requestParamsDTO.getAggregations()){
+				if(!aggregate.containsKey("requestValues") && !aggregate.containsKey("name") && !aggregate.containsKey("formula") && !aggregate.containsKey(aggregate.get("requestValues"))){
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
+				}else{
+					if(!fieldData.contains(aggregate.get(aggregate.get("requestValues")))){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(aggregate.get("requestValues"))}));
 					}
-					
-					if(!baseConnectionService.getEsOperations().contains(filters.getOperator())){
-						errorData.put(400, E1027+filters.getOperator());
-						return false;
-					}else{
-						for(String esOperator : baseConnectionService.getEsOperations()){
-							if(!filters.getOperator().equalsIgnoreCase(esOperator)){
-								errorData.put(400, E1027+filters.getOperator());
-								return false;
-							}
-						}
-					}
-					if(!checkNull(filters.getType()) && !filters.getType().equalsIgnoreCase("selector")){
-						errorData.put(400, E1027+filters.getType());
-						return false;
-					}
-					if(!checkNull(filters.getValueType())){
-						errorData.put(400, E1027+filters.getValueType());
-						return false;
-					}
-					
-					if(!checkNull(filters.getValue())){
-						errorData.put(400, E1027+filters.getValue());
-						return false;
-					}
-				}
-			}
-			processedData.put("hasFilter", true);
-		}
-		
-		if (checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")) {
-			for(Map<String, String> aggregation : requestParamsDTO.getAggregations()){
-				if(!aggregation.containsKey("requestValues")){
-					errorData.put(400, E1028+"requestValues");
-					return false;
-				}
-				
-				if(!aggregation.containsKey("formula")){
-					errorData.put(400, E1028+"formula");
-					return false;
-				}
-				
-				if(!aggregation.containsKey(aggregation.get("requestValues"))){
-					errorData.put(400, E1028+aggregation.get("requestValues"));
-					return false;
+					fieldData.add(aggregate.get("name"));
 				}
 			}
 			processedData.put("hasAggregate", true);
 		}
 		
+		/**
+		 * fields should not be EMPTY and should be a valid field specified in data source
+		 */
+		if (checkNull(requestParamsDTO.getFields())) {
+			StringBuffer errorField = new StringBuffer();
+			for(String field : requestParamsDTO.getFields().split(APIConstants.COMMA)){
+				if(!fieldData.contains(field)){
+					errorField.append(field);
+					if(errorField.length() > 0){
+						errorField.append(APIConstants.COMMA);
+					}
+				}
+			}
+			if(errorField.length() > 0){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.FIELDS,errorField.toString()}));
+			}
+			processedData.put("hasFields", true);
+		}else{
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FIELDS));
+		}
+		
+		/**
+		 * If the aggregation is given then groupBy should not be EMPTY and vice versa.
+		 */
+		if (checkNull(requestParamsDTO.getGroupBy())) {
+			if(!processedData.get("hasAggregate")){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
+			}
+			StringBuffer errorField = new StringBuffer();
+			for(String field : requestParamsDTO.getGroupBy().split(APIConstants.COMMA)){
+				if(!fieldData.contains(field)){
+					errorField.append(field);
+				}
+				if(errorField.length() > 0){
+					errorField.append(APIConstants.COMMA);
+				}
+			}
+			if(errorField.length() > 0){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GROUP_BY,errorField.toString()}));
+			}
+			processedData.put("hasGroupBy", true);
+		}else if(processedData.get("hasAggregate")){
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.GROUP_BY));
+		}
+		
+		/**
+		 * granularity should be a valid acceptable field 
+		 */
+		if (checkNull(requestParamsDTO.getGranularity())) {
+			boolean isValid = false;
+			for(String granularity : APIConstants.GRANULARITY){
+				if(requestParamsDTO.getGranularity().endsWith(granularity)){
+					isValid = true;
+					break;
+				}
+			}
+			if(!isValid){
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GRANULARITY_NAME,requestParamsDTO.getGranularity()}));
+			}
+			processedData.put("hasGranularity", true);
+		}
+		
+		/**
+		 * Filter mandatory fields should not be EMPTY and it should be acceptable field
+		 */
+		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0))) {
+			for(RequestParamsFilterDetailDTO logicalOperations : requestParamsDTO.getFilter()){
+				
+				if(!checkNull(logicalOperations.getLogicalOperatorPrefix())){
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.LOGICAL_OPERATOR));
+				}
+				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix())){
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.LOGICAL_OPERATOR,logicalOperations.getLogicalOperatorPrefix()}));
+				}
+				
+				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
+
+					if(!checkNull(filters.getFieldName()) || !checkNull(filters.getOperator()) ||!checkNull(filters.getValueType()) || !checkNull(filters.getValue()) || !checkNull(filters.getType())){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FILTERS));
+					}
+					if(!filters.getType().equalsIgnoreCase(APIConstants.SELECTOR)){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getType()}));
+					}
+					if(!fieldData.contains(filters.getFieldName())){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getFieldName()}));
+					}
+					if(!baseConnectionService.getEsOperations().contains(filters.getOperator())){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getOperator()}));
+					}
+				}
+			}
+			processedData.put("hasFilter", true);
+		}
+
+		/**
+		 * Check for pagination and the sortBy field should not be EMPTY and it should be valid field.
+		 */
 		if (checkNull(requestParamsDTO.getPagination())) {
 			processedData.put("hasPagination", true);
 			if (checkNull(requestParamsDTO.getPagination().getLimit())) {
@@ -575,77 +592,17 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 				for(RequestParamsSortDTO orderData : requestParamsDTO.getPagination().getOrder()){
 					
 					if(!checkNull(orderData.getSortBy())){
-						errorData.put(400, E1029+orderData.getSortBy());
-						return false;
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.SORT_BY));
 					}
 					
 					if(!fieldData.contains(orderData.getSortBy())){
-						errorData.put(400, E1029+orderData.getSortBy());
-						return false;
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.SORT_BY,orderData.getSortBy()}));
 					}
 					
 					if (checkNull(orderData.getSortOrder())) {
 						processedData.put("hasSortOrder", true);
 					}
 					processedData.put("hasSortBy", true);
-				}
-			}
-		}
-		return false;
-	}
-	
-	public Map<String, Boolean> validateData(RequestParamsDTO requestParamsDTO) {
-		Map<String, Boolean> processedData = new HashMap<String, Boolean>();
-		processedData.put("hasFields", false);
-		processedData.put("hasDataSource", false);
-		processedData.put("hasGroupBy", false);
-		processedData.put("hasIntervals", false);
-		processedData.put("hasFilter", false);
-		processedData.put("hasAggregate", false);
-		processedData.put("hasLimit", false);
-		processedData.put("hasOffset", false);
-		processedData.put("hasSortBy", false);
-		processedData.put("hasSortOrder", false);
-		processedData.put("hasGranularity", false);
-		processedData.put("hasPagination", false);
-
-		if (checkNull(requestParamsDTO.getFields())) {
-			processedData.put("hasFields", true);
-		}
-		if (checkNull(requestParamsDTO.getDataSource())) {
-			processedData.put("hasDataSource", true);
-		}
-		if (checkNull(requestParamsDTO.getGroupBy())) {
-			processedData.put("hasGroupBy", true);
-		}
-		if (checkNull(requestParamsDTO.getIntervals())) {
-			processedData.put("hasIntervals", true);
-		}
-		if (checkNull(requestParamsDTO.getGranularity())) {
-			processedData.put("hasGranularity", true);
-		}
-		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0)) && checkNull(requestParamsDTO.getFilter().get(0).getLogicalOperatorPrefix())
-				&& checkNull(requestParamsDTO.getFilter().get(0).getFields()) && checkNull(requestParamsDTO.getFilter().get(0).getFields().get(0))) {
-			processedData.put("hasFilter", true);
-		}
-		if (checkNull(requestParamsDTO.getAggregations()) && processedData.get("hasGroupBy")) {
-			processedData.put("hasAggregate", true);
-		}
-		if (checkNull(requestParamsDTO.getPagination())) {
-			processedData.put("hasPagination", true);
-			if (checkNull(requestParamsDTO.getPagination().getLimit())) {
-				processedData.put("hasLimit", true);
-			}
-			if (checkNull(requestParamsDTO.getPagination().getOffset())) {
-				processedData.put("hasOffset", true);
-			}
-			if (checkNull(requestParamsDTO.getPagination().getOrder())) {
-				if (checkNull(requestParamsDTO.getPagination().getOrder().get(0)))
-					if (checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortBy())) {
-						processedData.put("hasSortBy", true);
-					}
-				if (checkNull(requestParamsDTO.getPagination().getOrder().get(0).getSortOrder())) {
-					processedData.put("hasSortOrder", true);
 				}
 			}
 		}
@@ -672,17 +629,15 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return ISO_8601_DATE_TIME.format(date);
 	}
 
-	@Override
 	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 
-		String gooruUId = userMap.containsKey(GOORUUID) ? userMap.get(GOORUUID).toString() : null;
+		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
 
-		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get("permissions");
-		System.out.println("gooruUId:" + gooruUId);
+		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
+		logger.info(APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
+		logger.info(APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
 		
-		System.out.println("partyPermissions:" + partyPermissions);
-		
-		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,AP_ALL_PARTY_ALL_DATA))){
+		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
 			return requestParamsDTO;
 		}
 
@@ -691,7 +646,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
 		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 
-		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,AP_PARTY_ALL_DATA);
+		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
 		
 		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
 			validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
@@ -699,8 +654,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		if(!StringUtils.isBlank(partyAlldataPerm) && !userFilterOrgValues.isEmpty()){			
 			for(String org : userFilterOrgValues){
 				if(!partyAlldataPerm.contains(org)){
-					errorMap.put(403, E1013);
-					break;
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
 				}
 			}		
 			return requestParamsDTO;
@@ -709,9 +663,9 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		Map<String, Object> orgFilters = new HashMap<String, Object>();
 		
 		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
-			if(e.getValue().contains(AP_ALL_PARTY_ALL_DATA)){
+			if(e.getValue().contains(APIConstants.AP_ALL_PARTY_ALL_DATA)){
 				return requestParamsDTO;
-			}else if(e.getValue().contains(AP_PARTY_ALL_DATA)){
+			}else if(e.getValue().contains(APIConstants.AP_PARTY_ALL_DATA)){
 				orgFilters.put(e.getKey(), e.getValue());
 			}
 		}
@@ -721,21 +675,21 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		
 		if (!validateUserPermissionService.checkIfFieldValueMatch(userFilters, userFiltersAndValues, errorMap).isEmpty()) {
 			if(errorMap.containsKey(403)){
-				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions, errorMap);
+				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions);
 			}else{
 				errorMap.clear();
 				return requestParamsDTO;
 			}
 		}
 
-		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) 
-				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(USERFILTERPARAM)))) {
-				errorMap.put(403, E1003);
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
+				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
+				errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				return requestParamsDTO;
 		}
-		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
-				errorMap.put(403, E1004);
-				return requestParamsDTO;
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
+			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
+			return requestParamsDTO;
 		}
 
 		if (!userFilterOrgValues.isEmpty()) {
@@ -743,22 +697,20 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		} else {
 			String allowedParty = validateUserPermissionService.getAllowedParties(requestParamsDTO, partyPermissions);
 			if (!StringUtils.isBlank(allowedParty)) {
-				if(requestParamsDTO.getDataSource().matches(USERDATASOURCES)){
+				if(requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)){
 					validateUserPermissionService.addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 				}else{
 					validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 				}
 			} else {
-				errorMap.put(403, E1009);
+				errorMap.put(403, ErrorConstants.E108);
 				return requestParamsDTO;
 			}
 		}
 
 		JSONSerializer serializer = new JSONSerializer();
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
-
-		System.out.print("\n newObject : " + serializer.deepSerialize(requestParamsDTO));
-
+		logger.info(APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
 		return requestParamsDTO;
 	}
 
@@ -771,7 +723,7 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 					String queryId = redisService.getRedisValue(requestId);
 					redisService.removeRedisKey(requestId);
 					if (redisService.hasRedisKey(queryId)) {
-						redisService.removeRedisKey(CACHE_PREFIX_ID + SEPARATOR + queryId);
+						redisService.removeRedisKey(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + queryId);
 						status = redisService.removeRedisKey(queryId);
 						System.out.println(" requestId " + requestId + " queryid " + queryId);
 					}
@@ -828,28 +780,26 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return redisService.getKeys();
 	}
 
-	public String putRedisCache(String query, Map<String, Object> userMap, JSONObject jsonObject) {
+	public <M> String putRedisCache(String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO) {
 
 		UUID queryId = UUID.randomUUID();
 
-		String KEYPREFIX = "";
-		if (userMap.containsKey("gooruUId") && userMap.get("gooruUId") != null) {
-			KEYPREFIX += userMap.get("gooruUId") + SEPARATOR;
+		String KEY_PREFIX = APIConstants.EMPTY;
+		if (userMap.containsKey(APIConstants.GOORUUID) && userMap.get(APIConstants.GOORUUID) != null) {
+			KEY_PREFIX += userMap.get(APIConstants.GOORUUID) + APIConstants.SEPARATOR;
 		}
-		if (redisService.hasRedisKey(CACHE_PREFIX_ID + SEPARATOR + KEYPREFIX + query.trim())) {
-			return redisService.getRedisValue(CACHE_PREFIX_ID + SEPARATOR + KEYPREFIX + query.trim());
+		if (redisService.hasRedisKey(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim())) {
+			return redisService.getRedisValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim());
 		}
-
-		redisService.putRedisStringValue(KEYPREFIX + queryId.toString(), query.trim());
-		redisService.putRedisStringValue(KEYPREFIX + query.trim(), jsonObject.toString());
-		redisService.putRedisStringValue(CACHE_PREFIX_ID + SEPARATOR + KEYPREFIX + query.trim(), queryId.toString());
+		redisService.putRedisStringValue(KEY_PREFIX + queryId.toString(), query.trim());
+		redisService.putRedisStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).serialize(responseParamDTO));
+		redisService.putRedisStringValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim(), queryId.toString());
 
 		System.out.println("new Id created " + queryId);
 		return queryId.toString();
 
 	}
 
-	@Override
 	public Map<String, Object> getRequestFieldNameValueInMap(HttpServletRequest request, String prefix) {
 	     Map<String, Object> requestFieldNameValue = new HashMap<String, Object>();
          Enumeration paramNames = request.getParameterNames();
@@ -862,19 +812,16 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
          return requestFieldNameValue;
 	}
 
-	public void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap){
+	public void saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> dataMap, Map<String, Object> userMap){
 		try {
 		if (requestParamsDTO.isSaveQuery() != null) {
 			if (requestParamsDTO.isSaveQuery()) {
-				JSONObject jsonObject = new JSONObject();
-					jsonObject.put("data",jsonArray.toString());
-				jsonObject.put("message",dataMap);
-				String queryId = putRedisCache(data,userMap, jsonObject);
+				String queryId = putRedisCache(data,userMap, responseParamDTO);
 				dataMap.put("queryId", queryId);
 			}
 		}
-		} catch (org.json.JSONException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.INSERT));
 		}
 	}
 }
