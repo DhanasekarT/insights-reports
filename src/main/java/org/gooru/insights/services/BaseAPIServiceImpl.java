@@ -464,10 +464,10 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			StringBuffer errorField = new StringBuffer();
 			for(String field : requestParamsDTO.getFields().split(APIConstants.COMMA)){
 				if(!fieldData.contains(field)){
-					errorField.append(field);
 					if(errorField.length() > 0){
 						errorField.append(APIConstants.COMMA);
 					}
+					errorField.append(field);
 				}
 			}
 			if(errorField.length() > 0){
@@ -488,10 +488,10 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			StringBuffer errorField = new StringBuffer();
 			for(String field : requestParamsDTO.getGroupBy().split(APIConstants.COMMA)){
 				if(!fieldData.contains(field)){
+					if(errorField.length() > 0){
+						errorField.append(APIConstants.COMMA);
+					}
 					errorField.append(field);
-				}
-				if(errorField.length() > 0){
-					errorField.append(APIConstants.COMMA);
 				}
 			}
 			if(errorField.length() > 0){

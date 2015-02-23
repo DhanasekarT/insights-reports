@@ -17,14 +17,17 @@ public class MessageHandler {
 	
 	private static String DEFAULT_MESSAGE = "message not found!";
 
-	private static String DEFAULT_LOCALIZER_LOCATION = "localizer-properties/LocaleBundle_"+Locale.ENGLISH;
+	private static String DEFAULT_LOCALIZER_LOCATION = "localizer-properties/localeBundle_"+Locale.ENGLISH;
 	
 	private static ResourceBundle resourceBundle = null;
 	
+	@Autowired
+	private BaseConnectionService baseConnectionService;
+	
 	@PostConstruct
 	private void init(){
-		resourceBundle = ResourceBundle.getBundle(BaseConnectionServiceImpl.fileProperties.containsKey(LOCALIZER) ? 
-				BaseConnectionServiceImpl.fileProperties.get(LOCALIZER).toString() : DEFAULT_LOCALIZER_LOCATION);
+		resourceBundle = ResourceBundle.getBundle(baseConnectionService.getFileProperties().containsKey(LOCALIZER) ? 
+				baseConnectionService.getFileProperties().get(LOCALIZER).toString() : DEFAULT_LOCALIZER_LOCATION);
 	}
 
 	/**

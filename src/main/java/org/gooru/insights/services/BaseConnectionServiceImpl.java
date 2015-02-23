@@ -90,8 +90,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	@Autowired
 	private  BaseCassandraService baseCassandraService;
 	
-	@Resource(name="cassandra")
-	public static  Properties fileProperties;
+	@Resource(name="filePath")
+	private Properties fileProperties;
 	
 	@Autowired
 	private RedisService redisService;

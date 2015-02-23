@@ -66,7 +66,7 @@
 		</property>
 	</bean>
 <!-- 		 <context:property-placeholder location="classpath:config.properties" /> -->
-	<bean id="cassandra"
+	<bean id="filePath"
 		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">
 			<props>
@@ -74,7 +74,8 @@
 				<prop key="cassandra.port">${cassandra.port}</prop>
 				<prop key="cassandra.clusterName">${cassandra.clusterName}</prop>
 				<prop key="cassandra.keyspace.insights">${cassandra.keyspace.insights}</prop>
-                                <prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
+                <prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
+                <prop key="localizer">${localizer}</prop>
 			</props>
 		</property>
 	</bean>

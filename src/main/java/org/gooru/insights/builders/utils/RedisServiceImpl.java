@@ -8,6 +8,7 @@ import javax.annotation.PostConstruct;
 
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.DateFormats;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
