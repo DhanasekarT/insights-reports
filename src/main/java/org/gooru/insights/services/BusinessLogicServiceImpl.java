@@ -49,13 +49,13 @@ import com.google.gson.reflect.TypeToken;
 @Service
 public class BusinessLogicServiceImpl implements BusinessLogicService{
 
-	Logger logger = LoggerFactory.getLogger(BusinessLogicServiceImpl.class);
+	private Logger logger = LoggerFactory.getLogger(BusinessLogicServiceImpl.class);
 	
 	@Autowired
-	BaseConnectionService baseConnectionService;
+	private BaseConnectionService baseConnectionService;
 	
 	@Autowired
-	BaseAPIService baseAPIService;
+	private BaseAPIService baseAPIService;
 
 	/**
 	 * This function will build the aggregate bucket

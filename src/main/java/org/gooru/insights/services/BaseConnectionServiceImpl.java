@@ -94,10 +94,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	public static  Properties fileProperties;
 	
 	@Autowired
-	RedisService redisService;
+	private RedisService redisService;
 	
 	@PostConstruct
-	public void initConnect() {
+	private void initConnect() {
 
 		if (!baseAPIService.checkNull(insightsKeyspace)) {
 			initCassandraConnection();
@@ -119,7 +119,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 	
-	public void initCassandraConnection() {
+	private void initCassandraConnection() {
 
 		String seeds = getFileProperties().getProperty(CassandraConstants.CassandraConfigs.SEEDS.cassandraConfig());
 		Integer port = Integer.parseInt(getFileProperties().getProperty(CassandraConstants.CassandraConfigs.PORT.cassandraConfig()));
@@ -133,7 +133,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 
 	}
 	
-	public ConnectionPoolConfigurationImpl connectionConfig(String seeds, Integer port) {
+	private ConnectionPoolConfigurationImpl connectionConfig(String seeds, Integer port) {
 		StringBuffer seedConfigured = new StringBuffer();
 		for (String seed : seeds.split(APIConstants.COMMA)) {
 			if (seedConfigured.length() > 0) {
@@ -152,8 +152,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		return connectionPoolConfig;
 	}
 	
-	public void initDevESConnection(){
-		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),ESConstants.EsConfigs.DEV_ROWKEY.esConfig(), new ArrayList<String>());
+	private void initDevESConnection(){
+		OperationResult<ColumnList<String>> rowResult = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),ESConstants.EsConfigs.DEV_ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		String clusterName = columnList.getStringValue(ESConstants.EsConfigs.CLUSTER.esConfig(),APIConstants.EMPTY) ;
 		String hostName = columnList.getColumnByName(ESConstants.EsConfigs.HOSTS.esConfig()).getStringValue();
@@ -169,8 +169,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 
-	public void initProdESConnection(){
-		OperationResult<ColumnList<String>> rowResult =baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),ESConstants.EsConfigs.ROWKEY.esConfig(), new ArrayList<String>());
+	private void initProdESConnection(){
+		OperationResult<ColumnList<String>> rowResult = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),ESConstants.EsConfigs.ROWKEY.esConfig(), new ArrayList<String>());
 		ColumnList<String> columnList = rowResult.getResult();
 		String clusterName = columnList.getStringValue(ESConstants.EsConfigs.CLUSTER.esConfig(),APIConstants.EMPTY) ;
 		String hostName = columnList.getColumnByName(ESConstants.EsConfigs.HOSTS.esConfig()).getStringValue();
@@ -187,19 +187,19 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	}
 	
 	
-	public Client initNodeClient(String clusterName){
+	private Client initNodeClient(String clusterName){
 		 Settings settings = ImmutableSettings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
 		 return new NodeBuilder().settings(settings).node().client();   	
 	}
 	
-	public Client initTransportClient(String hostName,String portNo,String clusterName){
+	private Client initTransportClient(String hostName,String portNo,String clusterName){
 		 Settings settings = ImmutableSettings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
          TransportClient transportClient = new TransportClient(settings);
          transportClient.addTransportAddress(new InetSocketTransportAddress(hostName, Integer.valueOf(portNo)));
          return transportClient;
 	}
 	
-	public void fieldDataType(){
+	private void fieldDataType(){
 		
 		fieldsDataTypeCache = new HashMap<String, String>();
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.EVENT_FIELDS.columnFamily(),new ArrayList<String>());
@@ -209,7 +209,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 	
-	public Set<String> indexList(){
+	private Set<String> indexList(){
 
 		indexMap = new HashMap<String,String>();
 		Set<String> fetchFields = new HashSet<String>(); 
@@ -221,7 +221,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		return fetchFields;
 	}
 	
-	public void fieldsConfig(){
+	private void fieldsConfig(){
 
 		fieldsConfigCache = new HashMap<String, Map<String,String>>();
 		fieldsCache = new HashMap<String,Map<String,String>>();
@@ -253,7 +253,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 
-	public void dependentFields(){
+	private void dependentFields(){
 		
 		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
 		OperationResult<Rows<String, String>> operationalResult = baseCassandraService.readAll(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),indexList(),new ArrayList<String>());
@@ -281,7 +281,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 	
-	public void fieldArrayHandler(){
+	private void fieldArrayHandler(){
 		fieldArrayHandler = new HashMap<String, String>();
 		arrayHandler = new String();
 		ColumnList<String> operationalResult = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.FILED_ARRAY_HANDLER.CassandraRowKey());
@@ -382,7 +382,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		return userMap;
 	}
 
-	public void putLogicalOperations(){
+	private void putLogicalOperations(){
 		logicalOperations = new HashSet<String>();
 		logicalOperations.add("AND");
 		logicalOperations.add("OR");
@@ -392,7 +392,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		logicalOperations.add("not");
 	}
 	
-	public void putEsOperations(){
+	private void putEsOperations(){
 		esOperations = new HashSet<String>();
 		esOperations.add("GT");
 		esOperations.add("RG");

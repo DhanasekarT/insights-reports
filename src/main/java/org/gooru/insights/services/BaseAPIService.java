@@ -31,8 +31,6 @@ public interface BaseAPIService {
 	
 	Set<String> convertStringtoSet(String inputDatas);
 	
-	Map<String,Boolean> validateData(RequestParamsDTO requestParamsDTO);
-	
 	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
 	
 	String[] getIndices(String names);
@@ -61,7 +59,7 @@ public interface BaseAPIService {
 	
 	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
 
-	String putRedisCache(String query,Map<String,Object> userMap,JSONObject jsonObject);
+	<M> String putRedisCache(String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO);
 	
 	boolean clearQuery(String id);
 	
@@ -81,7 +79,7 @@ public interface BaseAPIService {
 
 	Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO);
 	
-	void saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap);
+	Map<String,Object> saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap);
 
 	<T> T deserialize(String json, Class<T> clazz);
 }

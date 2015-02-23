@@ -37,24 +37,24 @@ import flexjson.JSONSerializer;
 @Service
 public class ItemServiceImpl implements ItemService {
 	
-	Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	private Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
 
 	@Autowired
-	BaseAPIService baseAPIService;
+	private BaseAPIService baseAPIService;
 
 	@Autowired
-	BaseESService esService;
+	private BaseESService esService;
 
 	@Autowired
-	BusinessLogicService businessLogicService;
+	private BusinessLogicService businessLogicService;
 
 	@Autowired
-	BaseConnectionService baseConnectionService;
+	private BaseConnectionService baseConnectionService;
 
 	@Autowired
-	BaseCassandraService baseCassandraService;
+	private BaseCassandraService baseCassandraService;
 	
-	JSONSerializer serializer = new JSONSerializer();
+	private JSONSerializer serializer = new JSONSerializer();
 	
 	/**
 	 * This will return simple message as service available
@@ -191,7 +191,7 @@ public class ItemServiceImpl implements ItemService {
 		/**
 		 * save data to redis
 		 */
-		baseAPIService.saveQuery(requestParamsDTO, responseParamDTO, data, userMap);
+		responseParamDTO.setMessage(baseAPIService.saveQuery(requestParamsDTO, responseParamDTO, data, userMap));
 		return responseParamDTO;
 
 	}

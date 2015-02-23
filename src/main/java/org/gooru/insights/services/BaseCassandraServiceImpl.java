@@ -30,19 +30,18 @@ import com.netflix.astyanax.serializers.StringSerializer;
 public class BaseCassandraServiceImpl implements BaseCassandraService{
 
 	@Autowired
-	BaseConnectionService connector;
+	private BaseConnectionService connector;
 	
 	@Autowired
-	BaseAPIService baseAPIService;
+	private BaseAPIService baseAPIService;
 
-	 private static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
+	private static final ConsistencyLevel DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.CL_QUORUM;
 	 
-	 private static final int SLEEP_TIME_MS = 2000;
+	private static final int SLEEP_TIME_MS = 2000;
 	 
-	 private static final int LOOP_COUNT = 5;
+	private static final int LOOP_COUNT = 5;
 	 
 	 
-	 Logger logger = LoggerFactory.getLogger(BaseCassandraServiceImpl.class);
 	 
 	
 	public OperationResult<ColumnList<String>> readColumns(String keyspace, String columnFamilyName, String rowKey,Collection<String> columns) {

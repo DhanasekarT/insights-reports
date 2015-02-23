@@ -55,9 +55,9 @@ import flexjson.JSONException;
 import flexjson.JSONSerializer;
 
 @Service
-public class BaseAPIServiceImpl {
+public class BaseAPIServiceImpl implements BaseAPIService {
 	
-	Logger logger = LoggerFactory.getLogger(BaseAPIServiceImpl.class); 
+	private Logger logger = LoggerFactory.getLogger(BaseAPIServiceImpl.class); 
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -384,27 +384,6 @@ public class BaseAPIServiceImpl {
 		return requestData;
 	}
 
-	public static void main(String[] args){
-		String data="abc";
-		//abc,bca,cba,acb,cab,bac,
-		StringBuffer result = new StringBuffer();
-		int counter =0;
-		int replacer=0;
-		while((data.length() * data.length()) != counter){
-		for(int i=replacer;i< data.length();i++){
-			result.append(data.charAt(i));
-			if(replacer >= data.length()){
-				i =0;
-			}
-		}
-		if(result.length() > 0){
-			result.append(",");
-		}
-		replacer++;
-		counter++;
-		}
-		System.out.println(result.toString());
-	}
 	public JSONArray formatKeyValueJson(List<Map<String, Object>> dataMap, String key) throws org.json.JSONException {
 
 		JSONArray jsonArray = new JSONArray();
@@ -428,11 +407,6 @@ public class BaseAPIServiceImpl {
 		return jsonArray;
 	}
 	
-	public boolean validateRequest(RequestParamsDTO requestParamsDTO,Map<String, Boolean> processedData){
-		
-		return false;
-	}
-	 
 	public Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO){
 		Map<String, Boolean> processedData = new HashMap<String, Boolean>();
 		processedData.put("hasFields", false);
@@ -629,10 +603,11 @@ public class BaseAPIServiceImpl {
 		return ISO_8601_DATE_TIME.format(date);
 	}
 
-	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO, Map<String, Object> userMap, Map<Integer, String> errorMap) {
-
+	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
+		
 		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
 
+		Map<Integer,String> errorMap = new HashMap<Integer, String>();
 		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
 		logger.info(APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
 		logger.info(APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
@@ -684,12 +659,11 @@ public class BaseAPIServiceImpl {
 
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
 				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
-				errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
-				return requestParamsDTO;
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 		}
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
 			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
-			return requestParamsDTO;
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
 		}
 
 		if (!userFilterOrgValues.isEmpty()) {
@@ -703,13 +677,12 @@ public class BaseAPIServiceImpl {
 					validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
 				}
 			} else {
-				errorMap.put(403, ErrorConstants.E108);
-				return requestParamsDTO;
+				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
 			}
 		}
 
 		JSONSerializer serializer = new JSONSerializer();
-		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
 		logger.info(APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
 		return requestParamsDTO;
 	}
@@ -725,7 +698,6 @@ public class BaseAPIServiceImpl {
 					if (redisService.hasRedisKey(queryId)) {
 						redisService.removeRedisKey(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + queryId);
 						status = redisService.removeRedisKey(queryId);
-						System.out.println(" requestId " + requestId + " queryid " + queryId);
 					}
 				}
 			}
@@ -795,7 +767,7 @@ public class BaseAPIServiceImpl {
 		redisService.putRedisStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).serialize(responseParamDTO));
 		redisService.putRedisStringValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim(), queryId.toString());
 
-		System.out.println("new Id created " + queryId);
+		logger.info(APIConstants.NEW_QUERY+queryId);
 		return queryId.toString();
 
 	}
@@ -812,16 +784,19 @@ public class BaseAPIServiceImpl {
          return requestFieldNameValue;
 	}
 
-	public void saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> dataMap, Map<String, Object> userMap){
+	public Map<String,Object> saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap){
 		try {
 		if (requestParamsDTO.isSaveQuery() != null) {
 			if (requestParamsDTO.isSaveQuery()) {
 				String queryId = putRedisCache(data,userMap, responseParamDTO);
-				dataMap.put("queryId", queryId);
+				Map<String,Object> dataMap = new HashMap<String, Object>();
+				dataMap.put(APIConstants.QUERY_ID, queryId);
+				return dataMap;
 			}
 		}
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.INSERT));
 		}
+		return null;
 	}
 }

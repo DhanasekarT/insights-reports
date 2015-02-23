@@ -209,6 +209,8 @@ public class APIConstants {
 	public final static String ALLOWED_ORG = "allowedOrg";
 	
 	public final static String ROLES = "roles";
+	
+	public static final String QUERY_ID = "queryId";
 
 
 	/**
