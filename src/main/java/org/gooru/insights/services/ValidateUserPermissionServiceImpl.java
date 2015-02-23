@@ -16,12 +16,16 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService {
 
 	Logger log = org.slf4j.LoggerFactory.getLogger(ValidateUserPermissionServiceImpl.class);
+	
+	@Autowired
+	private BusinessLogicService businessLogicService;
 	
 	public Map<String, Object> getUserFilters(String gooruUId) {
 
@@ -120,7 +124,8 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		for (String userFilterOrgValue : userFilterOrgValues) {
 			if (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) {
 				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_PII))) {
-					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
+					return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
+//					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				}
 			} else if ((requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES))
 					&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)) {

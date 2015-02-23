@@ -41,6 +41,8 @@ public interface BusinessLogicService {
 	
 	JSONArray formDataJSONArray(Map<Integer,Map<String,Object>> requestMap);
 	
+	RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO);
+	
 	List<Map<String,Object>> getSource(String result);
 	
 	List<Map<String,Object>> formJoinKey(Map<String,Set<Object>> filtersMap);

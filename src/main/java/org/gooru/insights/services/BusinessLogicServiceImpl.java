@@ -1276,6 +1276,22 @@ public class BusinessLogicServiceImpl implements BusinessLogicService{
 			}
 			return esFields.toString();
 		}
+		
+	public RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO) {
+		String dataSources = APIConstants.EMPTY;
+		for (String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)) {
+			if (dataSources.length() > 0) {
+				dataSources += APIConstants.COMMA;
+			}
+			if (dataSource.matches(APIConstants.USERDATASOURCES)) {
+				dataSources += APIConstants.ANONYMOUS_USERDATA_SOURCE;
+			} else {
+				dataSources += dataSource;
+			}
+		}
+		requestParamsDTO.setDataSource(dataSources);
+		return requestParamsDTO;
+	}
 }
 
  

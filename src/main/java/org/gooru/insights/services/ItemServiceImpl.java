@@ -72,8 +72,9 @@ public class ItemServiceImpl implements ItemService {
 	 * This will process the API
 	 * 
 	 */
-	public ResponseParamDTO<Map<String,Object>> processApi(String data, Map<String, Object> userMap) throws Exception {
+	public ResponseParamDTO<Map<String,Object>> processApi(String data, String sessionToken) throws Exception {
 
+		Map<String,Object> userMap = getUserObjectData(sessionToken); 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
 		RequestParamsCoreDTO requestParamsCoreDTO = baseAPIService.buildRequestParamsCoreDTO(data);
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
@@ -85,7 +86,7 @@ public class ItemServiceImpl implements ItemService {
 				if (!baseAPIService.checkNull(api)) {
 					continue;
 				}
-				responseParamDTO = generateQuery(data, userMap);
+				responseParamDTO = generateQuery(data,null, userMap);
 				if (baseAPIService.checkNull(previousAPIKey)) {
 					resultData = businessLogicService.leftJoin(resultData, responseParamDTO.getContent(), previousAPIKey, api.getApiJoinKey());
 				}
@@ -98,10 +99,12 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;
 	}
 	
-	public ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> userMap) throws Exception {
+	public ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType,String sessionToken) throws Exception {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
 
+		Map<String, Object> userMap = getUserObjectData(sessionToken);
+		
 		Map<String,Object> filtersMap = baseAPIService.getRequestFieldNameValueInMap(request, "f");
 		Map<String,Object> paginationMap = baseAPIService.getRequestFieldNameValueInMap(request, "p");
 		
@@ -157,17 +160,25 @@ public class ItemServiceImpl implements ItemService {
 		logger.info(APIConstants.NEW_QUERY+datas);
 		
 		if(columns.getStringValue(APIConstants.QUERY, null) != null){			
-			return generateQuery(datas, userMap);
+			return generateQuery(datas, null, userMap);
 		}
 		return new ResponseParamDTO<Map<String,Object>>();
 	}
 	
-	//valid
-	public ResponseParamDTO<Map<String,Object>> generateQuery(String data,Map<String, Object> userMap) throws Exception {
-		
-		RequestParamsDTO requestParamsDTO = null;
-			requestParamsDTO = baseAPIService.buildRequestParameters(data);
-		
+	public ResponseParamDTO<Map<String, Object>> generateQuery(String data, String sessionToken, Map<String, Object> userMap) throws Exception {
+
+		/**
+		 * validate API Directly from Gooru API permanently disabled since we
+		 * have Redis server support but maintaining for backup.
+		 * Map<String,Object> userMap = itemService.getUserObject(sessionToken,
+		 * errorMap);
+		 */
+		if (userMap == null) {
+			userMap = getUserObjectData(sessionToken);
+		}
+
+		RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+
 		Map<String, Boolean> checkPoint = baseAPIService.checkPoint(requestParamsDTO);
 
 		/**
@@ -175,15 +186,14 @@ public class ItemServiceImpl implements ItemService {
 		 */
 		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap);
 
-
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
-		ResponseParamDTO<Map<String,Object>> responseParamDTO = esService.generateQuery(requestParamsDTO, indices, checkPoint);
-			/**
-			 * save data to redis
-			 */
-			baseAPIService.saveQuery(requestParamsDTO,responseParamDTO,data,userMap);
-			return responseParamDTO;
-			
+		ResponseParamDTO<Map<String, Object>> responseParamDTO = esService.generateQuery(requestParamsDTO, indices, checkPoint);
+		/**
+		 * save data to redis
+		 */
+		baseAPIService.saveQuery(requestParamsDTO, responseParamDTO, data, userMap);
+		return responseParamDTO;
+
 	}
 
 	public ResponseParamDTO<Map<String,String>> clearQuery(String id) {
@@ -206,8 +216,9 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;
 	}
 
-	public ResponseParamDTO<Map<String,Object>> getQuery(String id,Map<String,Object> dataMap) {
+	public ResponseParamDTO<Map<String,Object>> getQuery(String id, String sessionToken) {
 
+		Map<String,Object> dataMap = getUserObjectData(sessionToken); 
 		String prefix = APIConstants.EMPTY;
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		 if(dataMap.containsKey(APIConstants.GOORUUID) && dataMap.get(APIConstants.GOORUUID) != null){
@@ -220,9 +231,10 @@ public class ItemServiceImpl implements ItemService {
 
 	
 	
-	public ResponseParamDTO<Map<String,Object>> getCacheData(String id,Map<String,Object> userMap) {
+	public ResponseParamDTO<Map<String,Object>> getCacheData(String id,String sessionToken) {
 
-
+		Map<String,Object> userMap = getUserObjectData(sessionToken);
+		
 		 String prefix = APIConstants.EMPTY;
 		 if(userMap.containsKey(APIConstants.GOORUUID) && userMap.get(APIConstants.GOORUUID) != null){
 			 prefix = userMap.get(APIConstants.GOORUUID).toString()+APIConstants.SEPARATOR;

@@ -11,11 +11,11 @@ import org.json.JSONException;
 
 public interface ItemService {
 
-	ResponseParamDTO<Map<String,Object>> generateQuery(String data,Map<String,Object> userMap)throws Exception;
+	ResponseParamDTO<Map<String,Object>> generateQuery(String data, String sessionToken, Map<String, Object> userData)throws Exception;
 	
-	ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType,Map<String,Object> userMap)throws Exception;
+	ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType, String sessionToken)throws Exception;
 	
-	ResponseParamDTO<Map<String, Object>> processApi(String data,Map<String,Object> dataMap)throws Exception;
+	ResponseParamDTO<Map<String, Object>> processApi(String data, String sessionToken)throws Exception;
 	
 	ResponseParamDTO<Map<String,Object>> clearDataCache();
 	
@@ -25,9 +25,9 @@ public interface ItemService {
 	
 	ResponseParamDTO<Map<String, String>> clearQuery(String id);
 	
-	ResponseParamDTO<Map<String,Object>> getQuery(String id,Map<String,Object> dataMap);
+	ResponseParamDTO<Map<String,Object>> getQuery(String id,String sessionToken);
 	
-	ResponseParamDTO<Map<String,Object>> getCacheData(String id,Map<String,Object> userMap);
+	ResponseParamDTO<Map<String,Object>> getCacheData(String id,String sessionToken);
 	
 	ResponseParamDTO<Map<String,String>> insertKey(String data);
 	

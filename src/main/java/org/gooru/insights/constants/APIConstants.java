@@ -78,6 +78,8 @@ public class APIConstants {
 	
 	public final static String DI_REPORTS = "di_reports";
 	
+	public final static String ANONYMOUS_USERDATA_SOURCE = "anonymoususerdata";
+	
 	/**
 	 * parameter constants
 	 */

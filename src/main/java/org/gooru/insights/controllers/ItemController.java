@@ -32,16 +32,14 @@ import org.springframework.web.servlet.ModelAndView;
 @RequestMapping(value ="/query")
 public class ItemController extends BaseController{
 	
-	Logger logger = LoggerFactory.getLogger(ItemController.class);
-	
 	@Autowired
 	private ItemService itemService;
 	
 	/**
-	 * 
+	 * This will check the tomcat service availability
 	 * @param request
 	 * @param response
-	 * @return
+	 * @return Model view object 
 	 */
 	@RequestMapping(value = "/server/status", method = RequestMethod.GET)
 	public ModelAndView checkAPiStatus(HttpServletRequest request, HttpServletResponse response) {
@@ -54,7 +52,7 @@ public class ItemController extends BaseController{
 	 * @param data This will hold the client request data
 	 * @param sessionToken This is an Gooru sessionToken for validation
 	 * @param response HttpServlet Response
-	 * @return returns Model object
+	 * @return Model view object
 	 * @throws Exception
 	 */
 	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
@@ -62,15 +60,7 @@ public class ItemController extends BaseController{
 	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			@RequestParam(value = "sessionToken", required = true) String sessionToken, HttpServletResponse response) throws Exception {
 
-		/**
-		 * validate API Directly from Gooru API permanently disabled since we
-		 * have Redis server support but maintaining for backup.
-		 * Map<String,Object> userMap = itemService.getUserObject(sessionToken,
-		 * errorMap);
-		 */
-		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken);
-
-		return getModel(itemService.generateQuery(data, userMap));
+		return getModel(itemService.generateQuery(data, sessionToken, null));
 	}
 	
 	@RequestMapping(value = "/{action}/report", method = RequestMethod.POST)
@@ -87,7 +77,7 @@ public class ItemController extends BaseController{
 	 * @param reportType
 	 * @param sessionToken
 	 * @param response
-	 * @return
+	 * @return Model view object
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/report/{reportType}", method = { RequestMethod.GET, RequestMethod.POST })
@@ -95,16 +85,15 @@ public class ItemController extends BaseController{
 	public ModelAndView getPartyReports(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,
 			HttpServletResponse response) throws Exception {
 
-		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken);
-		return getModel(itemService.getPartyReport(request, reportType, userMap));
+		return getModel(itemService.getPartyReport(request, reportType, sessionToken));
 	}
 	
 	/**
-	 * 
-	 * @param request
-	 * @param queryId
-	 * @param response
-	 * @return
+	 * This will clear the stored query in redis
+	 * @param request is the client HTTPRequest
+	 * @param queryId is the unique query id for each query
+	 * @param response is the client HTTPResponse
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response){
@@ -113,35 +102,33 @@ public class ItemController extends BaseController{
 	}
 	
 	/**
-	 * 
-	 * @param request
-	 * @param queryId
-	 * @param sessionToken
-	 * @param response
-	 * @return
+	 * This will provide the query result for the given query id
+	 * @param request is the client HTTPRequest
+	 * @param queryId is the unique query id for each query
+	 * @param sessionToken is the Gooru user token
+	 * @param response is the client HTTPResponse
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
 		
-		Map<String,Object> userMap = itemService.getUserObjectData(sessionToken); 
-		return getModel(itemService.getQuery(queryId,userMap));
+		return getModel(itemService.getQuery(queryId,sessionToken));
 	}
 
 	/**
-	 * 
-	 * @param request
-	 * @param queryId
-	 * @param sessionToken
-	 * @param response
-	 * @return
+	 * This will provide the list of query result for the given query id or the whole item
+	 * @param request is the client HTTPRequest
+	 * @param queryId is the unique query id for each query
+	 * @param sessionToken is the Gooru user token
+	 * @param response is the client HTTPResponse
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/list",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
-		
-		Map<String,Object> userMap = itemService.getUserObjectData(sessionToken); 
-		return getModel(getItemService().getCacheData(queryId,userMap));
+		 
+		return getModel(getItemService().getCacheData(queryId,sessionToken));
 	}
 	
 	/**
@@ -149,44 +136,45 @@ public class ItemController extends BaseController{
 	 * @param request
 	 * @param data
 	 * @param response
-	 * @return
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/keys",method =RequestMethod.PUT)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView putRedisData(HttpServletRequest request,@RequestBody String data ,HttpServletResponse response){
+		
 		return getModel(getItemService().insertKey(data));
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * This will clear the cached data
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView clearDataCache(){
+		
 		return getModel(getItemService().clearDataCache());
 	}
 	
 	/**
-	 * 
-	 * @param request
-	 * @param data
-	 * @param sessionToken
-	 * @param response
-	 * @return
+	 * This will combine the two API call and project it as single
+	 * @param request is the client HTTPRequest
+	 * @param data is the API query to fetch data from ELS
+	 * @param sessionToken is the Gooru user token
+	 * @param response response is the client HTTPResponse
+	 * @return Model view object
 	 * @throws Exception
 	 */
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
-
-		Map<String,Object> dataMap = itemService.getUserObjectData(sessionToken); 
-		return getModel(getItemService().processApi(data,dataMap));
+		
+		return getModel(getItemService().processApi(data,sessionToken));
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * This will clear the data connection of cassandra and ELS
+	 * @return Model view object
 	 */
 	@RequestMapping(value="/clear/connection",method =RequestMethod.GET)
 	public ModelAndView clearConnectionCache(){
