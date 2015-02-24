@@ -182,22 +182,163 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public List<Map<String, Object>> generateReportFile(JSONArray data){
 
-		Map<String, Object> files = new HashMap<String, Object>();
-		String fileName = null;
+	public List<Map<String, Object>> generateReportFile(JSONArray activityArray) {
+
 		try {
-			fileName = csvBuilderService.generateCSVJSONReport(data, fileName);
+			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
+
+			for (int index = 0; index < activityArray.length(); index++) {
+				Map<String, Object> activityAsMap = new HashMap<String, Object>();
+				JSONObject activityJsonObject = activityArray.getJSONObject(index);
+				activityAsMap.put("id", activityJsonObject.get("eventId"));
+
+				if (!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())) {
+					Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
+					actorAsMap.put("objectType", "Agent");
+					actorAsMap.put("id", activityJsonObject.get("gooruUId"));
+					actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
+					actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
+					if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
+						actorAsMap.put("userIp", activityJsonObject.get("userIp"));
+						actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
+					}
+					activityAsMap.put("actor", actorAsMap);
+				}
+				if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
+					Map<String, Object> objectAsMap = new HashMap<String, Object>(1);
+					String objectType = null;
+					// TODO Add content types based on typeName 
+					if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
+						
+					} 
+					// TODO Add condition to differentiate Agent/ Statement/ Activity/ AtatementRef
+					objectType = "Activity";
+
+					objectAsMap.put("objectType", objectType);
+					objectAsMap.put("id", activityJsonObject.get("gooruOid"));
+					activityAsMap.put("object", objectAsMap);
+
+				}
+				if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
+					Map<String, Object> verbAsMap = new HashMap<String, Object>();
+					String verb = null;
+					verb = getVerb(activityJsonObject);
+					if (StringUtils.isNotBlank(verb)) {
+						verbAsMap.put("id", "www.goorulearning.org/exapi/verbs/" + verb);
+						Map<String, Object> displayAsMap = new HashMap<String, Object>();
+						displayAsMap.put("en-US", verb);
+						verbAsMap.put("display", displayAsMap);
+						activityAsMap.put("verb", verbAsMap);
+					}
+				}
+				List<Map<String, Map<String, Object>>> contextActivitiesList = new ArrayList<Map<String, Map<String, Object>>>();
+				Map<String, Map<String, Object>> contextAsMap = new HashMap<String, Map<String, Object>>();
+				if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
+					Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
+					parentAsMap.put("id", activityJsonObject.get("parentGooruId").toString());
+					if (!activityJsonObject.isNull("parentEventId") && StringUtils.isNotBlank(activityJsonObject.get("parentEventId").toString())) {
+						parentAsMap.put("id", activityJsonObject.get("parentEventId").toString());
+						parentAsMap.put("objectType", "StatementRef");
+					}
+					contextAsMap.put("parent", parentAsMap);
+				}
+				contextActivitiesList.add(contextAsMap);
+				Map<String, Object> resultMap = new HashMap<String, Object>();
+				if((activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.review") || activityJsonObject.get("eventName").toString().equalsIgnoreCase("comment.create")) && (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))){
+					Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
+					responseAsMap.put("response", activityJsonObject.get("text"));
+					resultMap.put("response", responseAsMap);
+				}
+				if (activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.rate") && (!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString()))) {
+					Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
+					responseAsMap.put("response", activityJsonObject.get("rate"));
+					resultMap.put("response", responseAsMap);
+				}
+				if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString())) {
+					resultMap.put("duration", activityJsonObject.get("totalTimeSpentInMs"));
+					if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) {
+						Map<String, Object> scaledAsMap = new HashMap<String, Object>(1);
+						scaledAsMap.put("score", Long.valueOf(activityJsonObject.get("score").toString()));
+						resultMap.put("scaled", scaledAsMap);
+					}
+				}
+				if(!resultMap.isEmpty()) {
+					activityAsMap.put("result", resultMap);
+				}
+
+				activityAsMap.put("timestamp", activityJsonObject.get("eventTime"));
+				activityAsMap.put("stored", activityJsonObject.get("eventTime"));
+
+				//System.out.println("activityID : " + activityJsonObject.get("eventId"));
+
+				/*
+				 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new TypeReference<Map<String,
+				 * Object>>() { });
+				 */
+				activityList.add(activityAsMap);
+			}
+
+			Map<String, Object> files = new HashMap<String, Object>();
+			String fileName = null;
+			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
+
+			files.put("file", fileName);
+			List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
+
+			classGrade.add(files);
+
+			return classGrade;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		files.put("file", fileName);
-		List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
-		
-		classGrade.add(files);
-
-		return classGrade;
+		return null;
 	}
+	
+	public String getVerb(JSONObject activityJsonObject) {
+		String verb = null;
+		try {
+			String eventName = activityJsonObject.get("eventName").toString();
+			if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
+				verb = "copied";
+			} else if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
+				verb = "moved";
+			} else if (eventName.toString().equalsIgnoreCase("item.create")) {
+				verb = "created";
+			} else if (eventName.toString().endsWith("play")) {
+				verb = "studied";
+			} else if (eventName.toString().endsWith("reaction")) {
+				verb = "reacted";
+			} else if (eventName.toString().endsWith("view")) {
+				verb = "viewed";
+			} else if (eventName.toString().endsWith("edit")) {
+				verb = "edited";
+			} else if (eventName.toString().endsWith("delete")) {
+				verb = "deleted";
+			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
+				verb = "reviewed";
+			} else if (eventName.toString().contains("comment")) {
+				verb = "commented";
+			}  else if (eventName.toString().endsWith("login")) {
+				verb = "loggedIn";
+			}  else if (eventName.toString().endsWith("register")) {
+				verb = "registered";
+			}  else if (eventName.toString().endsWith("load")) {
+				verb = "loaded";
+			}  else if (eventName.toString().equalsIgnoreCase("profile.action")) {
+				if(activityJsonObject.get("actionType").toString().endsWith("edit")) {
+					verb = "edited";
+				} else {
+					verb = "visited";
+				}
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return verb;
+	}
+	
 	public JSONArray generateQuery(String data, Map<String, Object> messageData, Map<String, Object> userMap, Map<Integer, String> errorData) {
 		
 		RequestParamsDTO requestParamsDTO = null;
