@@ -37,11 +37,11 @@
 			<level>DEBUG</level>
 		</filter>
 	</appender>
-	<appender name="debug-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
-		<param name="File" value="${catalina.home}/logs/insights_app/debug/insights-app-debug.log" />
+	<appender name="default-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
+		<param name="File" value="${CATALINA_HOME}/insights_app/normal_logs/insights-app.log" />
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
-			<fileNamePattern>insights-app-debug-%d{yyyy-MM-dd}.log</fileNamePattern>
+			<fileNamePattern>insights-app-%d{yyyy-MM-dd}.log</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>
@@ -53,7 +53,7 @@
 	</appender>
 	
 	<appender name="error-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
-		<param name="File" value="${catalina.home}/logs/insights_app/error/insights-app-error.log" />
+		<param name="File" value="${CATALINA_HOME}/insights_app/error_logs/insights-app-error.log" />
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
 			<fileNamePattern>insights-app-error.%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -65,22 +65,9 @@
 			<pattern>%-30([web] %d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n</pattern>
 		</encoder>
 	</appender>
-	
-		<appender name="info-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
-		<param name="File" value="${catalina.home}/logs/insights_app/info/insights-app-info.log" />
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<!-- daily rollover -->
-			<fileNamePattern>insights-app-info.%d{yyyy-MM-dd}.log</fileNamePattern>
-			<!-- keep 30 days' worth of history -->
-			<maxHistory>30</maxHistory>
-		</rollingPolicy>
-		<param name="encoding" value="UTF-8" />
-		<encoder>
-			<pattern>%-30([web] %d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n</pattern>
-		</encoder>
-	</appender>
-	<logger name="debugLog" level="DEBUG" additivity="false">
-        <appender-ref ref="debug-out"/>
+	<logger name="otherLog"  additivity="false">
+        <appender-ref ref="default-out" level="DEBUG"/>
+        <appender-ref ref="default-out" level="WARN"/>
     </logger>
     
     <logger name="errorLog" level="ERROR" additivity="false">
@@ -91,7 +78,7 @@
 	<logger name="org.hibernate.cfg.HbmBinder" level="WARN"></logger>
 
 	<root level="INFO">
-		<appender-ref ref="info-out" /> 
+		<appender-ref ref="default-out" /> 
 	</root>
 </configuration>
 

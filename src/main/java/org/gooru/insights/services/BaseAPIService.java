@@ -7,11 +7,10 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 public interface BaseAPIService {
 

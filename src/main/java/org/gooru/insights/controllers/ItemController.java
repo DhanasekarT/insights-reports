@@ -1,24 +1,11 @@
 package org.gooru.insights.controllers;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.gooru.insights.constants.APIConstants.*;
-import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.InsightsOperationConstants;
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.security.AuthorizeOperations;
-import org.gooru.insights.services.BaseConnectionServiceImpl;
 import org.gooru.insights.services.ItemService;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;

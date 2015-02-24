@@ -4,10 +4,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.gooru.insights.constants.ResponseParamDTO;
-import org.gooru.insights.models.RequestParamsDTO;
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.gooru.insights.models.ResponseParamDTO;
 
 public interface ItemService {
 

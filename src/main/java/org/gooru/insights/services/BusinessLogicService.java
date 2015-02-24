@@ -6,10 +6,10 @@ import java.util.Set;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 

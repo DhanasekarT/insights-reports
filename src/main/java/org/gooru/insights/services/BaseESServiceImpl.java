@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jackson.map.ser.std.EnumSetSerializer;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
@@ -18,15 +17,14 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ESConstants;
-import org.gooru.insights.constants.ESConstants.EsConfigs;
 import org.gooru.insights.constants.ESConstants.EsSources;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,7 +92,7 @@ public class BaseESServiceImpl implements BaseESService {
 			dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, checkPoint);		
 		}
 		responseParamDTO.setContent(dataList);
-	return responseParamDTO;
+		return responseParamDTO;
 	}
 	
 	private void groupConcat(List<Map<String,Object>> dataList,List<Map<String,Object>> resultList,Set<String> usedFilter){

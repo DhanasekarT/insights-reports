@@ -32,7 +32,6 @@ import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.builders.utils.RedisService;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
@@ -41,6 +40,7 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -73,7 +73,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		try {
 			return data != null ? deserialize(data, RequestParamsDTO.class) : null;
 		} catch (Exception e) {
-			throw new BadRequestException(ErrorConstants.E102);
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E102));
 		}
 	}
 	/**
@@ -445,11 +445,14 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 */
 		if(checkNull(requestParamsDTO.getAggregations())){
 			for(Map<String,String> aggregate : requestParamsDTO.getAggregations()){
-				if(!aggregate.containsKey("requestValues") && !aggregate.containsKey("name") && !aggregate.containsKey("formula") && !aggregate.containsKey(aggregate.get("requestValues"))){
+				if(!aggregate.containsKey("requestValues") || !aggregate.containsKey("name") || !checkNull(aggregate.get("name")) || !aggregate.containsKey("formula") || !checkNull(aggregate.get("formula")) || !aggregate.containsKey(aggregate.get("requestValues")) || !checkNull(aggregate.get(aggregate.get("requestValues")))){
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
 				}else{
 					if(!fieldData.contains(aggregate.get(aggregate.get("requestValues")))){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(aggregate.get("requestValues"))}));
+					}
+					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get("formula"))){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get("formula")}));
 					}
 					fieldData.add(aggregate.get("name"));
 				}
@@ -797,6 +800,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.INSERT));
 		}
-		return null;
+		return new HashMap<String, Object>();
 	}
 }

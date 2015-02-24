@@ -2,8 +2,8 @@ package org.gooru.insights.services;
 
 import java.util.Map;
 
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 
 public interface BaseESService {
 

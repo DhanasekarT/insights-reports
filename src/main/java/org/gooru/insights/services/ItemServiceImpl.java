@@ -16,7 +16,6 @@ import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.constants.ResponseParamDTO;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.models.RequestParamsCoreDTO;
@@ -24,6 +23,7 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,7 +185,6 @@ public class ItemServiceImpl implements ItemService {
 		 * Additional filters are added based on user authentication
 		 */
 		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap);
-
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		ResponseParamDTO<Map<String, Object>> responseParamDTO = esService.generateQuery(requestParamsDTO, indices, checkPoint);
 		/**

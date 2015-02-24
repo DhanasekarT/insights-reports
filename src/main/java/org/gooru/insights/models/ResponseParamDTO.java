@@ -1,4 +1,4 @@
-package org.gooru.insights.constants;
+package org.gooru.insights.models;
 
 import java.util.List;
 import java.util.Map;

@@ -84,6 +84,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	private static Set<String> esOperations;
 	
+	private static Set<String> formulaOperations;
+	
 	@Autowired
 	private BaseAPIService baseAPIService;
 	
@@ -110,6 +112,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 		if (!baseAPIService.checkNull(indexMap)) {
 			putLogicalOperations();
+			putFormulas();
 			putEsOperations();
 			indexList();
 			dependentFields();
@@ -392,6 +395,14 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		logicalOperations.add("not");
 	}
 	
+	private void putFormulas(){
+		formulaOperations = new HashSet<String>();
+		formulaOperations.add("SUM");
+		formulaOperations.add("MIN");
+		formulaOperations.add("MAX");
+		formulaOperations.add("COUNT");
+		
+	}
 	private void putEsOperations(){
 		esOperations = new HashSet<String>();
 		esOperations.add("GT");
@@ -458,6 +469,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 
 	public Map<String,Map<String,String>> getFields() {
 		return fieldsCache;
+	}
+	
+	public Set<String> getFormulaOperations() {
+		return formulaOperations;
 	}
 	
 	public Map<String, String> getFieldsDataType() {
