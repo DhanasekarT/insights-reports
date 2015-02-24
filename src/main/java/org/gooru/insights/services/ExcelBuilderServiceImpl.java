@@ -41,8 +41,8 @@ import com.google.common.collect.Lists;
 @Service
 public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 
-	@Resource(name = "filePath")
-	private Properties filePath;
+	/*@Resource(name = "filePath")
+	private Properties filePath;*/
 
 	public String exportXlsReport(List<Map<String, Object>> listOfMap, String fileName, boolean isNewFile) throws ParseException, IOException {
 
@@ -405,17 +405,17 @@ public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 		return style;
 	}
 
-	public Properties getFilePath() {
+	/*public Properties getFilePath() {
 		return filePath;
 	}
 
 	public void setFilePath(Properties filePath) {
 		this.filePath = filePath;
 	}
-
+*/
 	public String setFilePath(String file) {
 
-		String fileName = this.getFilePath().getProperty("insights.file.real.path");
+		String fileName = "/tmp/";
 		if (file != null && (!file.isEmpty())) {
 			fileName += file;
 
@@ -427,7 +427,7 @@ public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 
 	public String getFilePath(String file) {
 
-		String fileName = this.getFilePath().getProperty("insights.file.app.path");
+		String fileName = "/tmp/";
 
 		if (file != null && (!file.isEmpty())) {
 			fileName += file;

@@ -20,9 +20,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class CSVBuilderServiceImpl implements CSVBuilderService{
 
-	@Resource(name = "filePath")
+/*	@Resource(name = "filePath")
 	private Properties filePath;
-
+*/
 	
 	@Override
 	public String generateCSV(String startDate, String endDate,
@@ -133,17 +133,18 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		}		
 		return getFilePath(fileName);
 	}
-	public Properties getFilePath() {
+/*	public Properties getFilePath() {
 		return filePath;
 	}
 
 	public void setFilePath(Properties filePath) {
 		this.filePath = filePath;
-	}
+	}*/
 	
 	public String setFilePath(String file){
 		
-		String fileName = this.getFilePath().getProperty("insights.file.real.path");
+		//String fileName = this.getFilePath().getProperty("insights.file.real.path");
+		String fileName = "/tmp/";
 		
 		if(file != null && (!file.isEmpty())){
 			fileName += file;
@@ -169,7 +170,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 
 	public void removeExpiredFiles(){
 		Date d = new Date();
-		File directory = new File(this.getFilePath().getProperty("insights.file.real.path"));
+		File directory = new File("/tmp/");
 		File[] fList = directory.listFiles();
 		for (File file : fList){
 			if (file.isFile()){
