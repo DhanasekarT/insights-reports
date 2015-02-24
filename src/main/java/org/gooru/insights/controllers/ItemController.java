@@ -67,7 +67,7 @@ public class ItemController extends BaseController implements APIConstants{
 		return getModel(jsonArray, dataMap);
 	}
 
-	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
+	@RequestMapping(value="/export",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView exportQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			@RequestParam(value = "sessionToken", required = false) String sessionToken, HttpServletResponse response) throws IOException {
