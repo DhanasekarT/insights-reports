@@ -46,6 +46,8 @@ public interface BaseConnectionService {
 	
 	Set<String> getFormulaOperations();
 	
+	Set<String> getDataTypes();
+	
 	Map<String,String> getDefaultFields();
 	
 	Properties getFileProperties();

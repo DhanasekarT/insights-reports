@@ -90,6 +90,8 @@ public class APIConstants {
 	
 	public final static String FIELDS = "fields";
 	
+	public final static String FILTER_FIELDS = "filterFields";
+	
 	public final static String GROUP_BY = "groupBy";
 	
 	public final static String SELECTOR = "selector";

@@ -86,6 +86,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	private static Set<String> formulaOperations;
 	
+	private static Set<String> dataTypes;
+	
 	@Autowired
 	private BaseAPIService baseAPIService;
 	
@@ -114,6 +116,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			putLogicalOperations();
 			putFormulas();
 			putEsOperations();
+			putDataTypes();
 			indexList();
 			dependentFields();
 			fieldDataType();
@@ -390,9 +393,6 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		logicalOperations.add("AND");
 		logicalOperations.add("OR");
 		logicalOperations.add("NOT");
-		logicalOperations.add("and");
-		logicalOperations.add("or");
-		logicalOperations.add("not");
 	}
 	
 	private void putFormulas(){
@@ -401,8 +401,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		formulaOperations.add("MIN");
 		formulaOperations.add("MAX");
 		formulaOperations.add("COUNT");
-		
 	}
+	
+	private void putDataTypes(){
+		dataTypes = new HashSet<String>();
+		dataTypes.add("INTEGER");
+		dataTypes.add("LONG");
+		dataTypes.add("STRING");
+		dataTypes.add("DATE");
+		dataTypes.add("DOUBLE");
+	}
+	
 	private void putEsOperations(){
 		esOperations = new HashSet<String>();
 		esOperations.add("GT");
@@ -416,15 +425,6 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		esOperations.add("GE");
 		esOperations.add("LT");
 		esOperations.add("gt");
-		esOperations.add("rg");
-		esOperations.add("nrg");
-		esOperations.add("eq");
-		esOperations.add("lk");
-		esOperations.add("ex");
-		esOperations.add("in");
-		esOperations.add("le");
-		esOperations.add("ge");
-		esOperations.add("lt");
 	}
 	
 	public Set<String> getLogicalOperations(){
@@ -474,6 +474,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	public Set<String> getFormulaOperations() {
 		return formulaOperations;
 	}
+
+	public Set<String> getDataTypes() {
+		return dataTypes;
+	}
 	
 	public Map<String, String> getFieldsDataType() {
 		return fieldsDataTypeCache;
@@ -490,5 +494,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	public Map<String, String> getIndexMap() {
 		return indexMap;
 	}
+	
 }
+
 

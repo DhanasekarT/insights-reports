@@ -451,7 +451,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 					if(!fieldData.contains(aggregate.get(aggregate.get("requestValues")))){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(aggregate.get("requestValues"))}));
 					}
-					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get("formula"))){
+					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get("formula").toUpperCase())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get("formula")}));
 					}
 					fieldData.add(aggregate.get("name"));
@@ -531,14 +531,25 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				if(!checkNull(logicalOperations.getLogicalOperatorPrefix())){
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.LOGICAL_OPERATOR));
 				}
-				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix())){
+				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix().toUpperCase())){
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.LOGICAL_OPERATOR,logicalOperations.getLogicalOperatorPrefix()}));
 				}
-				
+				if(!checkNull(logicalOperations.getFields())){
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FILTER_FIELDS));
+				}
 				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
 
-					if(!checkNull(filters.getFieldName()) || !checkNull(filters.getOperator()) ||!checkNull(filters.getValueType()) || !checkNull(filters.getValue()) || !checkNull(filters.getType())){
+					if(!checkNull(filters.getFieldName()) || !checkNull(filters.getOperator()) || !checkNull(filters.getValueType()) || !checkNull(filters.getValue()) || !checkNull(filters.getType())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FILTERS));
+					}
+					if(!baseConnectionService.getDataTypes().contains(filters.getValueType().toUpperCase())){
+						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getValueType()}));
+					}else{
+						/** future validation for date field for range 
+						 *
+						 *if(APIConstants.DataTypes.DATE.dataType().equalsIgnoreCase(filters.getValueType())){
+						 *} 
+						 */
 					}
 					if(!filters.getType().equalsIgnoreCase(APIConstants.SELECTOR)){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getType()}));
@@ -546,7 +557,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 					if(!fieldData.contains(filters.getFieldName())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getFieldName()}));
 					}
-					if(!baseConnectionService.getEsOperations().contains(filters.getOperator())){
+					if(!baseConnectionService.getEsOperations().contains(filters.getOperator().toUpperCase())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getOperator()}));
 					}
 				}
@@ -571,11 +582,9 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 					if(!checkNull(orderData.getSortBy())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.SORT_BY));
 					}
-					
 					if(!fieldData.contains(orderData.getSortBy())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.SORT_BY,orderData.getSortBy()}));
 					}
-					
 					if (checkNull(orderData.getSortOrder())) {
 						processedData.put("hasSortOrder", true);
 					}
