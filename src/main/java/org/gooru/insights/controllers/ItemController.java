@@ -1,19 +1,23 @@
 package org.gooru.insights.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.util.IOUtils;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
-import org.json.JSONObject;
-import org.mortbay.util.ajax.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,7 +66,44 @@ public class ItemController extends BaseController implements APIConstants{
 		}
 		return getModel(jsonArray, dataMap);
 	}
-	
+
+	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView exportQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+			@RequestParam(value = "sessionToken", required = false) String sessionToken, HttpServletResponse response) throws IOException {
+
+		Map<Integer, String> errorMap = new HashMap<Integer, String>();
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+
+		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
+		/*
+		 * validate API Directly from Gooru API permanently disabled since we
+		 * have Redis server support but maintaining for backup.
+		 * Map<String,Object> userMap = itemService.getUserObject(sessionToken,
+		 * errorMap);
+		 */
+		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
+
+		JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
+		
+		dataReport = itemService.generateReportFile(jsonArray);
+		
+		if(dataReport != null && !dataReport.isEmpty()){
+				for(Map<String,Object> map : dataReport){
+					try {
+						File file = new File(map.get("file").toString());
+						generateCSVOutput(response,file);
+						file.delete();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+			}
+		}else{
+			response.sendError(204, "No content for your request provide valid content.");
+		}
+		
+		return getModel(jsonArray, dataMap);
+	}
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request,@PathVariable(value="action") String action,@RequestParam(value="reportName",required = true) String reportName,@RequestParam(value="sessionToken",required = true) String sessionToken,@RequestBody String data ,HttpServletResponse response) throws IOException{
@@ -196,4 +237,19 @@ public class ItemController extends BaseController implements APIConstants{
 		return getModel(dataMap);
 	}
 
+	public void generateExcelOutput(HttpServletResponse response, File excelFile) throws IOException {
+		InputStream sheet = new FileInputStream(excelFile);
+		response.setContentType("application/xls");
+		IOUtils.copy(sheet, response.getOutputStream());
+		response.getOutputStream().flush();
+		response.getOutputStream().close();
+	}
+	
+	public void generateCSVOutput(HttpServletResponse response, File excelFile) throws IOException {
+		InputStream sheet = new FileInputStream(excelFile);
+		response.setContentType("application/csv");
+		IOUtils.copy(sheet, response.getOutputStream());
+		response.getOutputStream().flush();
+		response.getOutputStream().close();
+	}
 }

@@ -1,5 +1,6 @@
 package org.gooru.insights.services;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,4 +34,6 @@ public interface ItemService {
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
 
+	public List<Map<String, Object>> generateReportFile(JSONArray data);
+	
 }

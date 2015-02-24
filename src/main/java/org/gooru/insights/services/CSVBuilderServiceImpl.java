@@ -12,6 +12,9 @@ import java.util.Properties;
 import javax.annotation.Resource;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class CSVBuilderServiceImpl implements CSVBuilderService{
 
@@ -106,6 +109,28 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		return getFilePath(fileName);
 	}
 
+	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException{
+		
+		// Set output File
+		File csvfile = new File(setFilePath(fileName));
+		@SuppressWarnings("resource")
+		PrintStream stream = new PrintStream(csvfile);
+		
+		//print row values
+		ObjectMapper objectMapper = new ObjectMapper(); 
+		
+		for (int i=0; i<resultSet.length(); i++) {
+		    JSONObject item;
+			try {
+				item = resultSet.getJSONObject(i);
+				stream.print(objectMapper.writeValueAsString(item.toString()) + "|");
+				stream.println("");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}		
+		return getFilePath(fileName);
+	}
 	public Properties getFilePath() {
 		return filePath;
 	}
@@ -129,8 +154,8 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 
 	public String getFilePath(String file){
 		
-		String fileName = this.getFilePath().getProperty("insights.file.app.path");
-		
+		//String fileName = this.getFilePath().getProperty("insights.file.app.path");
+		String fileName = "/tmp/";
 		if(file != null && (!file.isEmpty())){
 			fileName += file;
 		

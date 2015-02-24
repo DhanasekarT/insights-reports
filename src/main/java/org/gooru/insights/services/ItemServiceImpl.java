@@ -1,5 +1,7 @@
 package org.gooru.insights.services;
 
+import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +53,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	@Autowired
 	BaseCassandraService baseCassandraService;
 
+	@Autowired
+	ExcelBuilderService excelBuilderService;
+	
+	@Autowired
+	CSVBuilderService csvBuilderService;
+	
 	JSONSerializer serializer = new JSONSerializer();
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
@@ -173,7 +182,22 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	
+	public List<Map<String, Object>> generateReportFile(JSONArray data){
+
+		Map<String, Object> files = new HashMap<String, Object>();
+		String fileName = null;
+		try {
+			fileName = csvBuilderService.generateCSVJSONReport(data, fileName);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		files.put("file", fileName);
+		List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
+		
+		classGrade.add(files);
+
+		return classGrade;
+	}
 	public JSONArray generateQuery(String data, Map<String, Object> messageData, Map<String, Object> userMap, Map<Integer, String> errorData) {
 		
 		RequestParamsDTO requestParamsDTO = null;

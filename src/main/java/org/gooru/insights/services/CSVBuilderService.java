@@ -6,6 +6,8 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
+
 public interface CSVBuilderService {
 	
 	String generateCSV(String startDate,String endDate,Integer partnerIpdId,List<Map<String,String>> resultSet,String FileName)throws ParseException, IOException;
@@ -13,6 +15,8 @@ public interface CSVBuilderService {
 	File generateCSVReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException;
 	
 	String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException;
-
+	
+	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException;
+	
 	public void removeExpiredFiles();
 }
