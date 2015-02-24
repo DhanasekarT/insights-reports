@@ -200,18 +200,70 @@ public interface APIConstants {
 		}
 	}
 	
-	public enum esFilterFields{
-		
-		AND("AND"),OR("OR"),NOT("NOT"),GT("gt"),FILTERS("filters"),SELECTOR("selector"),
-		RG("rg"),NRG("nrg"),EQ("eq"),LK("lk"),EX("ex"),IN("in"),LE("le"),GE("ge"),LT("lt");
+	public enum esFilterFields {
 
+		AND("AND"), OR("OR"), NOT("NOT"), GT("gt"), FILTERS("filters"), SELECTOR("selector"), RG("rg"), NRG("nrg"), EQ("eq"), LK("lk"), EX("ex"), IN("in"), LE("le"), GE("ge"), LT("lt");
 		private String field;
-		public String field(){
+
+		public String field() {
 			return field;
 		}
-		private esFilterFields(String field){
+
+		private esFilterFields(String field) {
 			this.field = field;
 		}
-
 	}
+	
+	public enum ResourceType {
+
+		PRESENTATION("ppt/pptx"), 
+		VIDEO("video/youtube"), 
+		QUIZ("question"), 
+		ANIMATION_SWF("animation/swf"), 
+		ANIMATION_KMZ("animation/kmz"), 
+		IMAGE("image/png"), 
+		RESOURCE("resource/url"), 
+		HANDOUTS("handouts"), 
+		CLASSPLAN("gooru/classplan"), 
+		TEXTBOOK("textbook/scribd"), 
+		STUDYSHELF("gooru/studyshelf"), 
+		EXAM("exam/pdf"), 
+		CLASSBOOK("gooru/classbook"), 
+		NOTEBOOK("gooru/notebook"), 
+		QB_QUESTION("qb/question"), 
+		QB_RESPONSE("qb/response"), 
+		ASSESSMENT_QUIZ("assessment-quiz"), 
+		ASSESSMENT_EXAM("assessment-exam"), 
+		ASSESSMENT_QUESTION("assessment-question"), 
+		AM_ASSESSMENT_QUESTION("am:assessment-question"), 
+		SCOLLECTION("scollection"), 
+		SHELF("shelf"), 
+		FOLDER("folder"), 
+		ASSESSMENT("assessment"), 
+		ASSIGNMENT("assignment"), 
+		CLASSPAGE("classpage"), 
+		PATHWAY("pathway"), 
+		ALL("all"), 
+		Quiz("quiz"), 
+		DOCUMENTS("documents"), 
+		AUDIO("audio"), 
+		READINGS("readings"), 
+		MAPS("maps"), 
+		CASES("cases"), 
+		APPLICATION("application"), 
+		OAUTH("oauth"), 
+		LTI("lti"), 
+		VIMEO_VIDEO("vimeo/video");
+
+		private String type;
+
+		ResourceType(String type) {
+			this.type = type;
+		}
+
+		public String getType() {
+			return this.type;
+		}
+	}
+	
 }

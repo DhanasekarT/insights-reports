@@ -61,6 +61,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 	
+	private static final String RESOURCES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.RESOURCE.getType();
+	
+	private static final String QUESTIONS = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUIZ.getType();
+	
+	private static final String COLLECTIONS = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
+	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
@@ -208,15 +214,26 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
 					Map<String, Object> objectAsMap = new HashMap<String, Object>(1);
 					String objectType = null;
-					// TODO Add content types based on typeName 
-					if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
-						
-					} 
-					// TODO Add condition to differentiate Agent/ Statement/ Activity/ AtatementRef
+					
+					// TODO Add condition to differentiate Agent/ Statement/ Activity/ StatementRef
 					objectType = "Activity";
-
 					objectAsMap.put("objectType", objectType);
 					objectAsMap.put("id", activityJsonObject.get("gooruOid"));
+					if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
+						Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
+						String typeName = activityJsonObject.get("typeName").toString();
+						if (typeName.matches(RESOURCES)) {
+							typeName = "Resource";
+						} else if (typeName.matches(COLLECTIONS)) {
+							typeName = "Collection";
+						} else if (typeName.matches(QUESTIONS)) {
+							typeName = "Question";
+						}
+						if (StringUtils.isNotBlank(typeName)) {
+							definitionAsMap.put("type", typeName);
+							objectAsMap.put("definition", definitionAsMap);
+						}
+					}
 					activityAsMap.put("object", objectAsMap);
 
 				}
@@ -246,9 +263,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				contextActivitiesList.add(contextAsMap);
 				Map<String, Object> resultMap = new HashMap<String, Object>();
 				if((activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.review") || activityJsonObject.get("eventName").toString().equalsIgnoreCase("comment.create")) && (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))){
-					Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
-					responseAsMap.put("response", activityJsonObject.get("text"));
-					resultMap.put("response", responseAsMap);
+					resultMap.put("response", activityJsonObject.get("text"));
 				}
 				if (activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.rate") && (!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString()))) {
 					Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
@@ -307,26 +322,26 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				verb = "created";
 			} else if (eventName.toString().endsWith("play")) {
 				verb = "studied";
-			} else if (eventName.toString().endsWith("reaction")) {
+			} else if (eventName.toString().contains("delete")) {
+				verb = "deleted";
+			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
 				verb = "reacted";
+			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
+				verb = "reviewed";
 			} else if (eventName.toString().endsWith("view")) {
 				verb = "viewed";
 			} else if (eventName.toString().endsWith("edit")) {
 				verb = "edited";
-			} else if (eventName.toString().endsWith("delete")) {
-				verb = "deleted";
-			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
-				verb = "reviewed";
-			} else if (eventName.toString().contains("comment")) {
+			} else if (eventName.toString().equalsIgnoreCase("comment.create")) {
 				verb = "commented";
-			}  else if (eventName.toString().endsWith("login")) {
+			} else if (eventName.toString().endsWith("login")) {
 				verb = "loggedIn";
-			}  else if (eventName.toString().endsWith("register")) {
+			} else if (eventName.toString().endsWith("register")) {
 				verb = "registered";
-			}  else if (eventName.toString().endsWith("load")) {
+			} else if (eventName.toString().endsWith("load")) {
 				verb = "loaded";
-			}  else if (eventName.toString().equalsIgnoreCase("profile.action")) {
-				if(activityJsonObject.get("actionType").toString().endsWith("edit")) {
+			} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
+				if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
 					verb = "edited";
 				} else {
 					verb = "visited";
