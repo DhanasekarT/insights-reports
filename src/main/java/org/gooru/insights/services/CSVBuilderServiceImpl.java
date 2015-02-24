@@ -15,7 +15,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.stereotype.Service;
 
+@Service
 public class CSVBuilderServiceImpl implements CSVBuilderService{
 
 	@Resource(name = "filePath")
