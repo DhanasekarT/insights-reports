@@ -34,10 +34,11 @@ import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Picture;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
+import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
 
-
+@Service
 public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 
 	@Resource(name = "filePath")
