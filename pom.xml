@@ -404,6 +404,30 @@
 	  <artifactId>json-smart</artifactId>
 	  <version>2.0-RC3</version>
 	 </dependency>
+
+	 <!-- workbook support -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.7</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>3.7</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml-schemas</artifactId>
+			<version>3.7</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+	 
 <!-- CORES Dependency for Access Origin -->
 <dependency>
 	<groupId>com.thetransactioncompany</groupId>
@@ -422,8 +446,11 @@
 	<artifactId>mvel2</artifactId>
 	<version>2.2.1.Final</version>
 </dependency>
-
- 
+<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-asl</artifactId>
+			<version>1.9.9</version>
+		</dependency> 
 	</dependencies>
 	<profiles>
 		<profile>
