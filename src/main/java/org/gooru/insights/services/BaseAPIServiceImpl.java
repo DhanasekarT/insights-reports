@@ -329,7 +329,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				if(!aggregate.containsKey(APIConstants.FormulaFields.REQUEST_VALUES.getField()) || !aggregate.containsKey(APIConstants.FormulaFields.NAME.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.NAME.getField())) || !aggregate.containsKey(APIConstants.FormulaFields.FORMULA.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.FORMULA.getField())) || !aggregate.containsKey(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())) || !checkNull(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
 				}else{
-					if(!fieldData.contains(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))){
+					if(!fieldData.contains(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))}));
 					}
 					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase())){
@@ -365,7 +365,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		/**
 		 * If the aggregation is given then groupBy should not be EMPTY and vice versa.
 		 */
-		boolean hasDateField = false;
 		if (checkNull(requestParamsDTO.getGroupBy())) {
 			if(!processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check())){
 				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
@@ -377,9 +376,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 						errorField.append(APIConstants.COMMA);
 					}
 					errorField.append(field);
-					if(APIConstants.DataTypes.DATE.dataType().equalsIgnoreCase(baseConnectionService.getFieldsDataType().get(field))){
-						hasDateField = true;	
-					}
 				}
 			}
 			if(errorField.length() > 0){
@@ -403,9 +399,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			}
 			if(!isValid){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GRANULARITY_NAME,requestParamsDTO.getGranularity()}));
-			}
-			if(!hasDateField){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E107, APIConstants.GROUP_BY));
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_GRANULARITY.check(), true);
 		}

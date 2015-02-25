@@ -160,7 +160,7 @@ public class RedisServiceImpl implements RedisService {
 			return getValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim());
 		}
 		putStringValue(KEY_PREFIX + queryId.toString(), query.trim());
-		putStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).serialize(responseParamDTO));
+		putStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).deepSerialize(responseParamDTO));
 		putStringValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim(), queryId.toString());
 
 		log.info(APIConstants.NEW_QUERY + queryId);

@@ -178,9 +178,6 @@ public class ItemServiceImpl implements ItemService {
 	 */
 	public ResponseParamDTO<Map<String, Object>> generateQuery(String data, String sessionToken, Map<String, Object> userMap) throws Exception {
 
-		logger.info("info log printed");
-		logger.debug("debug log printed");
-		logger.error("error log printed");
 		/**
 		 * validate API Directly from Gooru API permanently disabled since we
 		 * have Redis server support but maintaining for backup.
@@ -231,6 +228,7 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;
 	}
 
+	@SuppressWarnings("unchecked")
 	public ResponseParamDTO<Map<String,Object>> getQuery(String id, String sessionToken) {
 
 		Map<String,Object> dataMap = getUserObjectData(sessionToken); 
@@ -240,9 +238,12 @@ public class ItemServiceImpl implements ItemService {
 			 prefix = dataMap.get(APIConstants.GOORUUID).toString()+APIConstants.SEPARATOR;
 		 }
 		String result = redisService.getQuery(prefix,id);
-		baseAPIService.deserialize(result, responseParamDTO.getClass());
+		if(result != null){
+			
+			responseParamDTO = baseAPIService.deserialize(result, responseParamDTO.getClass());
+		}
 		return responseParamDTO;
-	}
+	} 
 
 	
 	
@@ -259,11 +260,8 @@ public class ItemServiceImpl implements ItemService {
 		try {
 			if (baseAPIService.checkNull(id)) {
 				for (String requestId : id.split(APIConstants.COMMA)) {
-					Map<String,Object> dataMap = new HashMap<String, Object>();
 					do {
-						dataMap.put(requestId, redisService.getValue(prefix+requestId) != null ? baseAPIService.deserialize(redisService.getValue(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
-						requestId = redisService.getValue(prefix+requestId);
-						resultList.add(dataMap);
+						requestId = appendQuery(requestId, prefix, resultList);
 					} while (redisService.hasKey(prefix+requestId));
 				}
 			} else {
@@ -277,10 +275,7 @@ public class ItemServiceImpl implements ItemService {
 					}
 				}
 				for (String requestId : customizedKey) {
-					Map<String,Object> dataMap = new HashMap<String, Object>();
-					dataMap.put(requestId, redisService.getValue(prefix+requestId) != null ? baseAPIService.deserialize(redisService.getValue(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
-					requestId = redisService.getValue(prefix+requestId);
-					resultList.add(dataMap);
+					appendQuery(requestId, prefix, resultList);
 				}
 			}
 		} catch (Exception e) {
@@ -290,6 +285,14 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;
 	}
 
+	private String appendQuery(String requestId, String prefix, List<Map<String, Object>> resultList) {
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put(requestId, redisService.getValue(prefix + requestId));
+		requestId = redisService.getValue(prefix + requestId);
+		resultList.add(dataMap);
+		return requestId;
+	}
+	
 	public ResponseParamDTO<Map<Integer,String>> manageReports(String action,String reportName,String data){
 		
 		 ResponseParamDTO<Map<Integer,String>> responseParamDTO = new ResponseParamDTO<Map<Integer,String>>();

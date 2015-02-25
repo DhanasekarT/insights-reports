@@ -74,8 +74,9 @@ public class BaseESServiceImpl implements BaseESService {
 		Map<String,Object> filters = new HashMap<String,Object>();
 		List<Map<String,Object>> dataList = coreGet(requestParamsDTO,responseParamDTO,indices[0],checkPoint,filters);
 		
-		if(dataList.isEmpty())
-		return responseParamDTO;			
+		if(dataList.isEmpty()){
+		return responseParamDTO;
+		}
 		/**
 		 * Get all the acceptable filter data from the index
 		 */
