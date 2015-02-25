@@ -48,6 +48,8 @@ public class ErrorConstants {
 	
 	public static final  String DATA_TYPE = "dataType";
 	
+	public static final  String FORMAT = "format";
+	
 	public static final  String INSERT = "insert";
 
 	public static final  String DELETE = "delete";

@@ -20,7 +20,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
 import org.gooru.insights.builders.utils.MessageHandler;
-import org.gooru.insights.builders.utils.RedisService;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.ESConstants;
@@ -46,7 +45,6 @@ import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor;
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.Column;
 import com.netflix.astyanax.model.ColumnList;
-import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.model.Row;
 import com.netflix.astyanax.model.Rows;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
@@ -54,7 +52,7 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 @Component
 public class BaseConnectionServiceImpl implements BaseConnectionService {
 
-	private Logger logger = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
 	
 	private static Client devClient;
 	
@@ -79,6 +77,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	private static Map<String,String> indexMap;
 	
 	private static Map<String,String> defaultFields;
+	
+	private static Map<String, Map<String, String>> apiFields;
 	
 	private static Set<String> logicalOperations;
 	
@@ -122,6 +122,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			fieldDataType();
 			fieldsConfig();
 			fieldArrayHandler();
+			apiFields();
 		}
 	}
 	
@@ -269,8 +270,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			if(row.getColumns().getColumnByName("dependent_fields") != null){
 			 String dependentKeys = row.getColumns().getColumnByName("dependent_fields").getStringValue();
 			 Set<String> fetchFields = new HashSet<String>(); 
-				for(String dependentKey : dependentKeys.split(",")){
-					fetchFields.add(row.getKey()+"~"+dependentKey);
+				for(String dependentKey : dependentKeys.split(APIConstants.COMMA)){
+					fetchFields.add(row.getKey()+APIConstants.SEPARATOR+dependentKey);
 				}
 				operationalResult =  baseCassandraService.readAll(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), fetchFields, new ArrayList<String>());
 				Rows<String,String> dependentrows = operationalResult.getResult();
@@ -279,11 +280,23 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 					for(Column<String> column : dependentRow.getColumns()){
 						dependentMap.put(column.getName(),column.getStringValue());
 					}
-					String[] key = dependentRow.getKey().split("~");
+					String[] key = dependentRow.getKey().split(APIConstants.SEPARATOR);
 					dataSet.put(key[1], dependentMap);
 				}
 				dependentFieldsCache.put(row.getKey(), dataSet);
 			}
+		}
+	}
+	
+	public void apiFields(){
+		Map<String, Map<String, String>> indexDbFields = getFields();
+		apiFields = new HashMap<String, Map<String, String>>();
+		for(Map.Entry<String, Map<String, String>> indexList : indexDbFields.entrySet()){
+		Map<String, String> fields = new HashMap<String, String>();
+		for(Map.Entry<String, String> dbFields : indexList.getValue().entrySet()){
+			fields.put(dbFields.getValue(), dbFields.getKey());
+		}
+		apiFields.put(indexList.getKey(), fields);
 		}
 	}
 	
@@ -313,6 +326,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		fieldDataType();
 		fieldsConfig();
 		fieldArrayHandler();
+		apiFields();
 	}
 	
 	public void clearConnectionCache(){
@@ -324,6 +338,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		initProdESConnection();
 	}
 	
+	/**
+	 * Depricated
+	 */
 	public Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){
 		ColumnList<String> endPoint = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
 		Map<String,Object> userMap = new LinkedHashMap<String, Object>();		
@@ -353,7 +370,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	public Map<String, Object> getUserObjectData(String sessionToken) {
 
-		String result = redisService.getRedisRawValue(APIConstants.GOORU_PREFIX + sessionToken);
+		String result = redisService.getDirectValue(APIConstants.GOORU_PREFIX + sessionToken);
 		Map<String, Object> userMap = new LinkedHashMap<String, Object>();
 		try {
 			JSONObject coreJsonObject = new JSONObject(result);
@@ -495,6 +512,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		return indexMap;
 	}
 	
+	public Map<String, Map<String, String>> getApiFields(){
+		return apiFields;
+	}
 }
 
 

@@ -18,12 +18,14 @@ import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
+import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
+import org.restlet.engine.http.connector.BaseServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +39,7 @@ import flexjson.JSONSerializer;
 @Service
 public class ItemServiceImpl implements ItemService {
 	
-	private Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
 
 	@Autowired
 	private BaseAPIService baseAPIService;
@@ -46,6 +48,9 @@ public class ItemServiceImpl implements ItemService {
 	private BaseESService esService;
 
 	@Autowired
+	private RedisService redisService;
+	
+	@Autowired
 	private BusinessLogicService businessLogicService;
 
 	@Autowired
@@ -53,8 +58,6 @@ public class ItemServiceImpl implements ItemService {
 
 	@Autowired
 	private BaseCassandraService baseCassandraService;
-	
-	private JSONSerializer serializer = new JSONSerializer();
 	
 	/**
 	 * This will return simple message as service available
@@ -69,8 +72,9 @@ public class ItemServiceImpl implements ItemService {
 	}
 	
 	/**
-	 * This will process the API
-	 * 
+	 * This will process the multiple API
+	 * @param data is the requested 
+	 * @param sessionToken is user access token
 	 */
 	public ResponseParamDTO<Map<String,Object>> processApi(String data, String sessionToken) throws Exception {
 
@@ -99,9 +103,13 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;
 	}
 	
+	/**
+	 * 
+	 */
 	public ResponseParamDTO<Map<String,Object>> getPartyReport(HttpServletRequest request,String reportType,String sessionToken) throws Exception {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
+		JSONSerializer serializer = new JSONSerializer();
 
 		Map<String, Object> userMap = getUserObjectData(sessionToken);
 		
@@ -165,8 +173,14 @@ public class ItemServiceImpl implements ItemService {
 		return new ResponseParamDTO<Map<String,Object>>();
 	}
 	
+	/**
+	 *This will generate the query with their respective data 
+	 */
 	public ResponseParamDTO<Map<String, Object>> generateQuery(String data, String sessionToken, Map<String, Object> userMap) throws Exception {
 
+		logger.info("info log printed");
+		logger.debug("debug log printed");
+		logger.error("error log printed");
 		/**
 		 * validate API Directly from Gooru API permanently disabled since we
 		 * have Redis server support but maintaining for backup.
@@ -185,12 +199,13 @@ public class ItemServiceImpl implements ItemService {
 		 * Additional filters are added based on user authentication
 		 */
 		requestParamsDTO = baseAPIService.validateUserRole(requestParamsDTO, userMap);
+		
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		ResponseParamDTO<Map<String, Object>> responseParamDTO = esService.generateQuery(requestParamsDTO, indices, checkPoint);
 		/**
 		 * save data to redis
 		 */
-		responseParamDTO.setMessage(baseAPIService.saveQuery(requestParamsDTO, responseParamDTO, data, userMap));
+		responseParamDTO.setMessage(saveQuery(requestParamsDTO, responseParamDTO, data, userMap));
 		return responseParamDTO;
 
 	}
@@ -199,8 +214,9 @@ public class ItemServiceImpl implements ItemService {
 		ResponseParamDTO<Map<String,String>> responseParamDTO = new ResponseParamDTO<Map<String,String>>();
 		Map<String, String> dataMap = new HashMap<String, String>();
 		String message = APIConstants.EMPTY;
+		
 		if(baseAPIService.checkNull(id)){
-		if(baseAPIService.clearQuery(id)){
+		if(redisService.clearQuery(id)){
 			message = MessageHandler.getMessage(APIConstants.STATUS, new String[]{APIConstants.QUERY,APIConstants.DELETED});
 		}else{
 			message = MessageHandler.getMessage(APIConstants.STATUS, new String[]{APIConstants.QUERY,APIConstants.NOT_FOUND});
@@ -223,7 +239,7 @@ public class ItemServiceImpl implements ItemService {
 		 if(dataMap.containsKey(APIConstants.GOORUUID) && dataMap.get(APIConstants.GOORUUID) != null){
 			 prefix = dataMap.get(APIConstants.GOORUUID).toString()+APIConstants.SEPARATOR;
 		 }
-		String result = baseAPIService.getQuery(prefix,id);
+		String result = redisService.getQuery(prefix,id);
 		baseAPIService.deserialize(result, responseParamDTO.getClass());
 		return responseParamDTO;
 	}
@@ -241,17 +257,17 @@ public class ItemServiceImpl implements ItemService {
 		 ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		 List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		try {
-			if (id != null && !id.isEmpty()) {
+			if (baseAPIService.checkNull(id)) {
 				for (String requestId : id.split(APIConstants.COMMA)) {
 					Map<String,Object> dataMap = new HashMap<String, Object>();
 					do {
-						dataMap.put(requestId, baseAPIService.getKey(prefix+requestId) != null ? baseAPIService.deserialize(baseAPIService.getKey(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
-						requestId = baseAPIService.getKey(prefix+requestId);
+						dataMap.put(requestId, redisService.getValue(prefix+requestId) != null ? baseAPIService.deserialize(redisService.getValue(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
+						requestId = redisService.getValue(prefix+requestId);
 						resultList.add(dataMap);
-					} while (baseAPIService.hasKey(prefix+requestId));
+					} while (redisService.hasKey(prefix+requestId));
 				}
 			} else {
-				Set<String> keyIds = baseAPIService.getKeys();
+				Set<String> keyIds = redisService.getKeys();
 				Set<String> customizedKey = new HashSet<String>();
 				for (String keyId : keyIds) {
 					if (keyId.contains(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + APIConstants.CACHE_PREFIX_ID+prefix)) {
@@ -262,13 +278,13 @@ public class ItemServiceImpl implements ItemService {
 				}
 				for (String requestId : customizedKey) {
 					Map<String,Object> dataMap = new HashMap<String, Object>();
-					dataMap.put(requestId, baseAPIService.getKey(prefix+requestId) != null ? baseAPIService.deserialize(baseAPIService.getKey(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
-					requestId = baseAPIService.getKey(prefix+requestId);
+					dataMap.put(requestId, redisService.getValue(prefix+requestId) != null ? baseAPIService.deserialize(redisService.getValue(prefix+requestId),ResponseParamDTO.class).getContent() : new ArrayList<Map<String,Object>>());
+					requestId = redisService.getValue(prefix+requestId);
 					resultList.add(dataMap);
 				}
 			}
 		} catch (Exception e) {
-			logger.error(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.GET));
+			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.GET));
 		}
 		responseParamDTO.setContent(resultList);
 		return responseParamDTO;
@@ -282,11 +298,7 @@ public class ItemServiceImpl implements ItemService {
 			Column<String> val = baseCassandraService.readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
 			
 			if(val == null || (val !=null && StringUtils.isBlank(val.getStringValue()))){
-				try {
 					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
-				} catch (Exception e) {
-					throw new BadRequestException(ErrorConstants.E102);
-				}	
 				
 				UUID reportId = UUID.randomUUID();
 	
@@ -297,7 +309,7 @@ public class ItemServiceImpl implements ItemService {
 			}else{
 				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E105));
 			}
-		}else if(action.equalsIgnoreCase("update")){
+		}else if(action.equalsIgnoreCase(APIConstants.UPDATE)){
 			Column<String> val = baseCassandraService.readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
 			
 			if(val !=null && !StringUtils.isBlank(val.getStringValue())){
@@ -309,9 +321,7 @@ public class ItemServiceImpl implements ItemService {
 //					errorMap.put(400,E1014);
 //					return errorMap;
 				}	
-				
 				baseCassandraService.saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue(), "query", data);
-				
 				resultMap.put(200,ErrorConstants.SUCCESSFULLY_ADDED);
 			}else{
 				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E105));
@@ -321,18 +331,24 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;	
 	}
 
-	public Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
+	/**
+	 * Depricated:used to fetch data from session token
+	 * @param sessionToken
+	 * @param errorMap
+	 * @return
+	 */
+	private Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
 		return baseConnectionService.getUserObject(sessionToken, errorMap);
 	}
 
-	public Map<String, Object> getUserObjectData(String sessionToken) {
+	private Map<String, Object> getUserObjectData(String sessionToken) {
 		return baseConnectionService.getUserObjectData(sessionToken);
 	}
 
 	public ResponseParamDTO<Map<String,String>> insertKey(String data){
 		ResponseParamDTO<Map<String,String>> responseParamDTO = new ResponseParamDTO<Map<String,String>>();
 		Map<String,String> resultData = new HashMap<String, String>();
-		if(baseAPIService.insertKey(data)){
+		if(redisService.insertKey(data)){
 			resultData.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.STATUS,new String[]{ APIConstants.QUERY,MessageHandler.getMessage(APIConstants.INSERTED)}));
 		}else{
 			resultData.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.STATUS,new String[]{ APIConstants.QUERY,MessageHandler.getMessage(APIConstants.FAILED)}));
@@ -358,6 +374,20 @@ public class ItemServiceImpl implements ItemService {
 		responseParamDTO.setMessage(dataMap);
 		return responseParamDTO;
 	}
-
 	
+	private Map<String,Object> saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap){
+		try {
+		if (requestParamsDTO.isSaveQuery() != null) {
+			if (requestParamsDTO.isSaveQuery()) {
+				String queryId = redisService.putCache(data,userMap, responseParamDTO);
+				Map<String,Object> dataMap = new HashMap<String, Object>();
+				dataMap.put(APIConstants.QUERY_ID, queryId);
+				return dataMap;
+			}
+		}
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.INSERT));
+		}
+		return new HashMap<String, Object>();
+	}
 }

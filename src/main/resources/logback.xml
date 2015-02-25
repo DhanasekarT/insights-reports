@@ -38,7 +38,8 @@
 		</filter>
 	</appender>
 	<appender name="default-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
-		<param name="File" value="${CATALINA_HOME}/insights_app/normal_logs/insights-app.log" />
+<!-- 		<param name="File" value="${CATALINA_HOME}/insights_app/normal_logs/insights-app.log" /> -->
+<param name="File" value="${CATALINA_HOME}/insights_app/insights-app.log" /> 
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
 			<fileNamePattern>insights-app-%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -52,27 +53,26 @@
 		</encoder>
 	</appender>
 	
-	<appender name="error-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> <!-- Rolling file appender for rolling files -->
-		<param name="File" value="${CATALINA_HOME}/insights_app/error_logs/insights-app-error.log" />
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<!-- daily rollover -->
-			<fileNamePattern>insights-app-error.%d{yyyy-MM-dd}.log</fileNamePattern>
-			<!-- keep 30 days' worth of history -->
-			<maxHistory>30</maxHistory>
-		</rollingPolicy>
-		<param name="encoding" value="UTF-8" />
-		<encoder>
-			<pattern>%-30([web] %d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n</pattern>
-		</encoder>
-	</appender>
-	<logger name="otherLog"  additivity="false">
-        <appender-ref ref="default-out" level="DEBUG"/>
-        <appender-ref ref="default-out" level="WARN"/>
-    </logger>
+<!-- 	<appender name="error-out" class="ch.qos.logback.core.rolling.RollingFileAppender"> Rolling file appender for rolling files -->
+<!-- 		<param name="File" value="${CATALINA_HOME}/insights_app/error_logs/insights-app-error.log" /> -->
+<!-- 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"> -->
+
+<!-- 			<fileNamePattern>insights-app-error.%d{yyyy-MM-dd}.log</fileNamePattern> -->
+<!-- 			<maxHistory>30</maxHistory> -->
+<!-- 		</rollingPolicy> -->
+<!-- 		<param name="encoding" value="UTF-8" /> -->
+<!-- 		<encoder> -->
+<!-- 			<pattern>%-30([web] %d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n</pattern> -->
+<!-- 		</encoder> -->
+<!-- 	</appender> -->
+<!-- 	<logger name="otherLog"  additivity="false"> -->
+<!--         <appender-ref ref="default-out" level="DEBUG"/> -->
+<!--         <appender-ref ref="default-out" level="WARN"/> -->
+<!--     </logger> -->
     
-    <logger name="errorLog" level="ERROR" additivity="false">
-        <appender-ref ref="error-out"/>
-    </logger>
+<!--     <logger name="errorLog" level="ERROR" additivity="false"> -->
+<!--         <appender-ref ref="error-out"/> -->
+<!--     </logger> -->
 	
 	<logger name="org.springframework" level="WARN"></logger>
 	<logger name="org.hibernate.cfg.HbmBinder" level="WARN"></logger>

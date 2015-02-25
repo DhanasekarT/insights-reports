@@ -9,6 +9,8 @@ public class APIConstants {
 	
 	public final static String COLON = ":";
 	
+	public final static String DOT = ".";
+	
 	public final static String EMPTY= "";
 	
 	public final static String PIPE = "|";
@@ -194,6 +196,8 @@ public class APIConstants {
 
 	public final static String DELETED = "DELETED";
 	
+	public final static String UPDATE = "UPDATE";
+	
 	public final static String INSERTED = "INSERTED";
 
 	public final static String NOT_FOUND = "NOT_FOUND";
@@ -213,7 +217,8 @@ public class APIConstants {
 	public final static String ROLES = "roles";
 	
 	public static final String QUERY_ID = "queryId";
-
+	
+	public static final String ASC = "ASC";
 
 	/**
 	 * Logical Enumaration 

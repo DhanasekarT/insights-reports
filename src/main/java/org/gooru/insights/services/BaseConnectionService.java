@@ -51,4 +51,6 @@ public interface BaseConnectionService {
 	Map<String,String> getDefaultFields();
 	
 	Properties getFileProperties();
+	
+	Map<String, Map<String, String>> getApiFields();
 }

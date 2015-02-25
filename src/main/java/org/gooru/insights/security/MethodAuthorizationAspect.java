@@ -29,18 +29,17 @@ import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.log4j.spi.LoggerFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.gooru.insights.builders.utils.RedisService;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.User;
 import org.gooru.insights.services.BaseCassandraService;
+import org.gooru.insights.services.RedisService;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
@@ -102,7 +101,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
 			sessionToken = request.getParameter("sessionToken");					
 
-			String result = redisService.getRedisRawValue(GOORU_PREFIX+sessionToken);
+			String result = redisService.getDirectValue(GOORU_PREFIX+sessionToken);
 			try{
 				JSONObject jsonObject = new JSONObject(result);
 				jsonObject = new JSONObject(jsonObject.getString("userToken"));

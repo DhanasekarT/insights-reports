@@ -18,8 +18,6 @@ public interface ItemService {
 	
 	ResponseParamDTO<Map<String,Object>> clearConnectionCache();
 	
-	Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
-	
 	ResponseParamDTO<Map<String, String>> clearQuery(String id);
 	
 	ResponseParamDTO<Map<String,Object>> getQuery(String id,String sessionToken);
@@ -27,8 +25,6 @@ public interface ItemService {
 	ResponseParamDTO<Map<String,Object>> getCacheData(String id,String sessionToken);
 	
 	ResponseParamDTO<Map<String,String>> insertKey(String data);
-	
-	Map<String, Object> getUserObjectData(String sessionToken);
 	
 	ResponseParamDTO<Map<Integer,String>> manageReports(String action,String reportName,String data);
 	

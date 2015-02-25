@@ -42,10 +42,6 @@ public interface BaseAPIService {
 	
 	String convertCollectiontoString(Collection<String> datas);
 	
-	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey);
-	
-	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
-	
 	List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
 	
 	List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder);
@@ -54,31 +50,9 @@ public interface BaseAPIService {
 	
 	JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException;
 
-	String convertTimeMstoISO(Object milliseconds);
-	
 	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
-
-	<M> String putRedisCache(String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO);
-	
-	boolean clearQuery(String id);
-	
-	String getQuery(String prefix,String id);
-	
-	boolean clearQuerys(String[] id);
-	
-	boolean hasKey(String id);
-	
-	String getKey(String id);
-	
-	Set<String> getKeys();
-	
-	String getRedisRawValue(String key);
-	
-	boolean insertKey(String data);
 
 	Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO);
 	
-	Map<String,Object> saveQuery(RequestParamsDTO requestParamsDTO, ResponseParamDTO<Map<String,Object>> responseParamDTO, String data, Map<String, Object> userMap);
-
 	<T> T deserialize(String json, Class<T> clazz);
 }
