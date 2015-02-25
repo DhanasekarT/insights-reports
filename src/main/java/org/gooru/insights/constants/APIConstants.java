@@ -218,7 +218,7 @@ public interface APIConstants {
 
 		PRESENTATION("ppt/pptx"), 
 		VIDEO("video/youtube"), 
-		QUIZ("question"), 
+		QUESTION("question"), 
 		ANIMATION_SWF("animation/swf"), 
 		ANIMATION_KMZ("animation/kmz"), 
 		IMAGE("image/png"), 
@@ -244,7 +244,7 @@ public interface APIConstants {
 		CLASSPAGE("classpage"), 
 		PATHWAY("pathway"), 
 		ALL("all"), 
-		Quiz("quiz"), 
+		QUIZ("quiz"), 
 		DOCUMENTS("documents"), 
 		AUDIO("audio"), 
 		READINGS("readings"), 

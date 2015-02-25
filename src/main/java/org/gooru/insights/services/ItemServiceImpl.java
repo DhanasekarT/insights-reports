@@ -1,7 +1,5 @@
 package org.gooru.insights.services;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,10 +20,10 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.joda.time.Period;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,11 +59,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 	
-	private static final String RESOURCES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.RESOURCE.getType();
+	private static final String RESOURCE_TYPES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.HANDOUTS.getType()+"|"+ResourceType.EXAM.getType();
 	
-	private static final String QUESTIONS = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUIZ.getType();
+	private static final String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
 	
-	private static final String COLLECTIONS = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
+	private static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -197,12 +195,19 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			for (int index = 0; index < activityArray.length(); index++) {
 				Map<String, Object> activityAsMap = new HashMap<String, Object>();
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
+				
+				/* Unique Activity Id*/
 				activityAsMap.put("id", activityJsonObject.get("eventId"));
 
-				if (!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())) {
+				/* Actor Property starts here*/
+				if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
 					Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
 					actorAsMap.put("objectType", "Agent");
-					actorAsMap.put("id", activityJsonObject.get("gooruUId"));
+					if(!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
+						actorAsMap.put("mbox", "mailto:"+activityJsonObject.get("emailId"));
+					} else {
+						actorAsMap.put("id", activityJsonObject.get("gooruUId"));
+					}
 					actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
 					actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
 					if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
@@ -211,6 +216,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					}
 					activityAsMap.put("actor", actorAsMap);
 				}
+				
+				/* Object Property starts here*/
 				if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
 					Map<String, Object> objectAsMap = new HashMap<String, Object>(1);
 					String objectType = null;
@@ -222,12 +229,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
 						Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
 						String typeName = activityJsonObject.get("typeName").toString();
-						if (typeName.matches(RESOURCES)) {
-							typeName = "Resource";
-						} else if (typeName.matches(COLLECTIONS)) {
-							typeName = "Collection";
-						} else if (typeName.matches(QUESTIONS)) {
-							typeName = "Question";
+						if (typeName.matches(RESOURCE_TYPES)) {
+							typeName = "resource";
+						} else if (typeName.matches(COLLECTION_TYPES)) {
+							typeName = "collection";
+						} else if (typeName.matches(QUESTION_TYPES)) {
+							typeName = "question";
 						}
 						if (StringUtils.isNotBlank(typeName)) {
 							definitionAsMap.put("type", typeName);
@@ -237,6 +244,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					activityAsMap.put("object", objectAsMap);
 
 				}
+				/* Verb Property starts here*/
 				if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
 					Map<String, Object> verbAsMap = new HashMap<String, Object>();
 					String verb = null;
@@ -249,18 +257,28 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						activityAsMap.put("verb", verbAsMap);
 					}
 				}
-				List<Map<String, Map<String, Object>>> contextActivitiesList = new ArrayList<Map<String, Map<String, Object>>>();
-				Map<String, Map<String, Object>> contextAsMap = new HashMap<String, Map<String, Object>>();
+				/* Context Property starts here*/
+				Map<String, Object> contextActivitiesMap = new HashMap<String, Object>();
+				Map<String, Object> contextAsMap = new HashMap<String, Object>();
 				if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
+					List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
 					Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
 					parentAsMap.put("id", activityJsonObject.get("parentGooruId").toString());
 					if (!activityJsonObject.isNull("parentEventId") && StringUtils.isNotBlank(activityJsonObject.get("parentEventId").toString())) {
 						parentAsMap.put("id", activityJsonObject.get("parentEventId").toString());
 						parentAsMap.put("objectType", "StatementRef");
+						parentList.add(parentAsMap);
 					}
-					contextAsMap.put("parent", parentAsMap);
+					if (parentList.size() > 0) {
+						contextAsMap.put("parent", parentList);
+						contextActivitiesMap.put("contextActivities", contextAsMap);
+					}
 				}
-				contextActivitiesList.add(contextAsMap);
+				if(!contextActivitiesMap.isEmpty()) {
+					activityAsMap.put("context", contextActivitiesMap);
+				}
+				
+				/* Result Property starts here*/
 				Map<String, Object> resultMap = new HashMap<String, Object>();
 				if((activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.review") || activityJsonObject.get("eventName").toString().equalsIgnoreCase("comment.create")) && (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))){
 					resultMap.put("response", activityJsonObject.get("text"));
@@ -271,11 +289,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					resultMap.put("response", responseAsMap);
 				}
 				if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString())) {
-					resultMap.put("duration", activityJsonObject.get("totalTimeSpentInMs"));
+					if(Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
+						resultMap.put("duration", new Period((long)Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString())));
+					} else {
+						resultMap.put("duration", new Period((long)1800000));
+					}
 					if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) {
-						Map<String, Object> scaledAsMap = new HashMap<String, Object>(1);
-						scaledAsMap.put("score", Long.valueOf(activityJsonObject.get("score").toString()));
-						resultMap.put("scaled", scaledAsMap);
+						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
+						rawScoreAsMap.put("raw", Long.valueOf(activityJsonObject.get("score").toString()));
+						resultMap.put("score", rawScoreAsMap);
 					}
 				}
 				if(!resultMap.isEmpty()) {
@@ -284,8 +306,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 				activityAsMap.put("timestamp", activityJsonObject.get("eventTime"));
 				activityAsMap.put("stored", activityJsonObject.get("eventTime"));
-
-				//System.out.println("activityID : " + activityJsonObject.get("eventId"));
 
 				/*
 				 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new TypeReference<Map<String,
