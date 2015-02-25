@@ -20,7 +20,6 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
-import org.joda.time.Period;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,12 +57,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	CSVBuilderService csvBuilderService;
 	
 	JSONSerializer serializer = new JSONSerializer();
-	
-	private static final String RESOURCE_TYPES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.HANDOUTS.getType()+"|"+ResourceType.EXAM.getType();
-	
-	private static final String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
-	
-	private static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -188,190 +181,85 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	}
 
 	public List<Map<String, Object>> generateReportFile(JSONArray activityArray) {
-
+		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 		try {
-			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 
-			for (int index = 0; index < activityArray.length(); index++) {
-				Map<String, Object> activityAsMap = new HashMap<String, Object>();
-				JSONObject activityJsonObject = activityArray.getJSONObject(index);
-				
-				/* Unique Activity Id*/
-				activityAsMap.put("id", activityJsonObject.get("eventId"));
-
-				/* Actor Property starts here*/
-				if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
-					Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
-					actorAsMap.put("objectType", "Agent");
-					if(!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
-						actorAsMap.put("mbox", "mailto:"+activityJsonObject.get("emailId"));
-					} else {
-						actorAsMap.put("id", activityJsonObject.get("gooruUId"));
-					}
-					actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
-					actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
-					if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
-						actorAsMap.put("userIp", activityJsonObject.get("userIp"));
-						actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
-					}
-					activityAsMap.put("actor", actorAsMap);
-				}
-				
-				/* Object Property starts here*/
-				if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
-					Map<String, Object> objectAsMap = new HashMap<String, Object>(1);
-					String objectType = null;
-					
-					// TODO Add condition to differentiate Agent/ Statement/ Activity/ StatementRef
-					objectType = "Activity";
-					objectAsMap.put("objectType", objectType);
-					objectAsMap.put("id", activityJsonObject.get("gooruOid"));
-					if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
-						Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
-						String typeName = activityJsonObject.get("typeName").toString();
-						if (typeName.matches(RESOURCE_TYPES)) {
-							typeName = "resource";
-						} else if (typeName.matches(COLLECTION_TYPES)) {
-							typeName = "collection";
-						} else if (typeName.matches(QUESTION_TYPES)) {
-							typeName = "question";
-						}
-						if (StringUtils.isNotBlank(typeName)) {
-							definitionAsMap.put("type", typeName);
-							objectAsMap.put("definition", definitionAsMap);
-						}
-					}
-					activityAsMap.put("object", objectAsMap);
-
-				}
-				/* Verb Property starts here*/
-				if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
-					Map<String, Object> verbAsMap = new HashMap<String, Object>();
-					String verb = null;
-					verb = getVerb(activityJsonObject);
-					if (StringUtils.isNotBlank(verb)) {
-						verbAsMap.put("id", "www.goorulearning.org/exapi/verbs/" + verb);
-						Map<String, Object> displayAsMap = new HashMap<String, Object>();
-						displayAsMap.put("en-US", verb);
-						verbAsMap.put("display", displayAsMap);
-						activityAsMap.put("verb", verbAsMap);
-					}
-				}
-				/* Context Property starts here*/
-				Map<String, Object> contextActivitiesMap = new HashMap<String, Object>();
-				Map<String, Object> contextAsMap = new HashMap<String, Object>();
-				if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
-					List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
-					Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
-					parentAsMap.put("id", activityJsonObject.get("parentGooruId").toString());
-					if (!activityJsonObject.isNull("parentEventId") && StringUtils.isNotBlank(activityJsonObject.get("parentEventId").toString())) {
-						parentAsMap.put("id", activityJsonObject.get("parentEventId").toString());
-						parentAsMap.put("objectType", "StatementRef");
-						parentList.add(parentAsMap);
-					}
-					if (parentList.size() > 0) {
-						contextAsMap.put("parent", parentList);
-						contextActivitiesMap.put("contextActivities", contextAsMap);
-					}
-				}
-				if(!contextActivitiesMap.isEmpty()) {
-					activityAsMap.put("context", contextActivitiesMap);
-				}
-				
-				/* Result Property starts here*/
-				Map<String, Object> resultMap = new HashMap<String, Object>();
-				if((activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.review") || activityJsonObject.get("eventName").toString().equalsIgnoreCase("comment.create")) && (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))){
-					resultMap.put("response", activityJsonObject.get("text"));
-				}
-				if (activityJsonObject.get("eventName").toString().equalsIgnoreCase("item.rate") && (!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString()))) {
-					Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
-					responseAsMap.put("response", activityJsonObject.get("rate"));
-					resultMap.put("response", responseAsMap);
-				}
-				if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString())) {
-					if(Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
-						resultMap.put("duration", new Period((long)Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString())));
-					} else {
-						resultMap.put("duration", new Period((long)1800000));
-					}
-					if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) {
-						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
-						rawScoreAsMap.put("raw", Long.valueOf(activityJsonObject.get("score").toString()));
-						resultMap.put("score", rawScoreAsMap);
-					}
-				}
-				if(!resultMap.isEmpty()) {
-					activityAsMap.put("result", resultMap);
-				}
-
-				activityAsMap.put("timestamp", activityJsonObject.get("eventTime"));
-				activityAsMap.put("stored", activityJsonObject.get("eventTime"));
-
-				/*
-				 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new TypeReference<Map<String,
-				 * Object>>() { });
-				 */
-				activityList.add(activityAsMap);
-			}
+			// ReportData is generated here
+			getReportDataList(activityArray, activityList);
 
 			Map<String, Object> files = new HashMap<String, Object>();
 			String fileName = null;
 			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
-
 			files.put("file", fileName);
 			List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
-
 			classGrade.add(files);
 
 			return classGrade;
+		} catch (JSONException je) {
+			// TODO Add Error Handling
+			je.printStackTrace();
 		} catch (Exception e) {
+			// TODO Add Error Handling
 			e.printStackTrace();
 		}
 		return null;
 	}
 	
-	public String getVerb(JSONObject activityJsonObject) {
-		String verb = null;
-		try {
-			String eventName = activityJsonObject.get("eventName").toString();
-			if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
-				verb = "copied";
-			} else if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
-				verb = "moved";
-			} else if (eventName.toString().equalsIgnoreCase("item.create")) {
-				verb = "created";
-			} else if (eventName.toString().endsWith("play")) {
-				verb = "studied";
-			} else if (eventName.toString().contains("delete")) {
-				verb = "deleted";
-			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
-				verb = "reacted";
-			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
-				verb = "reviewed";
-			} else if (eventName.toString().endsWith("view")) {
-				verb = "viewed";
-			} else if (eventName.toString().endsWith("edit")) {
-				verb = "edited";
-			} else if (eventName.toString().equalsIgnoreCase("comment.create")) {
-				verb = "commented";
-			} else if (eventName.toString().endsWith("login")) {
-				verb = "loggedIn";
-			} else if (eventName.toString().endsWith("register")) {
-				verb = "registered";
-			} else if (eventName.toString().endsWith("load")) {
-				verb = "loaded";
-			} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
-				if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
-					verb = "edited";
-				} else {
-					verb = "visited";
+	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList) throws JSONException {
+
+		for (int index = 0; index < activityArray.length(); index++) {
+			Map<String, Object> activityAsMap = new HashMap<String, Object>();
+			JSONObject activityJsonObject = activityArray.getJSONObject(index);
+
+			/* Unique Activity Id */
+			activityAsMap.put("id", activityJsonObject.get("eventId"));
+
+			/* Actor Property starts here */
+			if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
+				Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
+				businessLogicService.generateActorProperty(activityJsonObject, actorAsMap);
+				if (!actorAsMap.isEmpty()) {
+					activityAsMap.put("actor", actorAsMap);
 				}
 			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			/* Verb Property starts here */
+			if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
+				Map<String, Object> verbAsMap = new HashMap<String, Object>();
+				businessLogicService.generateVerbProperty(activityJsonObject, verbAsMap);
+				if (!verbAsMap.isEmpty()) {
+					activityAsMap.put("verb", verbAsMap);
+				}
+			}
+			/* Object Property starts here */
+			Map<String, Object> objectAsMap = new HashMap<String, Object>();
+			businessLogicService.generateObjectProperty(activityJsonObject, objectAsMap);
+			if (!objectAsMap.isEmpty()) {
+				activityAsMap.put("object", objectAsMap);
+			}
+			/* Context Property starts here */
+			Map<String, Object> contextAsMap = new HashMap<String, Object>();
+			businessLogicService.generateContextProperty(activityJsonObject, contextAsMap);
+			if (!contextAsMap.isEmpty()) {
+				Map<String, Object> contextActivitiesMap = new HashMap<String, Object>();
+				contextActivitiesMap.put("contextActivities", contextAsMap);
+				activityAsMap.put("context", contextActivitiesMap);
+			}
+			/* Result Property starts here */
+			Map<String, Object> resultAsMap = new HashMap<String, Object>();
+			businessLogicService.generateResultProperty(activityJsonObject, resultAsMap);
+			if (!resultAsMap.isEmpty()) {
+				activityAsMap.put("result", resultAsMap);
+			}
+
+			activityAsMap.put("timestamp", activityJsonObject.get("eventTime"));
+			activityAsMap.put("stored", activityJsonObject.get("eventTime"));
+
+			/*
+			 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new TypeReference<Map<String,
+			 * Object>>() { });
+			 */
+			activityList.add(activityAsMap);
 		}
-		return verb;
 	}
 	
 	public JSONArray generateQuery(String data, Map<String, Object> messageData, Map<String, Object> userMap, Map<Integer, String> errorData) {

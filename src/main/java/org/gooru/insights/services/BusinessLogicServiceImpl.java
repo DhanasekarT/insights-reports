@@ -1,6 +1,5 @@
 package org.gooru.insights.services;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -34,6 +34,7 @@ import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.joda.time.Period;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1334,6 +1335,184 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				}
 			}
 			return esFields.toString();
+		}
+		
+		public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap) {
+			try {
+				actorAsMap.put("objectType", "Agent");
+				if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
+					actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("emailId"));
+				} else {
+					actorAsMap.put("id", activityJsonObject.get("gooruUId"));
+				}
+				actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
+				actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
+				if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
+					actorAsMap.put("userIp", activityJsonObject.get("userIp"));
+					actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
+				}
+			} catch (JSONException e) {
+				// TODO Error Handling Required
+				e.printStackTrace();
+			}
+		}
+		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap) {
+			String verb = null;
+			try {
+				String eventName = activityJsonObject.get("eventName").toString();
+				if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
+					verb = "copied";
+				} else if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
+					verb = "moved";
+				} else if (eventName.toString().equalsIgnoreCase("item.create")) {
+					verb = "created";
+				} else if (eventName.toString().endsWith("play")) {
+					verb = "studied";
+				} else if (eventName.toString().contains("delete")) {
+					verb = "deleted";
+				} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
+					verb = "reacted";
+				} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
+					verb = "reviewed";
+				} else if (eventName.toString().endsWith("view")) {
+					verb = "viewed";
+				} else if (eventName.toString().endsWith("edit")) {
+					verb = "edited";
+				} else if (eventName.toString().equalsIgnoreCase("comment.create")) {
+					verb = "commented";
+				} else if (eventName.toString().endsWith("login")) {
+					verb = "loggedIn";
+				} else if (eventName.toString().endsWith("register")) {
+					verb = "registered";
+				} else if (eventName.toString().endsWith("load")) {
+					verb = "loaded";
+				} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
+					if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
+						verb = "edited";
+					} else {
+						verb = "visited";
+					}
+				}
+				if (StringUtils.isNotBlank(verb)) {
+					verbAsMap.put("id", "www.goorulearning.org/exapi/verbs/" + verb);
+					Map<String, Object> displayAsMap = new HashMap<String, Object>(1);
+					displayAsMap.put("en-US", verb);
+					verbAsMap.put("display", displayAsMap);
+				}
+			} catch (JSONException e) {
+				// TODO Error Handling Required
+				e.printStackTrace();
+			}
+		}
+		
+		public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap) throws JSONException {
+			Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
+			Map<String, Object> nameAsMap = new HashMap<String, Object>(1);
+			String typeName = null;
+			if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
+				String objectType = null;
+				// TODO Add condition to differentiate Agent/ Statement/ Activity/ StatementRef
+				objectType = "Activity";
+				objectAsMap.put("objectType", objectType);
+				objectAsMap.put("id", activityJsonObject.get("gooruOid"));
+				if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
+					typeName = activityJsonObject.get("typeName").toString();
+					if (typeName.matches(RESOURCE_TYPES)) {
+						typeName = "resource";
+					} else if (typeName.matches(COLLECTION_TYPES)) {
+						typeName = "collection";
+					} else if (typeName.matches(QUESTION_TYPES)) {
+						typeName = "question";
+					}
+					
+				}
+			} else if((!activityJsonObject.isNull("userOrganizationUId") && StringUtils.isNotBlank(activityJsonObject.get("userOrganizationUId").toString()) && (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())))){
+				String eventName = activityJsonObject.get("eventName").toString();
+				String userOrganizationUId = activityJsonObject.get("userOrganizationUId").toString();
+				if (eventName.toString().equalsIgnoreCase("user.login") || eventName.toString().equalsIgnoreCase("user.register")) {
+					objectAsMap.put("objectType", "Agent");
+					typeName = "application";
+					nameAsMap.put("en-US","Gooru Application");
+					if (userOrganizationUId.equalsIgnoreCase("4261739e-ccae-11e1-adfb-5404a609bd14")) {
+						objectAsMap.put("id", userOrganizationUId);
+					}
+				}
+			}
+			if (StringUtils.isNotBlank(typeName)) {
+				definitionAsMap.put("type", typeName);
+			}
+			if(!nameAsMap.isEmpty()) {
+				definitionAsMap.put("name", nameAsMap);
+			}
+			if(!definitionAsMap.isEmpty()) {
+				objectAsMap.put("definition", definitionAsMap);
+			}
+		}
+		
+		public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap) {
+			try {
+				if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
+					List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
+					Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
+					parentAsMap.put("id", activityJsonObject.get("parentGooruId").toString());
+
+					if (!activityJsonObject.isNull("parentEventId") && StringUtils.isNotBlank(activityJsonObject.get("parentEventId").toString())) {
+						parentAsMap.put("id", activityJsonObject.get("parentEventId").toString());
+						parentAsMap.put("objectType", "StatementRef");
+						parentList.add(parentAsMap);
+					}
+					if (parentList.size() > 0) {
+						contextAsMap.put("parent", parentList);
+					}
+				}
+			} catch (JSONException e) {
+				// TODO Error Handling Required
+				e.printStackTrace();
+			}
+		}
+
+		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap) {
+			Map<String, Object> responseAsMap = new HashMap<String, Object>(1);
+			try {
+				String eventName = activityJsonObject.get("eventName").toString();
+				if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().equalsIgnoreCase("comment.create"))
+						&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
+					resultAsMap.put("response", activityJsonObject.get("text"));
+				}
+				if (eventName.toString().equalsIgnoreCase("item.rate") && (!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString()))) {
+					responseAsMap.put("response", activityJsonObject.get("rate"));
+				}
+				if (eventName.toString().equalsIgnoreCase("reaction.create") && (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString()))) {
+					responseAsMap.put("response", activityJsonObject.get("reactionType"));
+				}
+				if (!responseAsMap.isEmpty()) {
+					resultAsMap.put("response", responseAsMap);
+				}
+
+				if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString())) {
+					try {
+						if (Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
+							resultAsMap.put("duration", new Period((long) Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString())));
+						} else {
+							resultAsMap.put("duration", new Period((long) 1800000));
+						}
+					} catch (NumberFormatException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) {
+						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
+						rawScoreAsMap.put("raw", Long.valueOf(activityJsonObject.get("score").toString()));
+						resultAsMap.put("score", rawScoreAsMap);
+					}
+				}
+			} catch (JSONException e1) {
+				// TODO Error Handling Required
+				e1.printStackTrace();
+			}
 		}
 }
 

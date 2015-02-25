@@ -11,6 +11,7 @@ import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 public interface BusinessLogicService {
 
@@ -57,4 +58,14 @@ public interface BusinessLogicService {
 	List<Map<String,Object>> getRecords(String[] indices,String data,Map<Integer,String> errorRecord,String dataKey,Map<String,Object> dataMap);
 	
 	List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
+	
+	public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap);
+
+	public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap);
+
+	public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap) throws JSONException;
+
+	public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap);
+
+	void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap);
 }

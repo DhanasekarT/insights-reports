@@ -266,4 +266,10 @@ public interface APIConstants {
 		}
 	}
 	
+	public static final String RESOURCE_TYPES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.HANDOUTS.getType()+"|"+ResourceType.EXAM.getType();
+	
+	public static final String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
+	
+	public static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
+	
 }
