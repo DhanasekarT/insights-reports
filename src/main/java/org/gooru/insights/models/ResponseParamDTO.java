@@ -1,9 +1,12 @@
 package org.gooru.insights.models;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class ResponseParamDTO<M> {
+public class ResponseParamDTO<M> implements Serializable {
+
+	private static final long serialVersionUID = -2840599796987757918L;
 
 	private List<M> content;
 	

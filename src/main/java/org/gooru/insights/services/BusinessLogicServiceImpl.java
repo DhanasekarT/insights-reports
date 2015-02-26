@@ -32,6 +32,7 @@ import com.google.gson.reflect.TypeToken;
 @Service
 public class BusinessLogicServiceImpl implements BusinessLogicService {
 
+	private static final Logger logger = LoggerFactory.getLogger(BusinessLogicServiceImpl.class);
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
@@ -241,7 +242,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				resultList.add(dataMap);
 			}
 		} catch (JSONException e) {
-			throw new ReportGenerationException(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON));
+			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON)+e);
 		}
 		return resultList;
 	}
@@ -361,7 +362,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			}
 			return resultList;
 		} catch (JSONException e) {
-			e.printStackTrace();
+			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON));
 		}
 		return resultList;
 	}
@@ -386,7 +387,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 								resultMap.put(dependentColumn.get(columnKey), arrayData);
 							}
 						} catch (Exception e) {
-
 							resultMap.put(dependentColumn.get(columnKey), json.get(key));
 						}
 					}
@@ -436,38 +436,33 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 					while (keys.hasNext()) {
 						String key = keys.next();
 						JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
-						if (fieldJsonArray.length() == 1) {
 							if (comparekey.containsKey(key)) {
 								Map<String, String> comparable = new HashMap<String, String>();
 								comparable = comparekey.get(key);
 								for (Map.Entry<String, String> compare : comparable.entrySet()) {
-
-									if (compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString()))
+									
+									if (compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString())){
+										if (fieldJsonArray.length() == 1) {
 										resultMap.put(compare.getValue(), fieldJsonArray.getString(0));
+										}else{
+											resultMap.put(compare.getValue(), fieldJsonArray);
+										}
+									}
 								}
 							} else {
+								if (fieldJsonArray.length() == 1) {
 								resultMap.put(apiFields(indices[0], key), fieldJsonArray.get(0));
-							}
-						} else {
-							if (comparekey.containsKey(key)) {
-								Map<String, String> comparable = new HashMap<String, String>();
-								comparable = comparekey.get(key);
-								for (Map.Entry<String, String> compare : comparable.entrySet()) {
-
-									if (compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString()))
-										resultMap.put(compare.getValue(), fieldJsonArray);
-								}
-							} else {
+								}else{
 								resultMap.put(apiFields(indices[0], key), fieldJsonArray);
+								}
 							}
-						}
 					}
 					resultList.add(resultMap);
 				}
 			}
 			return resultList;
 		} catch (JSONException e) {
-			e.printStackTrace();
+			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON)+e);
 		}
 		return resultList;
 	}
@@ -540,7 +535,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				counter++;
 			}
 		} catch (JSONException e) {
-			throw new ReportGenerationException(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.DATA_TYPE));
+			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.DATA_TYPE)+e);
 		}
 		return dataList;
 	}

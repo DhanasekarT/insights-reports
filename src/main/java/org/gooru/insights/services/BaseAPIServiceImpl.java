@@ -132,7 +132,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			return new JSONDeserializer<T>().use(null, clazz).deserialize(json);
 		} catch (Exception e) {
 			throw new JSONException();
-		}
+	}
 	}
 
 	public <T> T deserializeTypeRef(String json, TypeReference<T> type) throws JsonParseException, JsonMappingException, IOException {

@@ -24,8 +24,8 @@ public class ItemController extends BaseController{
 	
 	/**
 	 * This will check the tomcat service availability
-	 * @param request
-	 * @param response
+	 * @param request HttpServlet Request 
+	 * @param response HttpServlet Response
 	 * @return Model view object 
 	 */
 	@RequestMapping(value = "/server/status", method = RequestMethod.GET)
@@ -50,6 +50,17 @@ public class ItemController extends BaseController{
 		return getModel(itemService.generateQuery(data, sessionToken, null));
 	}
 	
+	/**
+	 * This will list the manageable report
+	 * @param request
+	 * @param action
+	 * @param reportName
+	 * @param sessionToken
+	 * @param data
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@RequestMapping(value = "/{action}/report", method = RequestMethod.POST)
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request, @PathVariable(value = "action") String action, @RequestParam(value = "reportName", required = true) String reportName,
@@ -59,11 +70,11 @@ public class ItemController extends BaseController{
 	}
 	
 	/**
-	 * 
-	 * @param request
-	 * @param reportType
+	 * This will provide the party related reports
+	 * @param request HttpServlet Request 
+	 * @param reportType 
 	 * @param sessionToken
-	 * @param response
+	 * @param response HttpServlet Response
 	 * @return Model view object
 	 * @throws Exception
 	 */
@@ -120,9 +131,9 @@ public class ItemController extends BaseController{
 	
 	/**
 	 * 
-	 * @param request
-	 * @param data
-	 * @param response
+	 * @param request is the client HTTPRequest
+	 * @param data is the API query to store in redis
+	 * @param response is the client HTTPResponse
 	 * @return Model view object
 	 */
 	@RequestMapping(value="/keys",method =RequestMethod.PUT)
