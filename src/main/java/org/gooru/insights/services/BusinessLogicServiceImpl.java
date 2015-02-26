@@ -1347,10 +1347,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}
 			actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
 			actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
-			if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
+			/*if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
 				actorAsMap.put("userIp", activityJsonObject.get("userIp"));
 				actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
-			}
+			}*/
 		}
 
 		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException {
@@ -1367,22 +1367,38 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				verb = "experienced";
 			} else if (eventName.toString().contains("delete")) {
 				verb = "deleted";
+				if(eventName.toString().contains("comment")) {
+					verb = "deleted a comment";	
+				} else if (eventName.toString().contains("reaction")) {
+					verb = "deleted a reaction";	
+				}
+			} else if (eventName.toString().endsWith("edit")) {
+				verb = "edited";
+				if(eventName.toString().contains("comment")) {
+					verb = "edited a comment";	
+				} else if (eventName.toString().contains("review")) {
+					verb = "edited a review";	
+				}
 			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
 				verb = "reacted";
 			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
 				verb = "reviewed";
 			} else if (eventName.toString().endsWith("view")) {
 				verb = "viewed";
-			} else if (eventName.toString().endsWith("edit")) {
-				verb = "edited";
 			} else if (eventName.toString().equalsIgnoreCase("comment.create")) {
 				verb = "commented";
 			} else if (eventName.toString().endsWith("login")) {
 				verb = "loggedIn";
+			} else if (eventName.toString().endsWith("logout")) {
+				verb = "loggedOut";
 			} else if (eventName.toString().endsWith("register")) {
 				verb = "registered";
 			} else if (eventName.toString().endsWith("load")) {
 				verb = "loaded";
+			} else if (eventName.toString().endsWith("flag")) {
+				verb = "flagged";
+			} else if (eventName.toString().endsWith("share")) {
+				verb = "shared";
 			} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
 				if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
 					verb = "edited";
@@ -1482,7 +1498,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 
 		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException {
 			String eventName = activityJsonObject.get("eventName").toString();
-			if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().equalsIgnoreCase("comment.create"))
+			if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().contains("comment"))
 					&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
 				resultAsMap.put("response", activityJsonObject.get("text"));
 			}
