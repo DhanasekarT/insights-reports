@@ -1,8 +1,10 @@
 package org.gooru.insights.constants;
 
+import java.text.SimpleDateFormat;
+
 
 public interface APIConstants {
-
+	
 	public static String DEFAULT_FORMAT = "yyyy-MM-dd kk:mm:ss";
 	
 	public static String COMMA = ",";
@@ -270,6 +272,14 @@ public interface APIConstants {
 	
 	public static final String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
 	
-	public static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType()+"|"+ResourceType.CLASSPAGE.getType()+"|"+ResourceType.CLASSPLAN.getType()+"|"+ResourceType.STUDYSHELF.getType()+"|"+ResourceType.CLASSBOOK.getType();
+	public static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType();
+	
+	public static final String CLASSPAGE = ResourceType.CLASSPAGE.getType();
+	
+	public static final String LIBRARY = "library";
+	
+	public static final String AGENT = "Agent";
+	
+	public static final SimpleDateFormat MINUTE_DATE_FORMATTER = new SimpleDateFormat("yyyyMMddkkmm");
 	
 }

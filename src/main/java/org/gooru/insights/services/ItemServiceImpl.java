@@ -1,6 +1,7 @@
 package org.gooru.insights.services;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -180,85 +181,101 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return new JSONArray();
 	}
 
-	public List<Map<String, Object>> generateReportFile(JSONArray activityArray) {
+	public List<Map<String, Object>> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData) {
 		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
 		try {
 
 			// ReportData is generated here
-			getReportDataList(activityArray, activityList);
+			getReportDataList(activityArray, activityList, errorData);
 
 			Map<String, Object> files = new HashMap<String, Object>();
 			String fileName = null;
-			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
+			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv");
 			files.put("file", fileName);
-			List<Map<String, Object>> classGrade = new ArrayList<Map<String, Object>>();
 			classGrade.add(files);
-
+			errorData.put(200, E1001);
 			return classGrade;
 		} catch (JSONException je) {
 			// TODO Add Error Handling
 			je.printStackTrace();
+			errorData.put(400, E1014);
+			return classGrade;
+
 		} catch (Exception e) {
 			// TODO Add Error Handling
 			e.printStackTrace();
+			errorData.put(500, E1019);
+			return classGrade;
+
 		}
-		return null;
 	}
 	
-	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList) throws JSONException {
+	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorAsMap) throws JSONException {
 
-		for (int index = 0; index < activityArray.length(); index++) {
-			Map<String, Object> activityAsMap = new HashMap<String, Object>();
-			JSONObject activityJsonObject = activityArray.getJSONObject(index);
+		if (activityArray.length() > 0) {
+			for (int index = 0; index < activityArray.length(); index++) {
+				JSONObject activityJsonObject = activityArray.getJSONObject(index);
+				if (!activityJsonObject.isNull("eventId") && StringUtils.isNotBlank(activityJsonObject.get("eventId").toString())) {
+					Map<String, Object> activityAsMap = new HashMap<String, Object>();
 
-			/* Unique Activity Id */
-			activityAsMap.put("id", activityJsonObject.get("eventId"));
+					/* Unique Activity Id */
+					activityAsMap.put("id", activityJsonObject.get("eventId"));
 
-			/* Actor Property starts here */
-			if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
-				Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
-				businessLogicService.generateActorProperty(activityJsonObject, actorAsMap);
-				if (!actorAsMap.isEmpty()) {
-					activityAsMap.put("actor", actorAsMap);
+					/* Actor Property starts here */
+					if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
+						Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
+						businessLogicService.generateActorProperty(activityJsonObject, actorAsMap, errorAsMap);
+						if (!actorAsMap.isEmpty()) {
+							activityAsMap.put("actor", actorAsMap);
+						}
+					}
+					/* Verb Property starts here */
+					if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
+						Map<String, Object> verbAsMap = new HashMap<String, Object>();
+						businessLogicService.generateVerbProperty(activityJsonObject, verbAsMap, errorAsMap);
+						if (!verbAsMap.isEmpty()) {
+							activityAsMap.put("verb", verbAsMap);
+						}
+					}
+					/* Object Property starts here */
+					Map<String, Object> objectAsMap = new HashMap<String, Object>();
+					businessLogicService.generateObjectProperty(activityJsonObject, objectAsMap, errorAsMap);
+					if (!objectAsMap.isEmpty()) {
+						activityAsMap.put("object", objectAsMap);
+					}
+					/* Context Property starts here */
+					Map<String, Object> contextAsMap = new HashMap<String, Object>();
+					businessLogicService.generateContextProperty(activityJsonObject, contextAsMap, errorAsMap);
+					if (!contextAsMap.isEmpty()) {
+						Map<String, Object> contextActivitiesMap = new HashMap<String, Object>();
+						contextActivitiesMap.put("contextActivities", contextAsMap);
+						activityAsMap.put("context", contextActivitiesMap);
+					}
+					/* Result Property starts here */
+					Map<String, Object> resultAsMap = new HashMap<String, Object>();
+					businessLogicService.generateResultProperty(activityJsonObject, resultAsMap, errorAsMap);
+					if (!resultAsMap.isEmpty()) {
+						activityAsMap.put("result", resultAsMap);
+					}
+					String eventTime = null;
+					if (!activityJsonObject.isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString())) {
+						eventTime = activityJsonObject.get("eventTime").toString();
+					} else if (!activityJsonObject.isNull("startTime") && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString())) {
+						eventTime = activityJsonObject.get("startTime").toString();
+					}
+					activityAsMap.put("timestamp", eventTime);
+					activityAsMap.put("stored", eventTime);
+
+					/*
+					 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new
+					 * TypeReference<Map<String, Object>>() { });
+					 */
+					if (!objectAsMap.isEmpty()) {
+						activityList.add(activityAsMap);
+					} 
 				}
 			}
-			/* Verb Property starts here */
-			if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
-				Map<String, Object> verbAsMap = new HashMap<String, Object>();
-				businessLogicService.generateVerbProperty(activityJsonObject, verbAsMap);
-				if (!verbAsMap.isEmpty()) {
-					activityAsMap.put("verb", verbAsMap);
-				}
-			}
-			/* Object Property starts here */
-			Map<String, Object> objectAsMap = new HashMap<String, Object>();
-			businessLogicService.generateObjectProperty(activityJsonObject, objectAsMap);
-			if (!objectAsMap.isEmpty()) {
-				activityAsMap.put("object", objectAsMap);
-			}
-			/* Context Property starts here */
-			Map<String, Object> contextAsMap = new HashMap<String, Object>();
-			businessLogicService.generateContextProperty(activityJsonObject, contextAsMap);
-			if (!contextAsMap.isEmpty()) {
-				Map<String, Object> contextActivitiesMap = new HashMap<String, Object>();
-				contextActivitiesMap.put("contextActivities", contextAsMap);
-				activityAsMap.put("context", contextActivitiesMap);
-			}
-			/* Result Property starts here */
-			Map<String, Object> resultAsMap = new HashMap<String, Object>();
-			businessLogicService.generateResultProperty(activityJsonObject, resultAsMap);
-			if (!resultAsMap.isEmpty()) {
-				activityAsMap.put("result", resultAsMap);
-			}
-
-			activityAsMap.put("timestamp", activityJsonObject.get("eventTime"));
-			activityAsMap.put("stored", activityJsonObject.get("eventTime"));
-
-			/*
-			 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new TypeReference<Map<String,
-			 * Object>>() { });
-			 */
-			activityList.add(activityAsMap);
 		}
 	}
 	

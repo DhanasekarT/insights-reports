@@ -34,6 +34,6 @@ public interface ItemService {
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
 
-	public List<Map<String, Object>> generateReportFile(JSONArray data);
+	public List<Map<String, Object>> generateReportFile(JSONArray data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 	
 }
