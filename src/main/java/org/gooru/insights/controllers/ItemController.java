@@ -67,27 +67,28 @@ public class ItemController extends BaseController implements APIConstants{
 		return getModel(jsonArray, dataMap);
 	}
 
-	@RequestMapping(value="/export",method ={RequestMethod.GET,RequestMethod.POST})
+/*	@RequestMapping(value="/export",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView exportQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			@RequestParam(value = "sessionToken", required = false) String sessionToken, HttpServletResponse response) throws IOException {
+*/
+	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,
+			HttpServletResponse response) throws IOException {
+
+		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
 
 		Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		Map<String, Object> dataMap = new HashMap<String, Object>();
 
-		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
-		/*
-		 * validate API Directly from Gooru API permanently disabled since we
-		 * have Redis server support but maintaining for backup.
-		 * Map<String,Object> userMap = itemService.getUserObject(sessionToken,
-		 * errorMap);
-		 */
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
 
-		JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
-		
+		// JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
+		JSONArray jsonArray = itemService.getPartyReport(request, reportType, dataMap, userMap, errorMap);
+
 		dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
-		
+
 		if (!errorMap.isEmpty()) {
 			sendError(response, errorMap);
 			return null;
@@ -105,9 +106,9 @@ public class ItemController extends BaseController implements APIConstants{
 		} else {
 			response.sendError(204, "Data is unavailable for your request.");
 		}
-		
 		return getModel(jsonArray, dataMap);
 	}
+	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request,@PathVariable(value="action") String action,@RequestParam(value="reportName",required = true) String reportName,@RequestParam(value="sessionToken",required = true) String sessionToken,@RequestBody String data ,HttpServletResponse response) throws IOException{
