@@ -141,29 +141,36 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		
 		for(RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
-			List<RequestParamsFilterFieldsDTO> systemFields = systemFieldsDTO.getFields();
-			systemFields.clear();
+			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
 			for (String key : filtersMap.keySet()) {
-				RequestParamsFilterFieldsDTO systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+				RequestParamsFilterFieldsDTO systemfieldsDetails = null;
 				if (!key.matches(PAGINATION_PARAMS)) {
+					systemfieldsDetails = new RequestParamsFilterFieldsDTO();
 					systemfieldsDetails.setFieldName(key);
 					systemfieldsDetails.setOperator("in");
 					systemfieldsDetails.setValueType("String");
+					systemfieldsDetails.setType("selector");
+					systemfieldsDetails.setValue(filtersMap.get(key).toString());
+					systemFields.add(systemfieldsDetails);
 				} else if (key.equalsIgnoreCase("startDate")) {
+					systemfieldsDetails = new RequestParamsFilterFieldsDTO();
 					systemfieldsDetails.setFieldName("eventTime");
 					systemfieldsDetails.setOperator("ge");
 					systemfieldsDetails.setValueType("Date");
 					systemfieldsDetails.setFormat("yyyy-MM-dd");
+					systemfieldsDetails.setType("selector");
+					systemfieldsDetails.setValue(filtersMap.get(key).toString());
+					systemFields.add(systemfieldsDetails);
 				} else if (key.equalsIgnoreCase("endDate")) {
+					systemfieldsDetails = new RequestParamsFilterFieldsDTO();
 					systemfieldsDetails.setFieldName("eventTime");
 					systemfieldsDetails.setOperator("le");
 					systemfieldsDetails.setValueType("Date");
 					systemfieldsDetails.setFormat("yyyy-MM-dd");
+					systemfieldsDetails.setType("selector");
+					systemfieldsDetails.setValue(filtersMap.get(key).toString());
+					systemFields.add(systemfieldsDetails);
 				}
-				systemfieldsDetails.setType("selector");
-				systemfieldsDetails.setValue(filtersMap.get(key).toString());
-
-				systemFields.add(systemfieldsDetails);
 			}
 			systemFieldsDTO.setFields(systemFields);
 		}

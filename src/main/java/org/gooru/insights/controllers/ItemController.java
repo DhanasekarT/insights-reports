@@ -83,11 +83,12 @@ public class ItemController extends BaseController implements APIConstants{
 		Map<String, Object> dataMap = new HashMap<String, Object>();
 
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
-
 		// JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
 		JSONArray jsonArray = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap);
 
-		dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
+		if(jsonArray != null) {
+			dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
+		}
 
 		if (!errorMap.isEmpty()) {
 			sendError(response, errorMap);
