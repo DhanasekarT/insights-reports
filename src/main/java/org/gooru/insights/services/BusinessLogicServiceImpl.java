@@ -1443,16 +1443,21 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
 					typeName = activityJsonObject.get("typeName").toString();
 					if (typeName.matches(RESOURCE_TYPES)) {
-						typeName = "resource";
+						//typeName = "resource";
+						nameAsMap.put("en-US", "Resource");
 					} else if (typeName.matches(COLLECTION_TYPES)) {
-						typeName = "collection";
+						//typeName = "collection";
+						nameAsMap.put("en-US", "Collection");
 					} else if (typeName.matches(QUESTION_TYPES)) {
-						typeName = "question";
+						//typeName = "question";
+						nameAsMap.put("en-US", "Question");
 					} else if (typeName.equalsIgnoreCase(CLASSPAGE)) {
-						typeName = "class";
-					}	
+						//typeName = "class";
+						nameAsMap.put("en-US", "Class");
+					}
 				} else if (activityJsonObject.get("eventName").toString().contains(LIBRARY) && (!activityJsonObject.isNull("pageLocation") && StringUtils.isNotBlank(activityJsonObject.get("pageLocation").toString()) && activityJsonObject.get("pageLocation").toString().equalsIgnoreCase(LIBRARY))) {
 					typeName = LIBRARY;
+					nameAsMap.put("en-US", "Library");
 				}
 			} else if((!activityJsonObject.isNull("userOrganizationUId") && StringUtils.isNotBlank(activityJsonObject.get("userOrganizationUId").toString()) && (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())))){
 				String eventName = activityJsonObject.get("eventName").toString();
@@ -1461,13 +1466,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					objectAsMap.put("objectType", AGENT);
 					typeName = "application";
 					if (userOrganizationUId.equalsIgnoreCase("4261739e-ccae-11e1-adfb-5404a609bd14")) {
-						nameAsMap.put("en-US","Gooru Application");
+						nameAsMap.put("en-US","Gooru");
 						objectAsMap.put("id", userOrganizationUId);
 					} else if (userOrganizationUId.equalsIgnoreCase("33b9ad34-1a0c-43ba-bb9c-4784abe07110")){
-						nameAsMap.put("en-US","Gooru QA Application");
+						nameAsMap.put("en-US","Gooru QA");
 						objectAsMap.put("id", userOrganizationUId);
 					} else if (userOrganizationUId.equalsIgnoreCase("539eb92a-4b3c-11e2-bdd0-12313f01703b")){
-						nameAsMap.put("en-US","Pearson Application");
+						nameAsMap.put("en-US","Pearson");
 						objectAsMap.put("id", userOrganizationUId);
 					}
 				}
