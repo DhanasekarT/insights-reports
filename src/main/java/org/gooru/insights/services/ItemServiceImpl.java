@@ -2,6 +2,7 @@ package org.gooru.insights.services;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,6 +112,94 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
+	public JSONArray getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+		RequestParamsDTO systemRequestParamsDTO = null;
+		
+		 Map<String, Object> filtersMap = new HashMap<String, Object>();
+         Enumeration paramNames = request.getParameterNames();
+         while (paramNames.hasMoreElements()) {
+                 String paramName = (String) paramNames.nextElement();
+                 filtersMap.put(paramName, request.getParameter(paramName));
+         }
+         
+		if(filtersMap.isEmpty() || !filtersMap.containsKey(START_DATE) || !filtersMap.containsKey(START_DATE) ||
+				((filtersMap.containsKey(START_DATE) && StringUtils.isBlank(filtersMap.get(START_DATE).toString())) 
+				&& (filtersMap.containsKey(END_DATE) && StringUtils.isBlank(filtersMap.get(END_DATE).toString())))){
+			errorMap.put(400, E1030);
+			return new JSONArray();
+		}
+		
+		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		
+		if(val == null){
+			errorMap.put(400, E1018);
+			return new JSONArray();
+		}
+		
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		
+		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		
+		for(RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
+			List<RequestParamsFilterFieldsDTO> systemFields = systemFieldsDTO.getFields();
+			systemFields.clear();
+			for (String key : filtersMap.keySet()) {
+				RequestParamsFilterFieldsDTO systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+				if (!key.matches(PAGINATION_PARAMS)) {
+					systemfieldsDetails.setFieldName(key);
+					systemfieldsDetails.setOperator("in");
+					systemfieldsDetails.setValueType("String");
+				} else if (key.equalsIgnoreCase("startDate")) {
+					systemfieldsDetails.setFieldName("eventTime");
+					systemfieldsDetails.setOperator("ge");
+					systemfieldsDetails.setValueType("Date");
+					systemfieldsDetails.setFormat("yyyy-MM-dd");
+				} else if (key.equalsIgnoreCase("endDate")) {
+					systemfieldsDetails.setFieldName("eventTime");
+					systemfieldsDetails.setOperator("le");
+					systemfieldsDetails.setValueType("Date");
+					systemfieldsDetails.setFormat("yyyy-MM-dd");
+				}
+				systemfieldsDetails.setType("selector");
+				systemfieldsDetails.setValue(filtersMap.get(key).toString());
+
+				systemFields.add(systemfieldsDetails);
+			}
+			systemFieldsDTO.setFields(systemFields);
+		}
+		
+
+		if(!filtersMap.isEmpty()){
+			if(filtersMap.containsKey("limit")){
+				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf(""+filtersMap.get("limit")));
+			}
+			if(filtersMap.containsKey("offset")){
+				systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf(""+filtersMap.get("offset")));
+			}
+			if(filtersMap.containsKey("sortOrder")){
+				for(RequestParamsSortDTO requestParamsSortDTO :   systemRequestParamsDTO.getPagination().getOrder()){
+					requestParamsSortDTO.setSortOrder(filtersMap.get("sortOrder").toString());
+				}
+			}
+		}
+		
+		
+		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
+
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
+		String datas = serializer.deepSerialize(systemRequestParamsDTO);
+		
+		System.out.print("\n newObject : " + datas);
+
+		
+		if(columns.getStringValue("query", null) != null){			
+			return generateQuery(datas, dataMap, userMap, errorMap);
+		}
+		
+		return new JSONArray();
+	}
+
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
@@ -180,7 +269,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-
 	public List<Map<String, Object>> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData) {
 		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 		List<Map<String, Object>> filesMap = new ArrayList<Map<String, Object>>();

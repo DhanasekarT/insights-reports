@@ -59,4 +59,6 @@ public interface ErrorCodes {
 	public String E1028 = "Oops! Please pass valid fields in aggregation: ";
 	
 	public String E1029 = "Oops! Please pass valid fields in pagination: ";
+	
+	public String E1030 = "Oops! Filters can not be null or empty. Also startDate and endDate should be provided!";
 }
