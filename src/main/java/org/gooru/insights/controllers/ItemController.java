@@ -103,7 +103,7 @@ public class ItemController extends BaseController implements APIConstants{
 				}
 			}
 		} else {
-			response.sendError(204, "No content for your request provide valid content.");
+			response.sendError(204, "Data is unavailable for your request.");
 		}
 		
 		return getModel(jsonArray, dataMap);

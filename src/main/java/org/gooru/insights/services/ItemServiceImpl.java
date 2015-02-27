@@ -198,7 +198,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				errorData.put(200, E1019);
 				return filesMap;
 			} else {
-				errorData.put(404, "Data is unavailable for the request");
 				return filesMap;
 			}
 		} catch (Exception e) {
