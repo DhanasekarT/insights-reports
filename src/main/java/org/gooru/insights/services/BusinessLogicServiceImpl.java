@@ -1494,6 +1494,19 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			if (parentList.size() > 0) {
 				contextAsMap.put("parent", parentList);
 			}
+			//TODO Add support to include Question Attempt data
+			/*List<Map<String, Object>> otherList = new ArrayList<Map<String, Object>>();
+			Map<String, Object> otherAsMap = new HashMap<String, Object>(1);
+			if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString()) && activityJsonObject.get("typeName").toString().equalsIgnoreCase("question")) {
+				otherAsMap.put("attemptCount", activityJsonObject.get("attemptCount").toString());
+			}
+			if (!otherAsMap.isEmpty()) {
+				otherList.add(otherAsMap);
+			}
+			if (otherList.size() > 0) {
+				contextAsMap.put("other", otherList);
+			}*/
+			
 		}
 
 		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException {

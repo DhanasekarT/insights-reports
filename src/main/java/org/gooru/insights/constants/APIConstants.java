@@ -216,7 +216,7 @@ public interface APIConstants {
 		}
 	}
 	
-	public enum ResourceType {
+	enum ResourceType {
 
 		PRESENTATION("ppt/pptx"), 
 		VIDEO("video/youtube"), 
@@ -268,18 +268,20 @@ public interface APIConstants {
 		}
 	}
 	
-	public static final String RESOURCE_TYPES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.HANDOUTS.getType()+"|"+ResourceType.EXAM.getType();
+	String RESOURCE_TYPES = ResourceType.PRESENTATION.getType()+"|"+ResourceType.AUDIO.getType()+"|"+ResourceType.IMAGE.getType()+"|"+ResourceType.VIDEO.getType()+"|"+ResourceType.RESOURCE.getType()+"|"+ResourceType.ANIMATION_KMZ.getType()+"|"+ResourceType.ANIMATION_SWF.getType()+"|"+ResourceType.TEXTBOOK.getType()+"|"+ResourceType.VIMEO_VIDEO.getType()+"|"+ResourceType.HANDOUTS.getType()+"|"+ResourceType.EXAM.getType();
 	
-	public static final String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
+	String QUESTION_TYPES = ResourceType.ASSESSMENT_QUESTION.getType()+"|"+ResourceType.QB_QUESTION.getType()+"|"+ResourceType.QUESTION.getType();
 	
-	public static final String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType();
+	String COLLECTION_TYPES = ResourceType.SCOLLECTION.getType();
 	
-	public static final String CLASSPAGE = ResourceType.CLASSPAGE.getType();
+	String CLASSPAGE = ResourceType.CLASSPAGE.getType();
 	
-	public static final String LIBRARY = "library";
+	String LIBRARY = "library";
 	
-	public static final String AGENT = "Agent";
+	String AGENT = "Agent";
 	
-	public static final SimpleDateFormat MINUTE_DATE_FORMATTER = new SimpleDateFormat("yyyyMMddkkmm");
+	SimpleDateFormat MINUTE_DATE_FORMATTER = new SimpleDateFormat("yyyyMMddkkmm");
+	
+	String XAPI_SUPPORTED_EVENTS = "item.create|item.edit|item.delete||profile.actionitem.flag|item.rate|reaction.create|reaction.delete|review.create|review.edit|review.delete|comment.create|comment.edit|comment.delete|resource.play|collection.play|collection.resource.play|library.view|item.load|classpage.view|user.login|user.logout|";
 	
 }

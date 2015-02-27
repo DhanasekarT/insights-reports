@@ -103,12 +103,16 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		//print row values
 		ObjectMapper objectMapper = new ObjectMapper(); 
 		
-		for (Map<String, Object> map : resultSet) {
-			stream.print(objectMapper.writeValueAsString(map) + "|");
-			stream.println("");
+		if (!resultSet.isEmpty()) {
+			for (Map<String, Object> map : resultSet) {
+				stream.print(objectMapper.writeValueAsString(map) + "|");
+				stream.println("");
+			}
+
+			return getFilePath(fileName);
+		} else {
+			return null;
 		}
-		
-		return getFilePath(fileName);
 	}
 
 	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException{

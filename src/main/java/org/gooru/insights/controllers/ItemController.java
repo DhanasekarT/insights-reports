@@ -88,17 +88,17 @@ public class ItemController extends BaseController implements APIConstants{
 		
 		dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
 		
-		if(dataReport != null && !dataReport.isEmpty()){
-				for(Map<String,Object> map : dataReport){
-					try {
-						File file = new File(map.get("file").toString());
-						generateCSVOutput(response,file);
-						file.delete();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+		if (dataReport != null && !dataReport.isEmpty()) {
+			for (Map<String, Object> map : dataReport) {
+				try {
+					File file = new File(map.get("file").toString());
+					generateCSVOutput(response, file);
+					file.delete();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		}else{
+		} else {
 			response.sendError(204, "No content for your request provide valid content.");
 		}
 		
