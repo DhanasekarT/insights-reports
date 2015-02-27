@@ -1520,8 +1520,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
 				resultAsMap.put("response", activityJsonObject.get("text"));
 			}
-			if (eventName.toString().equalsIgnoreCase("item.rate") && (!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString()))) {
-				resultAsMap.put("response", activityJsonObject.get("rate"));
+			if (eventName.toString().equalsIgnoreCase("item.rate")) {
+				if(!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString())) {
+					resultAsMap.put("response", activityJsonObject.get("rate"));
+				} else if (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString())) {
+					resultAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));
+				}
 			}
 			if (eventName.toString().contains("reaction") && (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString()))) {
 				resultAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));

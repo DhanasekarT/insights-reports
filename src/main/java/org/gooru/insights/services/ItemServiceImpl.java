@@ -195,9 +195,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			if (fileName != null) {
 				files.put("file", fileName);
 				filesMap.add(files);
-				errorData.put(200, E1019);
 				return filesMap;
 			} else {
+				errorData.put(204, "Content is unavailable for your request.");
 				return filesMap;
 			}
 		} catch (Exception e) {
