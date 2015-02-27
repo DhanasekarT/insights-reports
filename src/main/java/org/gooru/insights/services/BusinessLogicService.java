@@ -59,13 +59,13 @@ public interface BusinessLogicService {
 	
 	List<Map<String,Object>> getMultiGetRecords(String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
 	
-	public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap, Map<Integer, String> errorAsMap) throws JSONException;
+	public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 
-	public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException;
+	public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 
-	public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap, Map<Integer, String> errorAsMap) throws JSONException;
+	public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 
-	public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException;
+	public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 
-	void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException;
+	void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 }

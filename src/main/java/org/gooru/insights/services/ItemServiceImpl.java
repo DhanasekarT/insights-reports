@@ -204,13 +204,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		} catch (Exception e) {
 			// TODO Add Error Handling
 			//e.printStackTrace();
-			errorData.put(500, E1001);
+			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 			return filesMap;
-
 		}
 	}
 	
-	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorAsMap) throws JSONException {
+	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 
 		if (activityArray.length() > 0) {
 			for (int index = 0; index < activityArray.length(); index++) {

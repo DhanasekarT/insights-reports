@@ -1338,22 +1338,27 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			return esFields.toString();
 		}
 		
-		public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap, Map<Integer, String> errorAsMap) throws JSONException {
+		public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			actorAsMap.put("objectType", "Agent");
 			if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
 				actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("emailId"));
 			} else {
 				actorAsMap.put("id", activityJsonObject.get("gooruUId"));
 			}
-			actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
-			actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
+			if(!activityJsonObject.isNull("apiKey") && StringUtils.isNotBlank(activityJsonObject.get("apiKey").toString())) {
+				actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
+			}
+			if(!activityJsonObject.isNull("userOrganizationUId") && StringUtils.isNotBlank(activityJsonObject.get("userOrganizationUId").toString())) {
+				actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
+			}
 			/*if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
 				actorAsMap.put("userIp", activityJsonObject.get("userIp"));
 				actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
 			}*/
+			
 		}
 
-		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException {
+		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String verb = null;
 			String eventName = activityJsonObject.get("eventName").toString();
 			if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
@@ -1415,7 +1420,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 
 		}
 		
-		public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap, Map<Integer, String> errorAsMap) throws JSONException {
+		public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
 			Map<String, Object> nameAsMap = new HashMap<String, Object>(1);
 			String typeName = null;
@@ -1478,7 +1483,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}
 		}
 		
-		public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException {
+		public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
 			Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
 			if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
@@ -1509,7 +1514,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			
 		}
 
-		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException {
+		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String eventName = activityJsonObject.get("eventName").toString();
 			if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().contains("comment"))
 					&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {

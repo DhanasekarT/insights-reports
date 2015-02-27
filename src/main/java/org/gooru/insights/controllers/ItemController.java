@@ -88,6 +88,10 @@ public class ItemController extends BaseController implements APIConstants{
 		
 		dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
 		
+		if (!errorMap.isEmpty()) {
+			sendError(response, errorMap);
+			return null;
+		}
 		if (dataReport != null && !dataReport.isEmpty()) {
 			for (Map<String, Object> map : dataReport) {
 				try {
