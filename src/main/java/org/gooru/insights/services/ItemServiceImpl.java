@@ -64,7 +64,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 
-	private int EXPORT_ROW_LIMIT = 5000;
+	private int EXPORT_ROW_LIMIT = 1000;
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -230,22 +230,19 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				e.printStackTrace();
 			}
 			System.out.print("\n dataMap : " + dataMap);
-				List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 				try {
+					List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 					// ReportData is generated here
 					getReportDataList(resultSet, activityList, errorMap);
 					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
 					finalData.put("Message", "File download link will be sent to your email account");
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);
-					return finalData;
 				} catch (Exception e) {
 					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
-					return finalData;
 				}			
 		}
-		
-		return new HashMap<String, String>();
+		return finalData;		
 	}
 
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {

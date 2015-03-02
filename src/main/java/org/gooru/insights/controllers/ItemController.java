@@ -73,21 +73,20 @@ public class ItemController extends BaseController implements APIConstants{
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) String emailId,
-			HttpServletResponse response) throws IOException {
+ HttpServletResponse response) throws IOException {
 		Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		Map<String, Object> dataMap = new HashMap<String, Object>();
 		Map<String, String> finalData = new HashMap<String, String>();
-		
+
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
-		finalData = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap,finalData,emailId);
+		itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, finalData, emailId);
 		System.out.print("finalData : " + finalData);
 		if (!errorMap.isEmpty()) {
-			System.out.print("errorMap : " + errorMap);
 			sendError(response, errorMap);
 			return null;
 		}
-		
-		return getModel(finalData);
+
+		return getReportModel(finalData);
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
