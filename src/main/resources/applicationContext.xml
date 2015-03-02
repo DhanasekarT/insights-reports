@@ -48,4 +48,28 @@
 		<property name="port" value="6379" />
 		<property name="hostName" value="${redis.server.host}" />
 	</bean>
+	
+	<!-- some pre-configured messages also which are ready to send -->
+	<bean id="preConfiguredMessage" class="org.springframework.mail.SimpleMailMessage">
+		<property name="to" value="arokiadaniel.a@goorulearning.org"></property>
+		<property name="from" value="reports@goorulearning.org"></property>
+		<property name="subject" value="FATAL - Application crash. Save your job !!" />
+	</bean>
+
+		<!-- default Mailer configuration -->
+	<bean id="defaultMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.gmail.com" />
+		<property name="port" value="587" />
+		<property name="username" value="reports@goorulearning.org" />
+		<property name="password" value="insights@2013" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.transport.protocol">smtp</prop>
+				<prop key="mail.smtp.auth">true</prop>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+				<prop key="mail.debug">false</prop>
+			</props>
+		</property>
+	</bean>
+	
 </beans>
