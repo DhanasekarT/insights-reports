@@ -60,7 +60,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 
-	private int EXPORT_ROW_LIMIT = 1000;
+	private int EXPORT_ROW_LIMIT = 5000;
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
