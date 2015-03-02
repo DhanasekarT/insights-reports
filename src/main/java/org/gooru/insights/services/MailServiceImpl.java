@@ -41,7 +41,26 @@ public class MailServiceImpl implements MailService {
 	     }
 
 	}
-	
+
+	/**
+	 * This method will send compose and send the message
+	 * */
+	public void sendMail(String to, String subject, String body) {
+		
+		MimeMessage message = mailSender.createMimeMessage();
+		try{
+			MimeMessageHelper helper = new MimeMessageHelper(message, true);
+			helper.setTo(to);
+			helper.setSubject(subject);
+			helper.setText("Hi, <BR> "+body);
+			helper.setReplyTo("insights@goorulearning.org");
+			//helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
+			mailSender.send(message);
+		}catch (MessagingException e) {
+			throw new MailParseException(e);
+	     }
+
+	}
 	public void checkSendType(String to, String subject, String body, String file){
 		
 		if(to != null && (!to.isEmpty())){

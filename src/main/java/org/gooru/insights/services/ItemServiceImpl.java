@@ -228,12 +228,16 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			}
 			System.out.print("\n dataMap : " + dataMap);
 				try {
+				if (totalRows > 0) {
 					List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 					// ReportData is generated here
 					getReportDataList(resultSet, activityList, errorMap);
 					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);
+				}else{
+					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
+				}
 				} catch (Exception e) {
 					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 				}			
