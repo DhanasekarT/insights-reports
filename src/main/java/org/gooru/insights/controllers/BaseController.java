@@ -33,17 +33,19 @@ public class BaseController {
 	public ModelAndView getModels(Map<Integer,String> data){
 		return  this.resultSets(data);
 	}
+
 	public ModelAndView getReportModel(Map<String, String> data) {
-			
-			ModelAndView model = new ModelAndView("content");
-			
-			if(data != null && !data.isEmpty()){
-				return model.addObject("content", data);
-			}else{
-				Map<String, String> finalData = new LinkedHashMap<String, String>();
-				finalData.put("Message", "File download link will be sent to your email Account");
-				return model.addObject("content", finalData);
-			}
+
+		ModelAndView model = new ModelAndView("content");
+
+		if (data != null && !data.isEmpty()) {
+			model.addObject("content", data);
+		} else {
+			Map<String, String> finalData = new LinkedHashMap<String, String>();
+			finalData.put("Message", "File download link will be sent to your email Account");
+			model.addObject("content", finalData);
+		}
+		return model;
 	}
 	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
 		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){ 
