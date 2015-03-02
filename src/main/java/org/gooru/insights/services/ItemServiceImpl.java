@@ -118,7 +118,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId) {
+	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,Map<String,String> finalData) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		 Map<String, Object> filtersMap = new HashMap<String, Object>();
@@ -209,6 +209,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
+			if(totalRows > 0){
+				finalData.put("Message", "File download link will be sent to your email account");
+			}else{
+				finalData.put("Message", "We don't see any records to export");
+			}
 			try {
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
@@ -235,9 +240,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);
-				}else{
+				}/*else{
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
-				}
+				}*/
 				} catch (Exception e) {
 					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 				}			

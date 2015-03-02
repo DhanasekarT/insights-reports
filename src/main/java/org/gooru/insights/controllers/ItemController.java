@@ -78,10 +78,9 @@ public class ItemController extends BaseController implements APIConstants{
 		final Thread counterThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, emailId);
+				itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, emailId,finalData);
 			}
 		});
-
     	counterThread.setDaemon(true);
     	counterThread.start();
 		System.out.print("finalData : " + finalData);
