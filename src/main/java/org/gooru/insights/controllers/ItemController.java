@@ -80,12 +80,14 @@ public class ItemController extends BaseController implements APIConstants{
 		
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
 		finalData = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap,finalData,emailId);
+		System.out.print("finalData : " + finalData);
 		if (!errorMap.isEmpty()) {
+			System.out.print("errorMap : " + errorMap);
 			sendError(response, errorMap);
 			return null;
 		}
 		
-		return getReportModel(finalData);
+		return getModel(finalData);
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
