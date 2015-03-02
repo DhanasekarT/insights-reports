@@ -1523,6 +1523,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 
 		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String eventName = activityJsonObject.get("eventName").toString();
+			if (eventName.toString().endsWith("play")) {
+				if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString()) && activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
+					resultAsMap.put("completion", Boolean.valueOf("true"));
+				} else {
+					resultAsMap.put("completion", Boolean.valueOf("false"));
+				}
+			}
 			if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().contains("comment"))
 					&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
 				resultAsMap.put("response", activityJsonObject.get("text"));
@@ -1538,7 +1545,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				resultAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));
 			}
 
-			if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString())) {
+			if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString()) && (!activityJsonObject.get("eventName").toString().endsWith("react") && !activityJsonObject.get("eventName").toString().endsWith("rate"))) {
 				try {
 					if (Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
 						resultAsMap.put("duration", new Period(Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()).longValue()));
@@ -1553,9 +1560,18 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					//e.printStackTrace();
 				}
 				if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()) && activityJsonObject.get("eventName").toString().endsWith("play")) {
-					Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
-					rawScoreAsMap.put("raw", Long.valueOf(activityJsonObject.get("score").toString()));
-					resultAsMap.put("score", rawScoreAsMap);
+					if (!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString())
+						&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0) {
+						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
+						Integer score = Integer.valueOf(activityJsonObject.get("score").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("score").toString()) : 0;
+						Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount").toString()) : 0;
+						if(questionCount >= score) {
+							rawScoreAsMap.put("min", 0);
+							rawScoreAsMap.put("max", questionCount);
+						}
+						rawScoreAsMap.put("raw", score);
+						resultAsMap.put("score", rawScoreAsMap);
+					}
 				}
 			}
 		}
