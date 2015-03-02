@@ -69,30 +69,17 @@ public class ItemController extends BaseController implements APIConstants{
 		return getModel(jsonArray, dataMap);
 	}
 
-/*	@RequestMapping(value="/export",method ={RequestMethod.GET,RequestMethod.POST})
-	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView exportQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
-			@RequestParam(value = "sessionToken", required = false) String sessionToken, HttpServletResponse response) throws IOException {
-*/
+
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) String emailId,
 			HttpServletResponse response) throws IOException {
-
-		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
-
 		Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		Map<String, Object> dataMap = new HashMap<String, Object>();
 		Map<String, String> finalData = new HashMap<String, String>();
 		
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
-		// JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
 		finalData = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap,finalData,emailId);
-
-		/*if(jsonArray != null) {
-			dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
-		}*/
-
 		if (!errorMap.isEmpty()) {
 			sendError(response, errorMap);
 			return null;

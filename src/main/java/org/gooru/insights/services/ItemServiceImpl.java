@@ -307,30 +307,17 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	}
 	public Map<String, String> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,Map<String,String> finalData,String emailId) {
 		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
-		List<Map<String, Object>> filesMap = new ArrayList<Map<String, Object>>();
 		try {
 
 			// ReportData is generated here
 			getReportDataList(activityArray, activityList, errorData);
 
-			Map<String, Object> files = new HashMap<String, Object>();
 			String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
 			finalData.put("Message", "File download link will be sent to your email account");
-			mailService.sendMail(emailId, fileName, "Please download the attachement ", fileName);
-			
-			/*if (fileName != null) {
-				files.put("file", fileName);
-				filesMap.add(files);
-				return filesMap;
-			} else {
-				errorData.put(204, "Content is unavailable for your request.");
-				return filesMap;
-			}*/
+			mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);			
 			return finalData;
 		} catch (Exception e) {
-			// TODO Add Error Handling
-			//e.printStackTrace();
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 			return finalData;
 		}
