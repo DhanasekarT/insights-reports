@@ -415,7 +415,7 @@ public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 */
 	public String setFilePath(String file) {
 
-		String fileName = "http://www.goorulearning.org/data/insights-reports/";
+		String fileName = "/data/insights-reports/";
 		if (file != null && (!file.isEmpty())) {
 			fileName += file;
 
@@ -427,7 +427,7 @@ public class ExcelBuilderServiceImpl implements ExcelBuilderService{
 
 	public String getFilePath(String file) {
 
-		String fileName = "http://www.goorulearning.org/data/insights-reports/";
+		String fileName = "/data/insights-reports/";
 
 		if (file != null && (!file.isEmpty())) {
 			fileName += file;
