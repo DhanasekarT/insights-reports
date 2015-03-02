@@ -234,7 +234,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					getReportDataList(resultSet, activityList, errorMap);
 					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
-					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", "http://www.goorulearning.org/data/insights-reports/"+fileName);
+					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", "http://www.goorulearning.org"+fileName);
 				}else{
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
 				}

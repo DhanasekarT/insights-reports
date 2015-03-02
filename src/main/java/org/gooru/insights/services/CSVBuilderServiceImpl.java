@@ -162,7 +162,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 	public String getFilePath(String file){
 		
 		//String fileName = this.getFilePath().getProperty("insights.file.app.path");
-		String fileName = "/data/insights-reports/";
+		String fileName = "/insights-reports/";
 		if(file != null && (!file.isEmpty())){
 			fileName += file;
 		
