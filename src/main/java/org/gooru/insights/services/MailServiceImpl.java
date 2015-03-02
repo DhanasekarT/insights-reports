@@ -32,8 +32,8 @@ public class MailServiceImpl implements MailService {
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 			helper.setTo(to);
 			helper.setSubject(subject);
-			helper.setText("Hi, <BR> "+body);
-			helper.setReplyTo("insights@goorulearning.org");
+			helper.setText("Hi,"+body);
+			helper.setReplyTo("arokiadaniel.a@goorulearning.org");
 			helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
 			mailSender.send(message);
 		}catch (MessagingException e) {
@@ -52,8 +52,8 @@ public class MailServiceImpl implements MailService {
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 			helper.setTo(to);
 			helper.setSubject(subject);
-			helper.setText("Hi, <BR> "+body);
-			helper.setReplyTo("insights@goorulearning.org");
+			helper.setText("Hi,"+body);
+			helper.setReplyTo("arokiadaniel.a@goorulearning.org");
 			//helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
 			mailSender.send(message);
 		}catch (MessagingException e) {
