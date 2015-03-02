@@ -76,7 +76,7 @@ public class ItemController extends BaseController implements APIConstants{
 */
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "emailId", required = true) String emailId,
+	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) String emailId,
 			HttpServletResponse response) throws IOException {
 
 		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
