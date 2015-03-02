@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -57,6 +58,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	@Autowired
 	CSVBuilderService csvBuilderService;
+
+	@Autowired
+	MailService mailService;
 	
 	JSONSerializer serializer = new JSONSerializer();
 
@@ -114,7 +118,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public JSONArray getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+	@Async
+	public Map<String,String> getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,Map<String,String> finalData,String emailId) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		 Map<String, Object> filtersMap = new HashMap<String, Object>();
@@ -128,14 +133,14 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				((filtersMap.containsKey(START_DATE) && StringUtils.isBlank(filtersMap.get(START_DATE).toString())) 
 				&& (filtersMap.containsKey(END_DATE) && StringUtils.isBlank(filtersMap.get(END_DATE).toString())))){
 			errorMap.put(400, E1030);
-			return new JSONArray();
+			return new HashMap<String, String>();
 		}
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
 		
 		if(val == null){
 			errorMap.put(400, E1018);
-			return new JSONArray();
+			return new HashMap<String, String>();
 		}
 		
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
@@ -225,10 +230,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				e.printStackTrace();
 			}
 			System.out.print("\n dataMap : " + dataMap);
-			return resultSet;
+			return generateReportFile(resultSet, dataMap, errorMap, finalData, emailId);
 		}
 		
-		return new JSONArray();
+		return new HashMap<String, String>();
 	}
 
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
@@ -300,7 +305,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public List<Map<String, Object>> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData) {
+	public Map<String, String> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,Map<String,String> finalData,String emailId) {
 		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 		List<Map<String, Object>> filesMap = new ArrayList<Map<String, Object>>();
 		try {
@@ -309,21 +314,25 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			getReportDataList(activityArray, activityList, errorData);
 
 			Map<String, Object> files = new HashMap<String, Object>();
-			String fileName = null;
-			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv");
-			if (fileName != null) {
+			String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
+			finalData.put("Message", "File download link will be sent to your email account");
+			mailService.sendMail(emailId, fileName, "Please download the attachement ", fileName);
+			
+			/*if (fileName != null) {
 				files.put("file", fileName);
 				filesMap.add(files);
 				return filesMap;
 			} else {
 				errorData.put(204, "Content is unavailable for your request.");
 				return filesMap;
-			}
+			}*/
+			return finalData;
 		} catch (Exception e) {
 			// TODO Add Error Handling
 			//e.printStackTrace();
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
-			return filesMap;
+			return finalData;
 		}
 	}
 	
@@ -406,12 +415,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			return new JSONArray();
 		}
 		
-		//Map<String, Boolean> checkPoint = baseAPIService.validateData(requestParamsDTO);
-		Map<String, Boolean> checkPoint = new HashMap<String, Boolean>();
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(requestParamsDTO);
+		/*Map<String, Boolean> checkPoint = new HashMap<String, Boolean>();
 		
 		if (!baseAPIService.checkPoint(requestParamsDTO, checkPoint, errorData)) {
 			return new JSONArray();
-		}
+		}*/
 
 		/*
 		 * Additional filters are added based on user authentication

@@ -19,6 +19,7 @@ import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 @RequestMapping(value ="/query")
 @Controller
+@EnableAsync
 public class ItemController extends BaseController implements APIConstants{
 	
 	@Autowired
@@ -74,40 +76,29 @@ public class ItemController extends BaseController implements APIConstants{
 */
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,
+	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "emailId", required = true) String emailId,
 			HttpServletResponse response) throws IOException {
 
 		List<Map<String, Object>> dataReport = new ArrayList<Map<String, Object>>();
 
 		Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		Map<String, Object> dataMap = new HashMap<String, Object>();
-
+		Map<String, String> finalData = new HashMap<String, String>();
+		
 		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
 		// JSONArray jsonArray = itemService.generateQuery(data, dataMap, userMap, errorMap);
-		JSONArray jsonArray = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap);
+		finalData = itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap,finalData,emailId);
 
-		if(jsonArray != null) {
+		/*if(jsonArray != null) {
 			dataReport = itemService.generateReportFile(jsonArray, dataMap, errorMap);
-		}
+		}*/
 
 		if (!errorMap.isEmpty()) {
 			sendError(response, errorMap);
 			return null;
 		}
-		if (dataReport != null && !dataReport.isEmpty()) {
-			for (Map<String, Object> map : dataReport) {
-				try {
-					File file = new File(map.get("file").toString());
-					generateCSVOutput(response, file);
-					file.delete();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		} else {
-			response.sendError(204, "Data is unavailable for your request.");
-		}
-		return getModel(jsonArray, dataMap);
+		
+		return getReportModel(finalData);
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)

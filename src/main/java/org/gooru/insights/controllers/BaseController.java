@@ -3,6 +3,7 @@ package org.gooru.insights.controllers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mortbay.util.ajax.JSON;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -32,6 +32,18 @@ public class BaseController {
 	}
 	public ModelAndView getModels(Map<Integer,String> data){
 		return  this.resultSets(data);
+	}
+	public ModelAndView getReportModel(Map<String, String> data) {
+			
+			ModelAndView model = new ModelAndView("content");
+			
+			if(data != null && !data.isEmpty()){
+				return model.addObject("content", data);
+			}else{
+				Map<String, String> finalData = new LinkedHashMap<String, String>();
+				finalData.put("Message", "File download link will be sent to your email Account");
+				return model.addObject("content", finalData);
+			}
 	}
 	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
 		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){ 

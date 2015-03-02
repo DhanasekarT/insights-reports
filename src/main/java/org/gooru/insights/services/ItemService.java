@@ -33,9 +33,7 @@ public interface ItemService {
 	Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap);
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
-
-	public List<Map<String, Object>> generateReportFile(JSONArray data,Map<String,Object> dataMap,Map<Integer,String> errorMap);
 	
-	JSONArray getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	Map<String, String> getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,Map<String,String> finalData,String emailId);
 	
 }
