@@ -59,6 +59,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	CSVBuilderService csvBuilderService;
 	
 	JSONSerializer serializer = new JSONSerializer();
+
+	private int EXPORT_ROW_LIMIT = 5000;
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -199,9 +201,31 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		System.out.print("\n newObject : " + datas);
 
+		JSONArray resultSet = null;
 		
-		if(columns.getStringValue("query", null) != null){			
-			return generateQuery(datas, dataMap, userMap, errorMap);
+		if (columns.getStringValue("query", null) != null) {
+			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+			int totalRows = (Integer) dataMap.get("totalRows");
+			System.out.print("totalRows : " + totalRows);
+			try {
+				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
+					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
+						System.out.print("\noffset before incr: " + offset);
+						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
+						JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
+						for (int j = 0; j < array.length(); j++) {
+							resultSet.put(array.get(j));
+
+						}
+						offset += EXPORT_ROW_LIMIT;
+						System.out.print("\noffset after incr: " + offset);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			System.out.print("\n dataMap : " + dataMap);
+			return resultSet;
 		}
 		
 		return new JSONArray();
