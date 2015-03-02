@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +17,6 @@ import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,7 +27,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 @RequestMapping(value ="/query")
 @Controller
-@EnableAsync
 public class ItemController extends BaseController implements APIConstants{
 	
 	@Autowired
@@ -72,20 +68,29 @@ public class ItemController extends BaseController implements APIConstants{
 
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getExportReport(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) String emailId,
+	public ModelAndView getExportReport(final HttpServletRequest request, @PathVariable(value = "reportType") final String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) final String emailId,
  HttpServletResponse response) throws IOException {
-		Map<Integer, String> errorMap = new HashMap<Integer, String>();
-		Map<String, Object> dataMap = new HashMap<String, Object>();
-		Map<String, String> finalData = new HashMap<String, String>();
+		final Map<Integer, String> errorMap = new HashMap<Integer, String>();
+		final Map<String, Object> dataMap = new HashMap<String, Object>();
+		final Map<String, String> finalData = new HashMap<String, String>();
 
-		Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
-		itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, finalData, emailId);
+		final Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
+		final Thread counterThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, emailId);
+			}
+		});
+
+    	counterThread.setDaemon(true);
+    	counterThread.start();
 		System.out.print("finalData : " + finalData);
 		if (!errorMap.isEmpty()) {
 			sendError(response, errorMap);
 			return null;
 		}
-
+		finalData.put("Message", "File download link will be sent to your email account");
+		
 		return getReportModel(finalData);
 	}
 	

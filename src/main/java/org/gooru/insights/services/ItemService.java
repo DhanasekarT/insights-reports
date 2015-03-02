@@ -1,11 +1,9 @@
 package org.gooru.insights.services;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.gooru.insights.models.RequestParamsDTO;
 import org.json.JSONArray;
 
 public interface ItemService {
@@ -34,6 +32,6 @@ public interface ItemService {
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
 	
-	Map<String, String> getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,Map<String,String> finalData,String emailId);
+	void getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,String emailId);
 	
 }

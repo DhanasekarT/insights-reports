@@ -118,8 +118,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	@Async
-	public Map<String,String> getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,Map<String,String> finalData,String emailId) {
+	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		 Map<String, Object> filtersMap = new HashMap<String, Object>();
@@ -133,14 +132,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				((filtersMap.containsKey(START_DATE) && StringUtils.isBlank(filtersMap.get(START_DATE).toString())) 
 				&& (filtersMap.containsKey(END_DATE) && StringUtils.isBlank(filtersMap.get(END_DATE).toString())))){
 			errorMap.put(400, E1030);
-			return new HashMap<String, String>();
 		}
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
 		
 		if(val == null){
 			errorMap.put(400, E1018);
-			return new HashMap<String, String>();
 		}
 		
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
@@ -236,13 +233,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					getReportDataList(resultSet, activityList, errorMap);
 					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
 					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
-					finalData.put("Message", "File download link will be sent to your email account");
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);
 				} catch (Exception e) {
 					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 				}			
 		}
-		return finalData;		
 	}
 
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
