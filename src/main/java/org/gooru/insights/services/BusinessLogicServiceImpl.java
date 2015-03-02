@@ -1386,7 +1386,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				}
 			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
 				verb = "reacted";
-			} else if (eventName.toString().endsWith("rate") || eventName.toString().endsWith("review")) {
+			} else if (eventName.toString().endsWith("rate")) {
+				verb = "rated";
+			} else if (eventName.toString().endsWith("review")) {
 				verb = "reviewed";
 			} else if (eventName.toString().endsWith("view")) {
 				verb = "viewed";
