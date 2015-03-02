@@ -297,7 +297,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		}
 		
 		try{
-		System.out.println("query "+ searchRequestBuilder);		
+		//System.out.println("query "+ searchRequestBuilder);		
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			e.printStackTrace();

@@ -14,7 +14,7 @@ public interface CSVBuilderService {
 
 	File generateCSVReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException;
 	
-	String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException;
+	String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName,boolean isNewFile)throws ParseException, IOException;
 	
 	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException;
 	

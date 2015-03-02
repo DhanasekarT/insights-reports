@@ -93,7 +93,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		return csvfile;
 	}
 	
-	public String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException{
+	public String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName,boolean isNewFile)throws ParseException, IOException{
 		
 		// Set output File
 		File csvfile = new File(setFilePath(fileName));
@@ -101,7 +101,10 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		PrintStream stream = new PrintStream(csvfile);
 		
 		//print row values
-		ObjectMapper objectMapper = new ObjectMapper(); 
+		ObjectMapper objectMapper = null;
+		if(isNewFile || objectMapper == null){
+			new ObjectMapper();
+		}
 		
 		if (!resultSet.isEmpty()) {
 			for (Map<String, Object> map : resultSet) {

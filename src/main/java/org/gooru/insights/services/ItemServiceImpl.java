@@ -205,36 +205,27 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 		JSONArray resultSet = null;
 		
+		String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+		String resultFileName = null;
 		if (columns.getStringValue("query", null) != null) {
+			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+			resultFileName = generateReportFile(resultSet, dataMap, errorMap,fileName);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
-			try {
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
 						System.out.print("\noffset before incr: " + offset);
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
 						JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						for (int j = 0; j < array.length(); j++) {
-							resultSet.put(array.get(j));
-
-						}
+						resultFileName = generateReportFile(array, dataMap, errorMap,fileName);
 						offset += EXPORT_ROW_LIMIT;
 						System.out.print("\noffset after incr: " + offset);
 					}
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			System.out.print("\n dataMap : " + dataMap);
-				try {
+			
 				if (totalRows > 0) {
-					List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
-					// ReportData is generated here
-					getReportDataList(resultSet, activityList, errorMap);
-					String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
-					fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
-					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", "http://www.goorulearning.org"+fileName);
+					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", "http://www.goorulearning.org"+resultFileName);
 				}else{
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
 				}
@@ -313,21 +304,16 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public Map<String, String> generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,Map<String,String> finalData,String emailId) {
-		List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
+	public String generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName) {
 		try {
-
+			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
 			getReportDataList(activityArray, activityList, errorData);
-
-			String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
-			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName);
-			finalData.put("Message", "File download link will be sent to your email account");
-			mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", fileName);			
-			return finalData;
+			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,false);
+			return fileName;
 		} catch (Exception e) {
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
-			return finalData;
+			return null;
 		}
 	}
 	
