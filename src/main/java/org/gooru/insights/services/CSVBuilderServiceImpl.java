@@ -148,7 +148,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 	public String setFilePath(String file){
 		
 		//String fileName = this.getFilePath().getProperty("insights.file.real.path");
-		String fileName = "/tmp/";
+		String fileName = "/data/insights-reports/";
 		
 		if(file != null && (!file.isEmpty())){
 			fileName += file;
@@ -162,7 +162,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 	public String getFilePath(String file){
 		
 		//String fileName = this.getFilePath().getProperty("insights.file.app.path");
-		String fileName = "/tmp/";
+		String fileName = "/insights-reports/";
 		if(file != null && (!file.isEmpty())){
 			fileName += file;
 		
@@ -174,7 +174,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 
 	public void removeExpiredFiles(){
 		Date d = new Date();
-		File directory = new File("/tmp/");
+		File directory = new File("/data/insights-reports/");
 		File[] fList = directory.listFiles();
 		for (File file : fList){
 			if (file.isFile()){
