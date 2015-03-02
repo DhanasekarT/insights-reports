@@ -284,7 +284,7 @@ public interface APIConstants {
 	
 	String XAPI_SUPPORTED_EVENTS = "item.create|item.edit|item.delete||profile.actionitem.flag|item.rate|reaction.create|reaction.delete|review.create|review.edit|review.delete|comment.create|comment.edit|comment.delete|resource.play|collection.play|collection.resource.play|library.view|item.load|classpage.view|user.login|user.logout|";
 	
-	String PAGINATION_PARAMS= "offset|limit|sortOrder|startDate|endDate|sessionToken";
+	String PAGINATION_PARAMS= "offset|limit|sortOrder|startDate|endDate|sessionToken|email";
 	
 	String START_DATE = "startDate";
 	
