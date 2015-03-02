@@ -91,7 +91,7 @@ public class ItemController extends BaseController implements APIConstants{
 		}
 		finalData.put("Message", "File download link will be sent to your email account");
 		
-		return getReportModel(finalData);
+		return getModel(finalData);
 	}
 	
 	@RequestMapping(value="/{action}/report",method = RequestMethod.POST)
