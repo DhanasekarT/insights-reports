@@ -105,8 +105,8 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		
 		if (!resultSet.isEmpty()) {
 			for (Map<String, Object> map : resultSet) {
-				stream.print(objectMapper.writeValueAsString(map) + "|");
-				stream.println("");
+				stream.append(objectMapper.writeValueAsString(map) + "|");
+				stream.append("");
 			}
 
 			return getFilePath(fileName);
