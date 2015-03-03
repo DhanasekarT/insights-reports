@@ -1,15 +1,14 @@
 package org.gooru.insights.services;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Resource;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONArray;
@@ -93,15 +92,15 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		return csvfile;
 	}
 	
-	public String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName)throws ParseException, IOException{
+	public String generateCSVMapReport(List<Map<String,Object>> resultSet,String fileName,boolean isNewFile)throws ParseException, IOException{
 		
 		// Set output File
 		File csvfile = new File(setFilePath(fileName));
 		@SuppressWarnings("resource")
-		PrintStream stream = new PrintStream(csvfile);
+		PrintStream stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(csvfile, true)));
 		
 		//print row values
-		ObjectMapper objectMapper = new ObjectMapper(); 
+		ObjectMapper objectMapper = new ObjectMapper();
 		
 		if (!resultSet.isEmpty()) {
 			for (Map<String, Object> map : resultSet) {
