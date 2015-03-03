@@ -207,8 +207,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		JSONArray resultSet = null;
 		if(StringUtils.isBlank(fileName)){
 			fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+		}else{
+			fileName = fileName+".csv";
 		}
-		String resultFileName = "http://www.goorulearning.org/insights-reports/"+fileName;
+		String resultFileName = "http://www.goorulearning.org/insights/api/v2/report/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
