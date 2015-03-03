@@ -64,7 +64,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 
-	private int EXPORT_ROW_LIMIT = 1000;
+	private int EXPORT_ROW_LIMIT = 100;
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -226,6 +226,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						
 						generateReportFile(array, dataMap, errorMap,fileName,false);
 						offset += EXPORT_ROW_LIMIT;
+						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
 				}
