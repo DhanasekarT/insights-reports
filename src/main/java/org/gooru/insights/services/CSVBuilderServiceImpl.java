@@ -101,10 +101,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		PrintStream stream = new PrintStream(csvfile);
 		
 		//print row values
-		ObjectMapper objectMapper = null;
-		if(isNewFile || objectMapper == null){
-			new ObjectMapper();
-		}
+		ObjectMapper objectMapper = new ObjectMapper();
 		
 		if (!resultSet.isEmpty()) {
 			for (Map<String, Object> map : resultSet) {

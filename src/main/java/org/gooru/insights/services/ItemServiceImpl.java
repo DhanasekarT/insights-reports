@@ -206,11 +206,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		JSONArray resultSet = null;
 		
 		String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
-		String resultFileName = "http://wwww.goorulearning.org/insights-reports/"+fileName;
+		String resultFileName = "http://www.goorulearning.org/insights-reports/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			generateReportFile(resultSet, dataMap, errorMap,fileName);
+			generateReportFile(resultSet, dataMap, errorMap,fileName,true);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
@@ -218,7 +218,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						System.out.print("\noffset before incr: " + offset);
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
 						JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						generateReportFile(array, dataMap, errorMap,fileName);
+						generateReportFile(array, dataMap, errorMap,fileName,false);
 						offset += EXPORT_ROW_LIMIT;
 						System.out.print("\noffset after incr: " + offset);
 					}
@@ -304,12 +304,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public String generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName) {
+	public String generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
 		try {
 			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
+			System.out.print("activityArray length : "+ activityArray.length());
 			getReportDataList(activityArray, activityList, errorData);
-			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,false);
+			System.out.print("activityList size : "+ activityList.size());
+			System.out.print("00 fileName : "+ fileName);
+			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,isNewFile);
 			return fileName;
 		} catch (Exception e) {
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
