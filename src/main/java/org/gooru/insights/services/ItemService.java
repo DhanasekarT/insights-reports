@@ -32,6 +32,6 @@ public interface ItemService {
 	
 	Map<Integer,String> manageReports(String action,String reportName,String data,Map<Integer,String> errorMap);
 	
-	void getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,String emailId);
+	void getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,String emailId,String fileName);
 	
 }

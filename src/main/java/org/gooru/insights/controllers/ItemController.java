@@ -68,7 +68,7 @@ public class ItemController extends BaseController implements APIConstants{
 
 	@RequestMapping(value="/export/{reportType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getExportReport(final HttpServletRequest request, @PathVariable(value = "reportType") final String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) final String emailId,
+	public ModelAndView getExportReport(final HttpServletRequest request, @PathVariable(value = "reportType") final String reportType, @RequestParam(value = "fileName", required = false) final String fileName,@RequestParam(value = "sessionToken", required = true) String sessionToken,@RequestParam(value = "email", required = true) final String emailId,
  HttpServletResponse response) throws IOException {
 		final Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		final Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -78,7 +78,7 @@ public class ItemController extends BaseController implements APIConstants{
 		final Thread counterThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, emailId);
+				itemService.getExportReportArray(request, reportType, dataMap, userMap, errorMap, emailId,fileName);
 			}
 		});
 

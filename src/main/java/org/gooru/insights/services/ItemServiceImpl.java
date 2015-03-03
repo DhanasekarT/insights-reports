@@ -118,7 +118,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId) {
+	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,String fileName) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		 Map<String, Object> filtersMap = new HashMap<String, Object>();
@@ -205,8 +205,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		System.out.print("\n newObject : " + datas);
 
 		JSONArray resultSet = null;
-		
-		String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+		if(StringUtils.isBlank(fileName)){
+			fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+		}
 		String resultFileName = "http://www.goorulearning.org/insights-reports/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
