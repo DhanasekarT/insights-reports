@@ -206,11 +206,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		JSONArray resultSet = null;
 		
 		String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
-		String resultFileName = null;
+		String resultFileName = "http://wwww.goorulearning.org/insights-reports/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			resultFileName = generateReportFile(resultSet, dataMap, errorMap,fileName);
+			generateReportFile(resultSet, dataMap, errorMap,fileName);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
@@ -218,14 +218,14 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						System.out.print("\noffset before incr: " + offset);
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
 						JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						resultFileName = generateReportFile(array, dataMap, errorMap,fileName);
+						generateReportFile(array, dataMap, errorMap,fileName);
 						offset += EXPORT_ROW_LIMIT;
 						System.out.print("\noffset after incr: " + offset);
 					}
 				}
 			
 				if (totalRows > 0) {
-					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", "http://www.goorulearning.org"+resultFileName);
+					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", resultFileName);
 				}else{
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
 				}
