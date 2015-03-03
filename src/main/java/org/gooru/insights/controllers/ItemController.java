@@ -85,10 +85,7 @@ public class ItemController extends BaseController implements APIConstants{
     	counterThread.setDaemon(true);
     	counterThread.start();
 		System.out.print("finalData : " + finalData);
-		if (!errorMap.isEmpty()) {
-			sendError(response, errorMap);
-			return null;
-		}
+		
 		finalData.put("Message", "File download link will be sent to your email account");
 		
 		return getModel(finalData);
