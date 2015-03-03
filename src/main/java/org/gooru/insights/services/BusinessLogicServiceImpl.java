@@ -1407,9 +1407,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			} else if (eventName.toString().endsWith("share")) {
 				verb = "shared";
 			} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
-				if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
+				/*if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
 					verb = "edited";
-				} else if (activityJsonObject.get("actionType").toString().endsWith("visit")) {
+				} else*/ if (activityJsonObject.get("actionType").toString().endsWith("visit")) {
 					verb = "visited";
 				}
 			}
@@ -1492,7 +1492,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 		
 		public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
-			Map<String, Object> parentAsMap = new HashMap<String, Object>(1);
+			Map<String, Object> parentAsMap = new HashMap<String, Object>(2);
 			if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
 				parentAsMap.put("id", activityJsonObject.get("parentGooruId").toString());
 			}
@@ -1547,11 +1547,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 
 			if (!activityJsonObject.isNull("totalTimeSpentInMs") && StringUtils.isNotBlank(activityJsonObject.get("totalTimeSpentInMs").toString()) && (!activityJsonObject.get("eventName").toString().endsWith("react") && !activityJsonObject.get("eventName").toString().endsWith("rate"))) {
 				try {
-					if (Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
+					//if (Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()) < 1800000) {
 						resultAsMap.put("duration", new Period(Long.valueOf(activityJsonObject.get("totalTimeSpentInMs").toString()).longValue()));
-					} else {
+					/*} else {
 						resultAsMap.put("duration", new Period((long) 1800000));
-					}
+					}*/
 				} catch (NumberFormatException e) {
 					System.out.println("NumberFormatException Exception on setting duration property");
 					//e.printStackTrace();
@@ -1560,18 +1560,18 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					//e.printStackTrace();
 				}
 				if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()) && activityJsonObject.get("eventName").toString().endsWith("play")) {
+					Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
+					Integer score = Integer.valueOf(activityJsonObject.get("score").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("score").toString()) : 0;
 					if (!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString())
 						&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0) {
-						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(1);
-						Integer score = Integer.valueOf(activityJsonObject.get("score").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("score").toString()) : 0;
 						Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount").toString()) : 0;
 						if(questionCount >= score) {
 							rawScoreAsMap.put("min", 0);
 							rawScoreAsMap.put("max", questionCount);
 						}
-						rawScoreAsMap.put("raw", score);
-						resultAsMap.put("score", rawScoreAsMap);
 					}
+					rawScoreAsMap.put("raw", score);
+					resultAsMap.put("score", rawScoreAsMap);
 				}
 			}
 		}
