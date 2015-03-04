@@ -1562,34 +1562,37 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					//e.printStackTrace();
 				}
 				if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()) && activityJsonObject.get("eventName").toString().endsWith("play")) {
-					Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
-					Integer score =  0;
-					score = Integer.valueOf(activityJsonObject.get("score").toString());
-					if((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
-						if(!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
-							int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
-							if(attemptStatus.length > 1) {
-								int recentAttempt = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
-								if(recentAttempt != 0){
-									recentAttempt = recentAttempt - 1;
+					if (!activityJsonObject.isNull("resourceTypeId") && StringUtils.isNotBlank(activityJsonObject.get("resourceTypeId").toString()) 
+							&& Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002) {
+						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
+						Integer score =  0;
+						score = Integer.valueOf(activityJsonObject.get("score").toString());
+						if((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
+							if(!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
+								int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
+								if(attemptStatus.length > 1) {
+									int recentAttempt = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
+									if(recentAttempt != 0){
+										recentAttempt = recentAttempt - 1;
+									}
+									score = attemptStatus[recentAttempt];
 								}
-								score = attemptStatus[recentAttempt];
+							} else if (score >= 1){
+								score =  1 ;
 							}
-						} else if (score >= 1){
-							score =  1 ;
 						}
-					}
-					if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
-						&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
-						Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount").toString()) : 0;
-						if(questionCount >= score) {
-							rawScoreAsMap.put("min", 0);
-							rawScoreAsMap.put("max", questionCount);
+						if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
+							&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
+							Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount").toString()) : 0;
+							if(questionCount >= score) {
+								rawScoreAsMap.put("min", 0);
+								rawScoreAsMap.put("max", questionCount);
+							}
 						}
-					}
-					rawScoreAsMap.put("raw", score);
-					if (!eventName.toString().equalsIgnoreCase("collection.play")) {
-						resultAsMap.put("score", rawScoreAsMap);
+						rawScoreAsMap.put("raw", score);
+						if (!eventName.toString().equalsIgnoreCase("collection.play")) {
+							resultAsMap.put("score", rawScoreAsMap);
+						}
 					}
 				}
 			}
