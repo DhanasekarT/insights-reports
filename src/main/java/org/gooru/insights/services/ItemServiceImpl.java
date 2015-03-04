@@ -144,8 +144,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		
-		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
 		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
+		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
 		
 		for(RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
 			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
