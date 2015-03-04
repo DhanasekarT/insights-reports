@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -1343,8 +1344,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			actorAsMap.put("objectType", "Agent");
 			if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
 				actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("emailId"));
-			} else if(!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())){
-				actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("gooruUId") + "@goorulearning.org");
+			} else if(!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()) && activityJsonObject.get("gooruUId").toString().equalsIgnoreCase("ANONYMOUS")){
+				actorAsMap.put("mbox", "mailto:Anonymous@goorulearning.org");
+			} else {
+				actorAsMap.put("mbox", "mailto:" + UUID.randomUUID() + "@goorulearning.org");
 			}
 			//Uncomment when organization data required
 			/*if(!activityJsonObject.isNull("apiKey") && StringUtils.isNotBlank(activityJsonObject.get("apiKey").toString())) {
