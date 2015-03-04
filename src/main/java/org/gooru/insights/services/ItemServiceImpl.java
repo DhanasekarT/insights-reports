@@ -146,7 +146,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		 */
 		RequestParamsDTO systemRequestParamsDTO1 = null;
 		
-		Column<String> val2 = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		Column<String> val2 = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,"score_resource");
 		
 		ColumnList<String> columns2 = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val2.getStringValue());
 		
@@ -170,7 +170,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					System.out.print("\n resourceObject : " + datas);
 					
 					JSONArray resourceResultSet = generateQuery(datas2, dataMap2, userMap, errorMap);
-					for (int resourceIndex = 0; resourceIndex < resultSet.length(); resourceIndex++) {
+					for (int resourceIndex = 0; resourceIndex < resourceResultSet.length(); resourceIndex++) {
 						JSONObject attemptStausJsonObject = resourceResultSet.getJSONObject(resourceIndex);
 						System.out.print("\nattemptStausJson : " + attemptStausJsonObject.get("attemptStatus").toString());
 					}
