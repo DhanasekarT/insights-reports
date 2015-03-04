@@ -118,6 +118,77 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
+	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+
+		RequestParamsDTO systemRequestParamsDTO = null;
+
+		
+		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		
+		if(val == null){
+			errorMap.put(400, E1018);
+		}
+		
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		
+		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
+		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
+
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
+		String datas = serializer.deepSerialize(systemRequestParamsDTO);
+		
+		System.out.print("\n newObject : " + datas);
+
+		JSONArray resultSet = null;
+
+		if (columns.getStringValue("query", null) != null) {
+			try {
+			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+			int totalRows = (Integer) dataMap.get("totalRows");
+			System.out.print("totalRows : " + totalRows);
+		
+				for (int index = 0; index < resultSet.length(); index++) {
+					JSONObject activityJsonObject = resultSet.getJSONObject(index);
+					System.out.print("eventId : "+ activityJsonObject.get("eventId").toString());
+					/*for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
+						List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
+						RequestParamsFilterFieldsDTO systemfieldsDetails = null;
+						systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+						systemfieldsDetails.setFieldName("parentEventId");
+						systemfieldsDetails.setOperator("in");
+						systemfieldsDetails.setValueType("String");
+						systemfieldsDetails.setType("selector");
+						systemfieldsDetails.setValue(activityJsonObject.get("eventId").toString());
+						systemFields.add(systemfieldsDetails);
+						systemFieldsDTO.setFields(systemFields);
+					}*/
+				}
+			
+			
+			/*if (totalRows > EXPORT_ROW_LIMIT) {
+					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
+						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
+						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
+						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
+						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
+						
+						generateReportFile(array, dataMap, errorMap,fileName,false);
+						offset += EXPORT_ROW_LIMIT;
+						Thread.sleep(EXPORT_ROW_LIMIT);
+						System.out.print("\nOffset: " + offset);
+					}
+				}*/
+			
+				} catch (Exception e) {
+					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
+				}			
+		}
+		
+	}
 	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,String fileName) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
