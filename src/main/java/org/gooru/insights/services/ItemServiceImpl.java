@@ -121,13 +121,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 
 		RequestParamsDTO systemRequestParamsDTO = null;
-
+		Map<String, Object> dataMap2 = new HashMap<String, Object>();
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
-		
-		if(val == null){
-			errorMap.put(400, E1018);
-		}
 		
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
 		
@@ -145,6 +141,20 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 		JSONArray resultSet = null;
 
+		/**
+		 * Resource events query
+		 */
+		RequestParamsDTO systemRequestParamsDTO1 = null;
+		
+		Column<String> val2 = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
+		
+		ColumnList<String> columns2 = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val2.getStringValue());
+		
+		systemRequestParamsDTO1 = baseAPIService.buildRequestParameters(columns2.getStringValue("query", null));
+				
+		String datas2 = serializer.deepSerialize(systemRequestParamsDTO1);
+		
+		
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
@@ -153,19 +163,17 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 				for (int index = 0; index < resultSet.length(); index++) {
 					JSONObject activityJsonObject = resultSet.getJSONObject(index);
-					System.out.print("eventId : "+ activityJsonObject.get("eventId").toString());
-					/*for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
-						List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
-						RequestParamsFilterFieldsDTO systemfieldsDetails = null;
-						systemfieldsDetails = new RequestParamsFilterFieldsDTO();
-						systemfieldsDetails.setFieldName("parentEventId");
-						systemfieldsDetails.setOperator("in");
-						systemfieldsDetails.setValueType("String");
-						systemfieldsDetails.setType("selector");
-						systemfieldsDetails.setValue(activityJsonObject.get("eventId").toString());
-						systemFields.add(systemfieldsDetails);
-						systemFieldsDTO.setFields(systemFields);
-					}*/
+					System.out.print("\n eventId : " + activityJsonObject.get("eventId").toString());
+					resourceEventing(systemRequestParamsDTO1, activityJsonObject.get("eventId").toString());
+					datas2 = serializer.deepSerialize(systemRequestParamsDTO1);
+		
+					System.out.print("\n resourceObject : " + datas);
+					
+					JSONArray resourceResultSet = generateQuery(datas2, dataMap2, userMap, errorMap);
+					for (int resourceIndex = 0; resourceIndex < resultSet.length(); resourceIndex++) {
+						JSONObject attemptStausJsonObject = resourceResultSet.getJSONObject(resourceIndex);
+						System.out.print("\nattemptStausJson : " + attemptStausJsonObject.get("attemptStatus").toString());
+					}
 				}
 			
 			
@@ -188,6 +196,22 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				}			
 		}
 		
+	}
+
+	public void resourceEventing(RequestParamsDTO systemRequestParamsDTO1, String id) {
+
+		for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO1.getFilter()) {
+			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
+			RequestParamsFilterFieldsDTO systemfieldsDetails = null;
+			systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+			systemfieldsDetails.setFieldName("parentEventId");
+			systemfieldsDetails.setOperator("eq");
+			systemfieldsDetails.setValueType("String");
+			systemfieldsDetails.setType("selector");
+			systemfieldsDetails.setValue(id);
+			systemFields.add(systemfieldsDetails);
+			systemFieldsDTO.setFields(systemFields);
+		}
 	}
 	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,String fileName) {
 		RequestParamsDTO systemRequestParamsDTO = null;
