@@ -1382,14 +1382,14 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				} else if (eventName.toString().contains("reaction")) {
 					verb = "deleted a reaction";	
 				}*/
-			} else if (eventName.toString().equalsIgnoreCase("item.edit")) {
+			}/* else if (eventName.toString().equalsIgnoreCase("item.edit")) {
 				verb = "edited";
-			/*	if(eventName.toString().contains("comment")) {
+				/*if(eventName.toString().contains("comment")) {
 					verb = "edited a comment";	
 				} else if (eventName.toString().contains("review")) {
 					verb = "edited a review";	
-				}*/
-			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
+				}
+			} */ else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
 				verb = "reacted";
 			} else if (eventName.toString().endsWith("rate")) {
 				verb = "rated";
@@ -1583,6 +1583,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 							} else if (score >= 1){
 								score =  1 ;
 							}
+							rawScoreAsMap.put("min", 0);
+							rawScoreAsMap.put("max", 1);
 						}
 						if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
 							&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
