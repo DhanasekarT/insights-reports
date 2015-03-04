@@ -1363,11 +1363,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String verb = null;
 			String eventName = activityJsonObject.get("eventName").toString();
-			if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
+			/*if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("copy")) {
 				verb = "copied";
 			} else if (eventName.toString().equalsIgnoreCase("item.create") && activityJsonObject.get("mode").toString().equalsIgnoreCase("move")) {
 				verb = "moved";
-			} else if (eventName.toString().equalsIgnoreCase("item.create")
+			} else*/ if (eventName.toString().equalsIgnoreCase("item.create")
 					&& (activityJsonObject.get("mode").toString().equalsIgnoreCase("add") || activityJsonObject.get("mode").toString().equalsIgnoreCase("create"))) {
 				verb = "created";
 			} else if (eventName.toString().endsWith("play")) {
@@ -1406,15 +1406,15 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				verb = "loaded";
 			} else if (eventName.toString().endsWith("flag")) {
 				verb = "flagged";
-			} else if (eventName.toString().endsWith("share")) {
+			} /*else if (eventName.toString().endsWith("share")) {
 				verb = "shared";
 			} else if (eventName.toString().equalsIgnoreCase("profile.action")) {
 				/*if (activityJsonObject.get("actionType").toString().endsWith("edit")) {
 					verb = "edited";
-				} else*/ if (activityJsonObject.get("actionType").toString().endsWith("visit")) {
+				} else if (activityJsonObject.get("actionType").toString().endsWith("visit")) {
 					verb = "visited";
 				}
-			}
+			}*/
 			if (StringUtils.isNotBlank(verb)) {
 				verbAsMap.put("id", "http://www.goorulearning.org/expapi/verbs/" + verb);
 				Map<String, Object> displayAsMap = new HashMap<String, Object>(1);
