@@ -1372,37 +1372,37 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				verb = "created";
 			} else if (eventName.toString().endsWith("play")) {
 				verb = "experienced";
-			} else if (eventName.toString().contains("delete")) {
+			} else if (eventName.toString().equalsIgnoreCase("item.delete")) {
 				verb = "deleted";
-				if(eventName.toString().contains("comment")) {
+			/*	if(eventName.toString().contains("comment")) {
 					verb = "deleted a comment";	
 				} else if (eventName.toString().contains("reaction")) {
 					verb = "deleted a reaction";	
-				}
-			} else if (eventName.toString().endsWith("edit")) {
+				}*/
+			} else if (eventName.toString().equalsIgnoreCase("item.edit")) {
 				verb = "edited";
-				if(eventName.toString().contains("comment")) {
+			/*	if(eventName.toString().contains("comment")) {
 					verb = "edited a comment";	
 				} else if (eventName.toString().contains("review")) {
 					verb = "edited a review";	
-				}
+				}*/
 			} else if (eventName.toString().equalsIgnoreCase("reaction.create")) {
 				verb = "reacted";
 			} else if (eventName.toString().endsWith("rate")) {
 				verb = "rated";
 			} else if (eventName.toString().endsWith("review")) {
 				verb = "reviewed";
-			} else if (eventName.toString().endsWith("view")) {
+			} /*else if (eventName.toString().endsWith("view")) {
 				verb = "viewed";
-			} else if (eventName.toString().equalsIgnoreCase("comment.create")) {
+			} */else if (eventName.toString().equalsIgnoreCase("comment.create")) {
 				verb = "commented";
 			} else if (eventName.toString().endsWith("login")) {
 				verb = "loggedIn";
 			} else if (eventName.toString().endsWith("logout")) {
 				verb = "loggedOut";
-			} else if (eventName.toString().endsWith("register")) {
+			} /*else if (eventName.toString().endsWith("register")) {
 				verb = "registered";
-			} else if (eventName.toString().endsWith("load")) {
+			}*/ else if (eventName.toString().endsWith("load")) {
 				verb = "loaded";
 			} else if (eventName.toString().endsWith("flag")) {
 				verb = "flagged";
