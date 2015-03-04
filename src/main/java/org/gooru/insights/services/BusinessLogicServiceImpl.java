@@ -1567,14 +1567,16 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					score = Integer.valueOf(activityJsonObject.get("score").toString());
 					if((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
 						if(!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
-							int recentAttempt = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
 							int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
-							if(recentAttempt != 0){
-								recentAttempt = recentAttempt - 1;
+							if(attemptStatus.length > 1) {
+								int recentAttempt = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
+								if(recentAttempt != 0){
+									recentAttempt = recentAttempt - 1;
+								}
+								score = attemptStatus[recentAttempt];
 							}
-							score = attemptStatus[recentAttempt];
-						} else {
-							score = (score >= 1) ? 1 : 0;
+						} else if (score >= 1){
+							score =  1 ;
 						}
 					}
 					if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
