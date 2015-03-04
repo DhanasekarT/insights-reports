@@ -30,6 +30,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.DataUtils;
 import org.gooru.insights.constants.ESConstants;
+import org.gooru.insights.constants.TypeConverter;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
@@ -1342,8 +1343,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			actorAsMap.put("objectType", "Agent");
 			if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
 				actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("emailId"));
-			} else {
-				actorAsMap.put("id", activityJsonObject.get("gooruUId"));
+			} else if(!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())){
+				actorAsMap.put("mbox", "mailto:" + activityJsonObject.get("gooruUId") + "@goorulearning.org");
 			}
 			//Uncomment when organization data required
 			/*if(!activityJsonObject.isNull("apiKey") && StringUtils.isNotBlank(activityJsonObject.get("apiKey").toString())) {
@@ -1562,9 +1563,22 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 				}
 				if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()) && activityJsonObject.get("eventName").toString().endsWith("play")) {
 					Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
-					Integer score = Integer.valueOf(activityJsonObject.get("score").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("score").toString()) : 0;
-					if (!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString())
-						&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0) {
+					Integer score =  0;
+					score = Integer.valueOf(activityJsonObject.get("score").toString());
+					if((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
+						if(!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
+							int recentAttempt = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
+							int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
+							if(recentAttempt != 0){
+								recentAttempt = recentAttempt - 1;
+							}
+							score = attemptStatus[recentAttempt];
+						} else {
+							score = (score >= 1) ? 1 : 0;
+						}
+					}
+					if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
+						&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
 						Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount").toString()) : 0;
 						if(questionCount >= score) {
 							rawScoreAsMap.put("min", 0);
@@ -1572,7 +1586,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 						}
 					}
 					rawScoreAsMap.put("raw", score);
-					resultAsMap.put("score", rawScoreAsMap);
+					if (!eventName.toString().equalsIgnoreCase("collection.play")) {
+						resultAsMap.put("score", rawScoreAsMap);
+					}
 				}
 			}
 		}
