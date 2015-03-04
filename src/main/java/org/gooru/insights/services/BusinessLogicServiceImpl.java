@@ -1345,12 +1345,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			} else {
 				actorAsMap.put("id", activityJsonObject.get("gooruUId"));
 			}
-			if(!activityJsonObject.isNull("apiKey") && StringUtils.isNotBlank(activityJsonObject.get("apiKey").toString())) {
+			//Uncomment when organization data required
+			/*if(!activityJsonObject.isNull("apiKey") && StringUtils.isNotBlank(activityJsonObject.get("apiKey").toString())) {
 				actorAsMap.put("apiKey", activityJsonObject.get("apiKey"));
 			}
 			if(!activityJsonObject.isNull("userOrganizationUId") && StringUtils.isNotBlank(activityJsonObject.get("userOrganizationUId").toString())) {
 				actorAsMap.put("organizationUid", activityJsonObject.get("userOrganizationUId"));
-			}
+			}*/
 			/*if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
 				actorAsMap.put("userIp", activityJsonObject.get("userIp"));
 				actorAsMap.put("userAgent", activityJsonObject.get("userAgent"));
