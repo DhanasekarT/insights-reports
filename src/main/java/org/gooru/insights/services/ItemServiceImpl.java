@@ -64,7 +64,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	JSONSerializer serializer = new JSONSerializer();
 
-	private int EXPORT_ROW_LIMIT = 1000;
+	private int EXPORT_ROW_LIMIT = 100;
 	
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
@@ -118,7 +118,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId) {
+	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,String fileName) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		 Map<String, Object> filtersMap = new HashMap<String, Object>();
@@ -143,6 +143,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
 		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
+		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
 		
 		for(RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
 			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
@@ -193,9 +197,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				}
 			}
 		}
-		
-		
-		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
+				
 
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
 		
@@ -204,9 +206,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		System.out.print("\n newObject : " + datas);
 
 		JSONArray resultSet = null;
-		
-		String fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
-		String resultFileName = "http://www.goorulearning.org/insights-reports/"+fileName;
+		if(StringUtils.isBlank(fileName)){
+			fileName = "activity" + "_" + MINUTE_DATE_FORMATTER.format(new Date()) + ".csv";
+		}else{
+			fileName = fileName+".csv";
+		}
+		String resultFileName = "http://www.goorulearning.org/insights/api/v2/report/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
@@ -215,12 +220,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
-						System.out.print("\noffset before incr: " + offset);
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
-						JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
+						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
+						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
+						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
+						
 						generateReportFile(array, dataMap, errorMap,fileName,false);
 						offset += EXPORT_ROW_LIMIT;
-						System.out.print("\noffset after incr: " + offset);
+						Thread.sleep(EXPORT_ROW_LIMIT);
+						System.out.print("\nOffset: " + offset);
 					}
 				}
 			
@@ -287,9 +295,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				}
 			}
 		}
-		
-		
-		System.out.print("\n Old Object : " + columns.getStringValue("query", null)+ "\n\n");
 
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
 		
@@ -308,10 +313,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		try {
 			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
-			System.out.print("activityArray length : "+ activityArray.length());
 			getReportDataList(activityArray, activityList, errorData);
-			System.out.print("activityList size : "+ activityList.size());
-			System.out.print("00 fileName : "+ fileName);
 			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,isNewFile);
 			return fileName;
 		} catch (Exception e) {
