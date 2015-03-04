@@ -167,7 +167,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					resourceEventing(systemRequestParamsDTO1, activityJsonObject.get("eventId").toString());
 					datas2 = serializer.deepSerialize(systemRequestParamsDTO1);
 		
-					System.out.print("\n resourceObject : " + datas);
+					System.out.print("\n resourceObject : " + datas2);
 					
 					JSONArray resourceResultSet = generateQuery(datas2, dataMap2, userMap, errorMap);
 					for (int resourceIndex = 0; resourceIndex < resourceResultSet.length(); resourceIndex++) {
