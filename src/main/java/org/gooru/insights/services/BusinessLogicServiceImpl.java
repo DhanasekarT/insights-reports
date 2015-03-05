@@ -1594,7 +1594,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 								rawScoreAsMap.put("max", questionCount);
 							}
 						}
-						if (!eventName.toString().equalsIgnoreCase("collection.play") && (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))) {
+						if (eventName.toString().equalsIgnoreCase("collection.play") && (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))) {
 							score = Integer.valueOf(activityJsonObject.get("newScore").toString()); 
 						}
 						rawScoreAsMap.put("raw", score);
