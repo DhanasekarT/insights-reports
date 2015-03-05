@@ -84,6 +84,4 @@ public interface BaseAPIService {
 
 	RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO);
 	
-	void singeColumnUpdate(String sourceIndex, String indexName, String typeBame, String id, String column, Object value);
-	
 }

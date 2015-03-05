@@ -13,5 +13,6 @@ public interface BaseESService {
 
 	List<Map<String, Object>> generateQuery(RequestParamsDTO requestParamsDTO,
 			String[] indices,Map<String,Boolean> validatedData,Map<String,Object> messageData,Map<Integer,String> errorData);
-
+	
+	public void singeColumnUpdate(String sourceIndex, String indexName, String typeName, String id, String column, Object value);
 }

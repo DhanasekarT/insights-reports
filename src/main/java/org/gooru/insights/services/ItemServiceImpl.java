@@ -182,7 +182,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			
 			logger.debug("\n Indexing content : " + assScore);
 			
-			baseAPIService.singeColumnUpdate("prod", "event_logger_info_20141226", "event_detail", eventId, "new_score", assScore);
+			esService.singeColumnUpdate("prod", "event_logger_info_20141226", "event_detail", eventId, "new_score", assScore);
 			
 		} catch (Exception e) {
 			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
