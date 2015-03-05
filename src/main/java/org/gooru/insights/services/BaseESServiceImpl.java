@@ -286,7 +286,7 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		if(!hasAggregate){
 
 			if(validatedData.get(hasdata.HAS_FILTER.check()))
-			searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()).cache(true));
+			searchRequestBuilder.setPostFilter(businessLogicService.includeFilter(indices[0],requestParamsDTO.getFilter()));
 
 			if(validatedData.get(hasdata.HAS_SORTBY.check()))
 				includeSort(indices,requestParamsDTO.getPagination().getOrder(),searchRequestBuilder,validatedData);

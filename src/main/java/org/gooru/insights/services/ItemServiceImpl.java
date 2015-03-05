@@ -26,7 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -396,6 +395,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	public void getReportDataList(JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 
 		if (activityArray.length() > 0) {
+			/*System.out.println("activityArray Length :" +activityArray.length());
+			int skippedCount = 0;*/
 			for (int index = 0; index < activityArray.length(); index++) {
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
 				if (!activityJsonObject.isNull("eventId") && StringUtils.isNotBlank(activityJsonObject.get("eventId").toString())) {
@@ -406,12 +407,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 						/* Actor Property starts here */
 						Map<String, Object> actorAsMap = new HashMap<String, Object>(1);
-						if ((!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString()))) {
-							businessLogicService.generateActorProperty(activityJsonObject, actorAsMap, errorAsMap);
-							if (!actorAsMap.isEmpty()) {
-								activityAsMap.put("actor", actorAsMap);
-							}
-						}
+						businessLogicService.generateActorProperty(activityJsonObject, actorAsMap, errorAsMap);
+						if (!actorAsMap.isEmpty()) {
+							activityAsMap.put("actor", actorAsMap);
+						}	
+						
 						/* Verb Property starts here */
 						Map<String, Object> verbAsMap = new HashMap<String, Object>();
 						if (!activityJsonObject.isNull("eventName") && StringUtils.isNotBlank(activityJsonObject.get("eventName").toString())) {
@@ -455,10 +455,19 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						 */
 						if (!objectAsMap.isEmpty() && !actorAsMap.isEmpty() && !verbAsMap.isEmpty() && !activityAsMap.isEmpty()) {
 							activityList.add(activityAsMap);
-						}
-					}
+						}/* else {
+							skippedCount++;
+							System.out.println("Skipped eventId >> "+activityJsonObject.get("eventId").toString() + "eventName :"+activityJsonObject.get("eventName").toString());
+						}*/
+					}/* else {
+						skippedCount++;
+						System.out.println("Skipped eventId >> "+activityJsonObject.get("eventId").toString() + "eventName :"+activityJsonObject.get("eventName").toString());
+					}*/
 				}
 			}
+			/*if(skippedCount > 0) {
+				System.out.println("skippedCount >> "+skippedCount);
+			}*/
 		}
 	}
 	
