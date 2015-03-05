@@ -894,4 +894,10 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		requestParamsDTO.setDataSource(dataSources);
 		return requestParamsDTO;
 	}
+
+	@Override
+	public void singeColumnUpdate(String sourceIndex, String indexName, String typeName, String id, String column, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
 }
