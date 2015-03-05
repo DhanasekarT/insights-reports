@@ -1564,9 +1564,9 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 					System.out.println("Json Exception on setting duration property");
 					//e.printStackTrace();
 				}
-				if (!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()) && activityJsonObject.get("eventName").toString().endsWith("play")) {
+				if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) || (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString())) && activityJsonObject.get("eventName").toString().endsWith("play")) {
 					if (!activityJsonObject.isNull("resourceTypeId") && StringUtils.isNotBlank(activityJsonObject.get("resourceTypeId").toString()) 
-							&& Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002) {
+							&& (Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002 || Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) ==1020)) {
 						Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
 						Integer score =  0;
 						score = Integer.valueOf(activityJsonObject.get("score").toString());
