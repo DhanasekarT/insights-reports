@@ -155,7 +155,7 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
         }
     }
 
-	public void saveIntegerValue(String keyspace,String cfName, String key,String columnName,Integer value) {
+	public void saveIntegerValue(String keyspace,String cfName, String key,String columnName,int value) {
 		
 		Keyspace queryKeyspace = null;
 		
