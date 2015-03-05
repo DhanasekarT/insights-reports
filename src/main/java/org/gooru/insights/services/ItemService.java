@@ -34,5 +34,5 @@ public interface ItemService {
 	
 	void getExportReportArray(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap,String emailId,String fileName);
 	
-	void calculateScore(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String,Object> userMap,Map<Integer,String> errorMap);
+	void calculateScore(HttpServletRequest request,String reportType,Map<String,Object> dataMap,Map<String, Object> userMap,Map<Integer,String> errorMap,String eventId);
 }

@@ -20,4 +20,6 @@ public interface BaseCassandraService {
 	public Column<String> readColumnValue(String keyspace,String cfName,String key,String columnName);
 	
 	public void saveStringValue(String keyspace,String cfName, String key,String columnName,String value);
+	
+	public void saveIntegerValue(String keyspace,String cfName, String key,String columnName,int value);
 }

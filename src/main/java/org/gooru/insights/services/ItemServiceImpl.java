@@ -25,6 +25,8 @@ import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -64,7 +66,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	JSONSerializer serializer = new JSONSerializer();
 
 	private int EXPORT_ROW_LIMIT = 100;
-	
+
+	 private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	 
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
@@ -117,76 +121,111 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
-
+	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId) {
+		System.out.print("\nProcessing ...");
+		long start = System.currentTimeMillis();;
 		RequestParamsDTO systemRequestParamsDTO = null;
-
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
-		
-		if(val == null){
-			errorMap.put(400, E1018);
-		}
 		
 		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
 		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		
-		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
-		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
-		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
-
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
+		resourceEventing(systemRequestParamsDTO, eventId);
+
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
-		System.out.print("\n newObject : " + datas);
-
-		JSONArray resultSet = null;
-
-		if (columns.getStringValue("query", null) != null) {
-			try {
-			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+		System.out.print("\n newObject" + datas);
+		
+		JSONArray resultSet = null;		
+		
+		try {
+			List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
+			resultSet = businessLogicService.buildAggregateJSON(resultList);
 			int totalRows = (Integer) dataMap.get("totalRows");
-			System.out.print("totalRows : " + totalRows);
-		
-				for (int index = 0; index < resultSet.length(); index++) {
-					JSONObject activityJsonObject = resultSet.getJSONObject(index);
-					System.out.print("eventId : "+ activityJsonObject.get("eventId").toString());
-					/*for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
-						List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
-						RequestParamsFilterFieldsDTO systemfieldsDetails = null;
-						systemfieldsDetails = new RequestParamsFilterFieldsDTO();
-						systemfieldsDetails.setFieldName("parentEventId");
-						systemfieldsDetails.setOperator("in");
-						systemfieldsDetails.setValueType("String");
-						systemfieldsDetails.setType("selector");
-						systemfieldsDetails.setValue(activityJsonObject.get("eventId").toString());
-						systemFields.add(systemfieldsDetails);
-						systemFieldsDTO.setFields(systemFields);
-					}*/
-				}
-			
-			
-			/*if (totalRows > EXPORT_ROW_LIMIT) {
-					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
-						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
-						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
-						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
-						
-						generateReportFile(array, dataMap, errorMap,fileName,false);
-						offset += EXPORT_ROW_LIMIT;
-						Thread.sleep(EXPORT_ROW_LIMIT);
-						System.out.print("\nOffset: " + offset);
+			System.out.print("\n totalRows : " + totalRows);
+
+			for (int index = 0; index < resultSet.length(); index++) {
+				JSONObject activityJsonObject = resultSet.getJSONObject(index);
+				System.out.print("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
+				System.out.print("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
+				System.out.print("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
+				int newScore = 0;
+				if(activityJsonObject.get("attemptStatus") != null){
+					String attempStatus = activityJsonObject.get("attemptStatus").toString();
+					int[] attempStatusArray =  convertStringToIntArray(attempStatus);
+					if(attempStatusArray.length > 0){
+						newScore = attempStatusArray[(attempStatusArray.length - 1)];
 					}
-				}*/
+				}
+				System.out.print("\n newScore for Question : " + newScore);
+				if(newScore > 0 && activityJsonObject.get("gooruOid") != null){
+					baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, activityJsonObject.get("gooruOid").toString(), newScore);
+				}
+			}
 			
-				} catch (Exception e) {
-					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
-				}			
-		}
+			ColumnList<String> assessmentList = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId);
+			int assScore = 0;
+			
+			for(Column<String> question : assessmentList){
+				assScore = (assScore+question.getIntegerValue());
+			}
+			
+			System.out.print("\n Assessment Score : " + assScore);
+			
+			baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, "newAssScore", assScore);
+			
+			System.out.print("\n Indexing event.. : ");
+			
+			esService.singeColumnUpdate("prod", "event_logger_info_20141231", "event_detail", eventId, "new_score", assScore);
 		
+			long stop = System.currentTimeMillis();;
+			
+			System.out.print("\n Time take to complete process: " + (stop-start));
+			
+			
+		} catch (Exception e) {
+			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
+		}			
+		
+		
+	}
+
+	public int[] convertStringToIntArray(String value){
+
+		String[] items = value.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\"", "").split(",");
+
+		int[] results = new int[items.length];
+
+		for (int i = 0; i < items.length; i++) {
+			try {
+				results[i] = Integer.parseInt(items[i]);
+			} catch (NumberFormatException nfe) {};
+		}	
+		
+		return results;
+	}
+	
+	public void resourceEventing(RequestParamsDTO systemRequestParamsDTO1, String id) {
+
+		for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO1.getFilter()) {
+			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
+			RequestParamsFilterFieldsDTO systemfieldsDetails = null;
+			systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+			systemfieldsDetails.setFieldName("parentEventId");
+			systemfieldsDetails.setOperator("eq");
+			systemfieldsDetails.setValueType("String");
+			systemfieldsDetails.setType("selector");
+			systemfieldsDetails.setValue(id);
+			systemFields.add(systemfieldsDetails);
+			systemFieldsDTO.setFields(systemFields);
+		}
 	}
 	public void getExportReportArray(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap,String emailId,String fileName) {
 		RequestParamsDTO systemRequestParamsDTO = null;
