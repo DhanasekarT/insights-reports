@@ -6,10 +6,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -364,6 +366,16 @@ public class BaseESServiceImpl implements BaseESService,APIConstants,ESConstants
 		return response.execute().actionGet().getCount();
 	}
 
+	public void singeColumnUpdate(String sourceIndex, String indexName, String typeName, String id, String column, Object value) {
+		try {
+			getClient(sourceIndex).prepareUpdate(indexName,typeName,id)
+			.addScriptParam("fieldValue", value)
+			.setScript("ctx._source."+column+"=fieldValue")
+			.execute().actionGet();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	public String esFields(String index,String fields){
 		Map<String,String> mappingfields = baseConnectionService.getFields().get(index);
 		StringBuffer esFields = new StringBuffer();

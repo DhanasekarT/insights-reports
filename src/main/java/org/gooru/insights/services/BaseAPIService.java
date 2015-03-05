@@ -83,4 +83,7 @@ public interface BaseAPIService {
 	void saveQuery(RequestParamsDTO requestParamsDTO, JSONArray jsonArray, String data, Map<String, Object> dataMap, Map<String, Object> userMap);
 
 	RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO);
+	
+	void singeColumnUpdate(String sourceIndex, String indexName, String typeBame, String id, String column, Object value);
+	
 }
