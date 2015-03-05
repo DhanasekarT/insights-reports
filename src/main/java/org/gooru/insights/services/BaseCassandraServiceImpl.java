@@ -154,7 +154,27 @@ public class BaseCassandraServiceImpl implements BaseCassandraService,CassandraC
             e.printStackTrace();
         }
     }
-    
+
+	public void saveIntegerValue(String keyspace,String cfName, String key,String columnName,Integer value) {
+		
+		Keyspace queryKeyspace = null;
+		
+		if (keyspaces.INSIGHTS.keyspace().equalsIgnoreCase(keyspace)) {
+			queryKeyspace = connector.connectInsights();
+		} else {
+			queryKeyspace = connector.connectSearch();
+		}
+        MutationBatch m = queryKeyspace.prepareMutationBatch().setConsistencyLevel(DEFAULT_CONSISTENCY_LEVEL).withRetryPolicy(new ConstantBackoff(2000, 5));
+
+        m.withRow(this.accessColumnFamily(cfName), key).putColumnIfNotNull(columnName, value, null);
+
+        try {
+            m.execute();
+        } catch (ConnectionException e) {
+            e.printStackTrace();
+        }
+    }
+	
 	public OperationResult<Rows<String, String>> readAll(String keyspace, String columnFamily,Collection<String> columns) {
 		OperationResult<Rows<String, String>> queryResult = null;
 		AllRowsQuery<String, String> allRowQuery = null;

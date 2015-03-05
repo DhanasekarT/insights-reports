@@ -161,8 +161,20 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					}
 				}
 				System.out.print("\n newScore : " + newScore);
+				if(newScore > 0 && activityJsonObject.get("gooruOid") != null){
+					baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, activityJsonObject.get("gooruOid").toString(), newScore);
+				}
 			}
-
+			
+			ColumnList<String> assessmentList = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId);
+			int assScore = 0;
+			
+			for(Column<String> question : assessmentList){
+				assScore = (assScore+question.getIntegerValue());
+			}
+			System.out.print("\n assScore : " + assScore);
+			
+			baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, "newAssScore", assScore);
 		} catch (Exception e) {
 			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 		}			
