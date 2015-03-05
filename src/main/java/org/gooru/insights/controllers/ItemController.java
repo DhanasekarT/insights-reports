@@ -94,7 +94,7 @@ public class ItemController extends BaseController implements APIConstants{
 
 	@RequestMapping(value="/score/{scoreType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView calculateScore(final HttpServletRequest request, @PathVariable(value = "scoreType") String reportType,@RequestParam(value = "score", required = false) int score,@RequestParam(value = "sessionToken", required = true)  String sessionToken,@RequestParam(value = "eventId", required = true)  String eventId
+	public ModelAndView calculateScore(final HttpServletRequest request, @PathVariable(value = "scoreType") String reportType,@RequestParam(value = "sessionToken", required = true)  String sessionToken,@RequestParam(value = "eventId", required = true)  String eventId
  ,HttpServletResponse response) throws IOException {
 		final Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		final Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -110,10 +110,8 @@ public class ItemController extends BaseController implements APIConstants{
 
     	counterThread.setDaemon(true);
     	counterThread.start();*/
-		itemService.calculateScore(request, reportType, dataMap,userMap, errorMap,eventId,score);
-		
-		System.out.print("finalData : " + finalData);
-		
+		itemService.calculateScore(request, reportType, dataMap,userMap, errorMap,eventId);
+				
 		finalData.put("Message", "Calculating score...please wait.....");
 		
 		return getModel(finalData);

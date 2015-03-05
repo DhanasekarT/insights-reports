@@ -121,8 +121,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId, int oldScore) {
-		logger.debug("\nProcessing ...");
+	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId) {
+		System.out.print("\nProcessing ...");
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
@@ -140,7 +140,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
-		logger.debug("\n newObject" + datas);
+		System.out.print("\n newObject" + datas);
 		
 		JSONArray resultSet = null;		
 		
@@ -148,13 +148,13 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
 			resultSet = businessLogicService.buildAggregateJSON(resultList);
 			int totalRows = (Integer) dataMap.get("totalRows");
-			logger.debug("\n totalRows : " + totalRows);
+			System.out.print("\n totalRows : " + totalRows);
 
 			for (int index = 0; index < resultSet.length(); index++) {
 				JSONObject activityJsonObject = resultSet.getJSONObject(index);
-				logger.debug("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
-				logger.debug("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
-				logger.debug("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
+				System.out.print("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
+				System.out.print("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
+				System.out.print("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
 				int newScore = 0;
 				if(activityJsonObject.get("attemptStatus") != null){
 					String attempStatus = activityJsonObject.get("attemptStatus").toString();
@@ -163,7 +163,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						newScore = attempStatusArray[(attempStatusArray.length - 1)];
 					}
 				}
-				logger.debug("\n newScore for Question : " + newScore);
+				System.out.print("\n newScore for Question : " + newScore);
 				if(newScore > 0 && activityJsonObject.get("gooruOid") != null){
 					baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, activityJsonObject.get("gooruOid").toString(), newScore);
 				}
@@ -176,11 +176,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				assScore = (assScore+question.getIntegerValue());
 			}
 			
-			logger.debug("\n Assessment Score : " + assScore);
+			System.out.print("\n Assessment Score : " + assScore);
 			
 			baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, "newAssScore", assScore);
 			
-			logger.debug("\n Indexing content : " + assScore);
+			System.out.print("\n Indexing content : " + assScore);
 			
 			esService.singeColumnUpdate("prod", "event_logger_info_20141226", "event_detail", eventId, "new_score", assScore);
 			
