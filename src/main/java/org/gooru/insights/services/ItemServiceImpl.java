@@ -131,6 +131,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
 		
 		resourceEventing(systemRequestParamsDTO, eventId);
+
+		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
@@ -139,7 +142,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		JSONArray resultSet = null;		
 		
 		try {
-			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+			List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
+			resultSet = businessLogicService.buildAggregateJSON(resultList);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
 
