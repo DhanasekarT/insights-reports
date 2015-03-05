@@ -895,9 +895,4 @@ public class BaseAPIServiceImpl implements BaseAPIService, APIConstants, ErrorCo
 		return requestParamsDTO;
 	}
 
-	@Override
-	public void singeColumnUpdate(String sourceIndex, String indexName, String typeName, String id, String column, Object value) {
-		// TODO Auto-generated method stub
-		
-	}
 }
