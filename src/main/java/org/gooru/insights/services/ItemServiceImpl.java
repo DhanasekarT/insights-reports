@@ -123,6 +123,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	
 	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId) {
 		System.out.print("\nProcessing ...");
+		long start = System.currentTimeMillis();;
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
@@ -180,9 +181,14 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			
 			baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, "newAssScore", assScore);
 			
-			System.out.print("\n Indexing content : " + assScore);
+			System.out.print("\n Indexing event.. : ");
 			
-			esService.singeColumnUpdate("prod", "event_logger_info_20141226", "event_detail", eventId, "new_score", assScore);
+			esService.singeColumnUpdate("prod", "event_logger_info_20141231", "event_detail", eventId, "new_score", assScore);
+		
+			long stop = System.currentTimeMillis();;
+			
+			System.out.print("\n Time take to complete process: " + (stop-start));
+			
 			
 		} catch (Exception e) {
 			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
