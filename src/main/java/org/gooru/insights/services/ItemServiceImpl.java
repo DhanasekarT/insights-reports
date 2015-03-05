@@ -118,10 +118,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		return resultList;
 	}
 	
-	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
+	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId, int oldScore) {
 
 		RequestParamsDTO systemRequestParamsDTO = null;
-		Map<String, Object> dataMap2 = new HashMap<String, Object>();
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
 		
@@ -129,72 +128,32 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		
-		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
-		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
-		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
-
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		
+		resourceEventing(systemRequestParamsDTO, eventId);
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
 		System.out.print("\n newObject : " + datas);
 
-		JSONArray resultSet = null;
-
-		/**
-		 * Resource events query
-		 */
-		RequestParamsDTO systemRequestParamsDTO1 = null;
+		JSONArray resultSet = null;		
 		
-		Column<String> val2 = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,"score_resource");
-		
-		ColumnList<String> columns2 = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val2.getStringValue());
-		
-		systemRequestParamsDTO1 = baseAPIService.buildRequestParameters(columns2.getStringValue("query", null));
-				
-		String datas2 = serializer.deepSerialize(systemRequestParamsDTO1);
-		
-		
-		if (columns.getStringValue("query", null) != null) {
-			try {
+		try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
+
+			for (int index = 0; index < resultSet.length(); index++) {
+				JSONObject activityJsonObject = resultSet.getJSONObject(index);
+				System.out.print("\n eventId : " + activityJsonObject.get("attemptStatus").toString());
+				System.out.print("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
+				System.out.print("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
+			}
+
+		} catch (Exception e) {
+			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
+		}			
 		
-				for (int index = 0; index < resultSet.length(); index++) {
-					JSONObject activityJsonObject = resultSet.getJSONObject(index);
-					System.out.print("\n eventId : " + activityJsonObject.get("eventId").toString());
-					resourceEventing(systemRequestParamsDTO1, activityJsonObject.get("eventId").toString());
-					datas2 = serializer.deepSerialize(systemRequestParamsDTO1);
-		
-					System.out.print("\n resourceObject : " + datas2);
-					
-					JSONArray resourceResultSet = generateQuery(datas2, dataMap2, userMap, errorMap);
-					for (int resourceIndex = 0; resourceIndex < resourceResultSet.length(); resourceIndex++) {
-						JSONObject attemptStausJsonObject = resourceResultSet.getJSONObject(resourceIndex);
-						System.out.print("\nattemptStausJson : " + attemptStausJsonObject.get("attemptStatus").toString());
-					}
-				}
-			
-			
-			/*if (totalRows > EXPORT_ROW_LIMIT) {
-					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
-						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
-						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
-						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
-						
-						generateReportFile(array, dataMap, errorMap,fileName,false);
-						offset += EXPORT_ROW_LIMIT;
-						Thread.sleep(EXPORT_ROW_LIMIT);
-						System.out.print("\nOffset: " + offset);
-					}
-				}*/
-			
-				} catch (Exception e) {
-					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
-				}			
-		}
 		
 	}
 
