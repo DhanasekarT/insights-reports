@@ -25,8 +25,9 @@ import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -65,7 +66,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	JSONSerializer serializer = new JSONSerializer();
 
 	private int EXPORT_ROW_LIMIT = 100;
-	
+
+	 private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	 
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
@@ -119,7 +122,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	}
 	
 	public void calculateScore(HttpServletRequest request,String reportType, Map<String, Object> dataMap,Map<String, Object> userMap, Map<Integer, String> errorMap,String eventId, int oldScore) {
-
+		logger.debug("\nProcessing ...");
 		RequestParamsDTO systemRequestParamsDTO = null;
 		
 		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,reportType);
@@ -137,21 +140,21 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
-		System.out.print("\n newObject : " + datas);
-
+		logger.debug("\n newObject" + datas);
+		
 		JSONArray resultSet = null;		
 		
 		try {
 			List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
 			resultSet = businessLogicService.buildAggregateJSON(resultList);
 			int totalRows = (Integer) dataMap.get("totalRows");
-			System.out.print("totalRows : " + totalRows);
+			logger.debug("\n totalRows : " + totalRows);
 
 			for (int index = 0; index < resultSet.length(); index++) {
 				JSONObject activityJsonObject = resultSet.getJSONObject(index);
-				System.out.print("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
-				System.out.print("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
-				System.out.print("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
+				logger.debug("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
+				logger.debug("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
+				logger.debug("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
 				int newScore = 0;
 				if(activityJsonObject.get("attemptStatus") != null){
 					String attempStatus = activityJsonObject.get("attemptStatus").toString();
@@ -160,7 +163,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						newScore = attempStatusArray[(attempStatusArray.length - 1)];
 					}
 				}
-				System.out.print("\n newScore : " + newScore);
+				logger.debug("\n newScore for Question : " + newScore);
 				if(newScore > 0 && activityJsonObject.get("gooruOid") != null){
 					baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, activityJsonObject.get("gooruOid").toString(), newScore);
 				}
@@ -172,9 +175,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			for(Column<String> question : assessmentList){
 				assScore = (assScore+question.getIntegerValue());
 			}
-			System.out.print("\n assScore : " + assScore);
+			
+			logger.debug("\n Assessment Score : " + assScore);
 			
 			baseCassandraService.saveIntegerValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.ASSESSMENT_SCORE.columnFamily(), eventId, "newAssScore", assScore);
+			
+			logger.debug("\n Indexing content : " + assScore);
+			
+			baseAPIService.singeColumnUpdate("prod", "event_logger_info_20141226", "event_detail", eventId, "new_score", assScore);
+			
 		} catch (Exception e) {
 			errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 		}			
