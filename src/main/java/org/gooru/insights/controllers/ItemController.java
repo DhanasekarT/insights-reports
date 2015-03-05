@@ -94,14 +94,14 @@ public class ItemController extends BaseController implements APIConstants{
 
 	@RequestMapping(value="/score/{scoreType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView calculateScore(final HttpServletRequest request, @PathVariable(value = "scoreType") final String reportType,@RequestParam(value = "score", required = false) final int score,@RequestParam(value = "sessionToken", required = true) final String sessionToken,@RequestParam(value = "eventId", required = true) final String eventId
+	public ModelAndView calculateScore(final HttpServletRequest request, @PathVariable(value = "scoreType") String reportType,@RequestParam(value = "score", required = false) int score,@RequestParam(value = "sessionToken", required = true)  String sessionToken,@RequestParam(value = "eventId", required = true)  String eventId
  ,HttpServletResponse response) throws IOException {
 		final Map<Integer, String> errorMap = new HashMap<Integer, String>();
 		final Map<String, Object> dataMap = new HashMap<String, Object>();
 		final Map<String, String> finalData = new HashMap<String, String>();
 		final Map<String, Object> userMap = itemService.getUserObjectData(sessionToken, errorMap);
 		
-		final Thread counterThread = new Thread(new Runnable() {
+/*		final Thread counterThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				itemService.calculateScore(request, reportType, dataMap,userMap, errorMap,eventId,score);
@@ -109,7 +109,9 @@ public class ItemController extends BaseController implements APIConstants{
 		});
 
     	counterThread.setDaemon(true);
-    	counterThread.start();
+    	counterThread.start();*/
+		itemService.calculateScore(request, reportType, dataMap,userMap, errorMap,eventId,score);
+		
 		System.out.print("finalData : " + finalData);
 		
 		finalData.put("Message", "Calculating score...please wait.....");
