@@ -1541,7 +1541,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}
 			if (eventName.toString().equalsIgnoreCase("item.rate")) {
 				if(!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString())) {
-					resultAsMap.put("response", activityJsonObject.get("rate"));
+					resultAsMap.put("response", Integer.valueOf(activityJsonObject.get("rate").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("rate").toString()) : 1);
 				} else if (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString())) {
 					resultAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));
 				}
