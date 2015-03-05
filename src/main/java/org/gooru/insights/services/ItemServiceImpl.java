@@ -149,9 +149,18 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 			for (int index = 0; index < resultSet.length(); index++) {
 				JSONObject activityJsonObject = resultSet.getJSONObject(index);
-				System.out.print("\n eventId : " + activityJsonObject.get("attemptStatus").toString());
+				System.out.print("\n attemptStatus : " + activityJsonObject.get("attemptStatus").toString());
 				System.out.print("\n gooruOid : " + activityJsonObject.get("gooruOid").toString());
 				System.out.print("\n attemptCount : " + activityJsonObject.get("attemptCount").toString());
+				int newScore = 0;
+				if(activityJsonObject.get("attemptStatus") != null){
+					String attempStatus = activityJsonObject.get("attemptStatus").toString();
+					int[] attempStatusArray =  convertStringToIntArray(attempStatus);
+					if(attempStatusArray.length > 0){
+						newScore = attempStatusArray[(attempStatusArray.length - 1)];
+					}
+				}
+				System.out.print("\n newScore : " + newScore);
 			}
 
 		} catch (Exception e) {
@@ -161,6 +170,21 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 	}
 
+	public int[] convertStringToIntArray(String value){
+
+		String[] items = value.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\"", "").split(",");
+
+		int[] results = new int[items.length];
+
+		for (int i = 0; i < items.length; i++) {
+			try {
+				results[i] = Integer.parseInt(items[i]);
+			} catch (NumberFormatException nfe) {};
+		}	
+		
+		return results;
+	}
+	
 	public void resourceEventing(RequestParamsDTO systemRequestParamsDTO1, String id) {
 
 		for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO1.getFilter()) {
