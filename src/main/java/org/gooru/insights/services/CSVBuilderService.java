@@ -19,4 +19,6 @@ public interface CSVBuilderService {
 	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException;
 	
 	public void removeExpiredFiles();
+	
+	String generateCSVReportPipeSeperatedValues(List<Map<String,Object>> resultSet,String fileName, Boolean isNewFile)throws ParseException, IOException;
 }

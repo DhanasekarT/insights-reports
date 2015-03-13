@@ -91,7 +91,6 @@ public class ItemController extends BaseController implements APIConstants{
 		return getModel(finalData);
 	}
 
-
 	@RequestMapping(value="/score/{scoreType}",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView calculateScore(final HttpServletRequest request, @PathVariable(value = "scoreType") final String reportType,@RequestParam(value = "sessionToken", required = true)  String sessionToken,@RequestParam(value = "eventId", required = true)  final String eventId

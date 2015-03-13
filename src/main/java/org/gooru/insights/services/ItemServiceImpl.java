@@ -1,5 +1,8 @@
 package org.gooru.insights.services;
 
+import java.net.InetAddress;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -17,11 +20,13 @@ import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
 import org.gooru.insights.constants.ErrorCodes;
+import org.gooru.insights.constants.TypeConverter;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
+import org.gooru.insights.models.ServerLocation;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,6 +67,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	@Autowired
 	MailService mailService;
+
+	@Autowired
+	GeoLocationService geoLocationService;
 	
 	JSONSerializer serializer = new JSONSerializer();
 
@@ -324,7 +332,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			generateReportFile(resultSet, dataMap, errorMap,fileName,true);
+			generateReportFile(reportType, resultSet, dataMap, errorMap,fileName,true);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
@@ -334,7 +342,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
 						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
 						
-						generateReportFile(array, dataMap, errorMap,fileName,false);
+						generateReportFile(reportType, array, dataMap, errorMap,fileName,false);
 						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
@@ -418,12 +426,17 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public String generateReportFile(JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
+	public String generateReportFile(String reportType, JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
 		try {
 			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
-			getReportDataList(activityArray, activityList, errorData);
-			fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,isNewFile);
+			if(reportType.equalsIgnoreCase("xapi")) {
+				getReportDataList(activityArray, activityList, errorData);
+				fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,isNewFile);
+			} else if(reportType.equalsIgnoreCase("xapi-edx-hybrid")) {
+				getXAPIEdxHybridDataList(activityArray, activityList, errorData);
+				fileName = csvBuilderService.generateCSVReportPipeSeperatedValues(activityList, fileName, isNewFile);
+			}
 			return fileName;
 		} catch (Exception e) {
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
@@ -488,10 +501,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						activityAsMap.put("timestamp", eventTime);
 						activityAsMap.put("stored", eventTime);
 
-						/*
-						 * Map<String, Object> responseAsMap = (Map<String, Object>) mapper.readValue(activityArray.toString, new
-						 * TypeReference<Map<String, Object>>() { });
-						 */
 						if (!objectAsMap.isEmpty() && !actorAsMap.isEmpty() && !verbAsMap.isEmpty() && !activityAsMap.isEmpty()) {
 							activityList.add(activityAsMap);
 						}/* else {
@@ -656,7 +665,250 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				
 		return errorMap;	
 	}
+	
+	public List<Map<String, Object>> getXAPIEdxHybridDataList(JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 
+		if (activityArray.length() > 0) {
+			/*System.out.println("activityArray Length :" +activityArray.length());
+			int skippedCount = 0;*/
+			String previousEventTime = null;
+			String currentEventTime = null;
+			String previousSessionToken = null;
+			String currentSessionToken = null;
+			Long secsToNext = 0L;
+			for (int index = 0; index < activityArray.length(); index++) {
+				JSONObject activityJsonObject = activityArray.getJSONObject(index);
+				if (!activityJsonObject.isNull("eventId") && StringUtils.isNotBlank(activityJsonObject.get("eventId").toString())) {
+					try{
+						Map<String, Object> activityAsMap = new HashMap<String, Object>();
+						if (activityJsonObject.get("eventName").toString().matches(XAPI_SUPPORTED_EVENTS)) {
+							/* Unique Activity Id */
+							activityAsMap.put("id", activityJsonObject.get("eventId"));
+							
+							/* Time of Activity */
+							if (!activityJsonObject.isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString())) {
+								currentEventTime = activityJsonObject.get("eventTime").toString();
+							} else if (!activityJsonObject.isNull("startTime") && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString())) {
+								currentEventTime = activityJsonObject.get("startTime").toString();
+							}
+							activityAsMap.put("time", currentEventTime);
+							
+							/* secsToNext Activity */
+							if (!activityJsonObject.isNull("sessionToken") && StringUtils.isNotBlank(activityJsonObject.get("sessionToken").toString())) {
+								currentSessionToken = activityJsonObject.get("sessionToken").toString();
+							}
+							if (currentEventTime != null && previousEventTime != null && previousSessionToken != null && currentSessionToken != null && currentSessionToken.equalsIgnoreCase(previousSessionToken)) {
+								SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+								try {
+									secsToNext = (formatter.parse(currentEventTime).getTime() - formatter.parse(previousEventTime).getTime()) / 1000;
+								} catch (ParseException e) {
+									e.printStackTrace();
+								}
+							}
+							activityAsMap.put("secs_to_next", secsToNext.longValue());
+
+							previousEventTime = currentEventTime;
+							previousSessionToken = currentSessionToken;
+
+							/* Actor property */
+							String mailId = null;
+							if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
+								mailId = activityJsonObject.get("emailId").toString();
+							} else if (!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())
+									&& activityJsonObject.get("gooruUId").toString().equalsIgnoreCase("ANONYMOUS")) {
+								mailId = "Anonymous@goorulearning.org";
+							} else {
+								mailId = UUID.randomUUID() + "@goorulearning.org";
+							}
+							activityAsMap.put("actor", mailId);
+
+							/* Verb property */
+							Map<String, Object> verbAsMap = new HashMap<String, Object>();
+							businessLogicService.generateVerbProperty(activityJsonObject, verbAsMap, errorAsMap);
+							if(!verbAsMap.isEmpty()) {
+								activityAsMap.put("verb", verbAsMap.get("id").toString().substring(42));
+							}
+							
+							/* object_name property */
+							String id = null;
+							if ((!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString()))
+									|| (!activityJsonObject.isNull("gooru_oid") && StringUtils.isNotBlank(activityJsonObject.get("gooru_oid").toString()))) {
+								if (!activityJsonObject.isNull("gooruOid") && StringUtils.isNotBlank(activityJsonObject.get("gooruOid").toString())) {
+									id = activityJsonObject.get("gooruOid").toString();
+								} else if (!activityJsonObject.isNull("gooru_oid") && StringUtils.isNotBlank(activityJsonObject.get("gooru_oid").toString())) {
+									id = activityJsonObject.get("gooru_oid").toString();
+								}
+							}
+							activityAsMap.put("object_name", id);
+							
+							/* object_type property */
+							String typeName = null;
+							String type = null;
+							if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
+								typeName = activityJsonObject.get("typeName").toString();
+								if (typeName.matches(RESOURCE_TYPES) || typeName.equalsIgnoreCase(QUESTION_TYPES)) {
+									type = "resource";
+								} else if (typeName.matches(COLLECTION_TYPES)) {
+									type = "collection";
+								}
+								activityAsMap.put("object_type", typeName);
+							}
+
+							/* agent property */
+							if (!activityJsonObject.isNull("userAgent") && StringUtils.isNotBlank(activityJsonObject.get("userAgent").toString())) {
+								activityAsMap.put("agent", activityJsonObject.get("userAgent"));
+							}
+							
+							// activityAsMap.put("event_type", activityJsonObject.get("TYPE"));
+							// "http://qa.goorulearning.org/#students-view&pageSize=5&id=cfed4718-ee28-44ad-82be-206dec5c9c8f&pageNum=0&pos=1"
+							// "http://qa.goorulearning.org/#teach&pageSize=5&classpageid=e7249ce2-b7c8-4e1d-b31f-c54f0cff9765&pageNum=0&pos=1";
+							
+							/* page property */
+							if (type != null) {
+								activityAsMap.put("page", "http://www.goorulearning.org/#" + type + "-play&id=" + id + "&pn=" + type);
+							}
+							
+							/* ip property */
+							String userIp = null;
+							if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
+								userIp = activityJsonObject.get("userIp").toString();
+							} else if (!activityJsonObject.isNull("user_ip") && StringUtils.isNotBlank(activityJsonObject.get("user_ip").toString())) {
+								userIp = activityJsonObject.get("user_ip").toString();
+							}
+							if (userIp != null) {
+								try {
+									ServerLocation location = geoLocationService.getLocation(userIp);
+									activityAsMap.put("state_code", location.getRegion().split("[\\(\\)]")[0]);
+									activityAsMap.put("country_code", location.getCountryCode().split("[\\(\\)]")[0]);
+									InetAddress inetAddress = InetAddress.getByName(userIp);
+									String hostName = inetAddress.getCanonicalHostName();
+									activityAsMap.put("ip", hostName);
+									activityAsMap.put("userIp", userIp);
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+
+							/* result, meta & event property */
+							String eventName = activityJsonObject.get("eventName").toString();
+							Map<String, Object> metaAsMap = new HashMap<String, Object>(3);
+							Map<String, Object> correctMap = new HashMap<String, Object>(4);
+							Map<String, Object> correctMapObject = new HashMap<String, Object>(1);
+							Map<String, Object> eventAsMap = new HashMap<String, Object>();
+							if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
+									|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
+									&& activityJsonObject.get("eventName").toString().endsWith("play")) {
+								String resultString = null;
+								String hint = null;
+								String hintMode = null;
+								int attemptCount = 0;
+								if (!activityJsonObject.isNull("resourceTypeId")
+										&& StringUtils.isNotBlank(activityJsonObject.get("resourceTypeId").toString())
+										&& (Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002 || Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1020)) {
+									Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
+									Integer score = 0;
+									score = Integer.valueOf(activityJsonObject.get("score").toString());
+
+									if ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
+										if (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
+											int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
+											attemptCount = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
+											if (attemptStatus.length > 1) {
+												int recentAttempt = attemptCount;
+												if (recentAttempt != 0) {
+													recentAttempt = recentAttempt - 1;
+												}
+												score = attemptStatus[recentAttempt];
+											}
+										} else if (score >= 1) {
+											score = 1;
+										}
+										resultString = score > 0 ? "correct" : "incorrect";
+										
+										if (!activityJsonObject.isNull("hints") && StringUtils.isNotBlank(activityJsonObject.get("hints").toString()) && !activityJsonObject.get("hints").toString().equalsIgnoreCase("{}")) {
+											hint = activityJsonObject.get("hints").toString();
+											hintMode = "on_request";
+										} else {
+											hint = null;
+											hintMode = "None";
+										}
+										
+										correctMap.put("u'correctness", resultString);
+										correctMap.put("hint", hint);
+										correctMap.put("hint_mode", hintMode);
+										
+										if (!correctMap.isEmpty()) {
+											correctMapObject.put(id, correctMap);
+										}
+										eventAsMap.put("u'grade", score);
+										eventAsMap.put("u'max_grade", 1);
+										eventAsMap.put("u'done", "true");
+										eventAsMap.put("u'problem_id", id);
+										eventAsMap.put("u'attempts", attemptCount);
+										eventAsMap.put("u'success", resultString);
+										rawScoreAsMap.put("min", 0);
+										rawScoreAsMap.put("max", 1);
+									}
+									
+									if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
+											&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
+										Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount")
+												.toString()) : 0;
+										if (questionCount >= score) {
+											rawScoreAsMap.put("min", 0);
+											rawScoreAsMap.put("max", questionCount);
+										}
+									}
+									if (eventName.toString().equalsIgnoreCase("collection.play")
+											&& (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))) {
+										score = Integer.valueOf(activityJsonObject.get("newScore").toString());
+									}
+									rawScoreAsMap.put("raw", score);
+									metaAsMap.put("score", rawScoreAsMap);
+									if (eventName.toString().endsWith("play")) {
+										if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString())
+												&& activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
+											metaAsMap.put("completion", Boolean.valueOf("true"));
+											eventAsMap.put("u'done", "true");
+										} else {
+											metaAsMap.put("completion", Boolean.valueOf("false"));
+											eventAsMap.put("u'done", "false");
+										}
+									}
+
+								}
+							}
+							if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
+								metaAsMap.put("parent", activityJsonObject.get("parentGooruId").toString());
+							}
+							if (!metaAsMap.isEmpty()) {
+								activityAsMap.put("meta", metaAsMap);
+							}
+
+							
+							if (eventAsMap.isEmpty()) {
+								eventAsMap.put("id", id);
+							}
+							if (!correctMapObject.isEmpty()) {
+								eventAsMap.put("u'correct_map", correctMapObject);
+							}
+							activityAsMap.put("event", eventAsMap);
+							
+							if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
+								activityList.add(activityAsMap);
+							}
+						}
+					
+					} catch(Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			System.out.println("activityList >>" +activityList);
+		}
+		return activityList;
+	}
+	
 	public boolean insertKey(String data){
 		return baseAPIService.insertKey(data);
 	}

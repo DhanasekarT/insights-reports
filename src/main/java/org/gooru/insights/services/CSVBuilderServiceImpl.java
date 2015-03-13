@@ -107,13 +107,12 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 				stream.print(objectMapper.writeValueAsString(map) + "|");
 				stream.println("");
 			}
-
 			return getFilePath(fileName);
 		} else {
 			return null;
 		}
 	}
-
+	
 	public String generateCSVJSONReport(JSONArray resultSet,String fileName)throws ParseException, IOException{
 		
 		// Set output File
@@ -187,5 +186,48 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 			}
 		}
 	}
+	
+	public String generateCSVReportPipeSeperatedValues(List<Map<String, Object>> resultSet, String fileName, Boolean isNewFile) throws ParseException, IOException {
+
+		// Set output File
+		File csvfile = new File(setFilePath(fileName));
+		@SuppressWarnings("resource")
+		PrintStream stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(csvfile, true)));
+
+		for (Map<String, Object> map : resultSet) {
+
+			if (isNewFile) {
+				// print header row
+				String headerLine = new String();
+				for (Map.Entry<String, Object> entry : map.entrySet()) {
+					if (headerLine.length() == 0) {
+						headerLine = entry.getKey();
+						stream.print(entry.getKey());
+					} else {
+						stream.print("|" + entry.getKey());
+					}
+				}
+				// print new line
+				stream.println("");
+			} else {
+				// print row values
+				String rowLine = new String();
+				for (Map.Entry<String, Object> entry : map.entrySet()) {
+					if (rowLine.length() == 0) {
+						rowLine = entry.getValue().toString();
+						stream.print(entry.getValue());
+					} else {
+						stream.print("|" + entry.getValue());
+					}
+				}
+				// print new line
+				stream.println("");
+			}
+		}
+		stream.println("");
+
+		return getFilePath(fileName);
+	}
+	
 	
 }
