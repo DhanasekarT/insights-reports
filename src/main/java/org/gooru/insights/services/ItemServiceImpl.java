@@ -798,7 +798,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									activityAsMap.put("country_code", countryCode);
 									//activityAsMap.put("userIp", userIp);
 								} catch (Exception e) {
-									e.getMessage();
+									e.printStackTrace();
 									activityAsMap.put("ip", hostName != null ? hostName : "NA");
 									activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
 									activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
