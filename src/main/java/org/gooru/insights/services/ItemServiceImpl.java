@@ -706,7 +706,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								}
 							}
 							activityAsMap.put("secs_to_next", secsToNext.longValue());
-
 							previousEventTime = currentEventTime;
 							previousSessionToken = currentSessionToken;
 
@@ -744,6 +743,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							/* object_type property */
 							String typeName = null;
 							String type = null;
+							
 							if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
 								typeName = activityJsonObject.get("typeName").toString();
 								if (typeName.matches(RESOURCE_TYPES) || typeName.equalsIgnoreCase(QUESTION_TYPES)) {
@@ -751,14 +751,20 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								} else if (typeName.matches(COLLECTION_TYPES)) {
 									type = "collection";
 								}
-								activityAsMap.put("object_type", typeName);
+							} else {
+								typeName = "NA";
 							}
+							activityAsMap.put("object_type", typeName);
 
 							/* agent property */
+							String agent = null;
 							if (!activityJsonObject.isNull("userAgent") && StringUtils.isNotBlank(activityJsonObject.get("userAgent").toString())) {
-								activityAsMap.put("agent", activityJsonObject.get("userAgent"));
+								agent = activityJsonObject.get("userAgent").toString();
+							} else {
+								agent = "NA";
 							}
-							
+							activityAsMap.put("agent", agent);
+
 							// activityAsMap.put("event_type", activityJsonObject.get("TYPE"));
 							// "http://qa.goorulearning.org/#students-view&pageSize=5&id=cfed4718-ee28-44ad-82be-206dec5c9c8f&pageNum=0&pos=1"
 							// "http://qa.goorulearning.org/#teach&pageSize=5&classpageid=e7249ce2-b7c8-4e1d-b31f-c54f0cff9765&pageNum=0&pos=1";
@@ -766,27 +772,41 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							/* page property */
 							if (type != null) {
 								activityAsMap.put("page", "http://www.goorulearning.org/#" + type + "-play&id=" + id + "&pn=" + type);
+							} else {
+								activityAsMap.put("page", "NA");
 							}
 							
 							/* ip property */
 							String userIp = null;
+							String stateCode = null;
+							String countryCode = null;
+							String hostName = null;
 							if (!activityJsonObject.isNull("userIp") && StringUtils.isNotBlank(activityJsonObject.get("userIp").toString())) {
 								userIp = activityJsonObject.get("userIp").toString();
 							} else if (!activityJsonObject.isNull("user_ip") && StringUtils.isNotBlank(activityJsonObject.get("user_ip").toString())) {
 								userIp = activityJsonObject.get("user_ip").toString();
 							}
-							if (userIp != null) {
+							if (userIp != null && !userIp.equalsIgnoreCase("127.0.0.1")) {
 								try {
 									ServerLocation location = geoLocationService.getLocation(userIp);
-									activityAsMap.put("state_code", location.getRegion().split("[\\(\\)]")[0]);
-									activityAsMap.put("country_code", location.getCountryCode().split("[\\(\\)]")[0]);
+									stateCode = location.getRegion().split("[\\(\\)]")[0];
+									countryCode = location.getCountryCode().split("[\\(\\)]")[0];
 									InetAddress inetAddress = InetAddress.getByName(userIp);
-									String hostName = inetAddress.getCanonicalHostName();
+									hostName = inetAddress.getCanonicalHostName();
 									activityAsMap.put("ip", hostName);
-									activityAsMap.put("userIp", userIp);
+									activityAsMap.put("state_code", stateCode);
+									activityAsMap.put("country_code", countryCode);
+									//activityAsMap.put("userIp", userIp);
 								} catch (Exception e) {
-									e.printStackTrace();
+									e.getMessage();
+									activityAsMap.put("ip", hostName != null ? hostName : "NA");
+									activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
+									activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 								}
+							} else {
+								activityAsMap.put("ip", hostName != null ? hostName : "NA");
+								activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
+								activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 							}
 
 							/* result, meta & event property */
@@ -883,9 +903,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							}
 							if (!metaAsMap.isEmpty()) {
 								activityAsMap.put("meta", metaAsMap);
+							} else {
+								activityAsMap.put("meta", "NA");
 							}
 
-							
 							if (eventAsMap.isEmpty()) {
 								eventAsMap.put("id", id);
 							}

@@ -206,11 +206,13 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 					} else {
 						stream.print("|" + entry.getKey());
 					}
+					isNewFile = false;
 				}
 				// print new line
 				stream.println("");
 			} else {
 				// print row values
+				stream.println("");
 				String rowLine = new String();
 				for (Map.Entry<String, Object> entry : map.entrySet()) {
 					if (rowLine.length() == 0) {
@@ -220,6 +222,7 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 						stream.print("|" + entry.getValue());
 					}
 				}
+				rowLine = null;
 				// print new line
 				stream.println("");
 			}
