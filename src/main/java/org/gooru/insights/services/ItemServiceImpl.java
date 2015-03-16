@@ -746,7 +746,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							
 							if (!activityJsonObject.isNull("typeName") && StringUtils.isNotBlank(activityJsonObject.get("typeName").toString())) {
 								typeName = activityJsonObject.get("typeName").toString();
-								if (typeName.matches(RESOURCE_TYPES) || typeName.equalsIgnoreCase(QUESTION_TYPES)) {
+								if (typeName.matches(RESOURCE_TYPES) || typeName.matches(QUESTION_TYPES)) {
 									type = "resource";
 								} else if (typeName.matches(COLLECTION_TYPES)) {
 									type = "collection";
@@ -760,6 +760,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							String agent = null;
 							if (!activityJsonObject.isNull("userAgent") && StringUtils.isNotBlank(activityJsonObject.get("userAgent").toString())) {
 								agent = activityJsonObject.get("userAgent").toString();
+							} else if (!activityJsonObject.isNull("user_agent") && StringUtils.isNotBlank(activityJsonObject.get("user_agent").toString())){
+								agent = activityJsonObject.get("user_agent").toString();
 							} else {
 								agent = "NA";
 							}
@@ -913,7 +915,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if (!correctMapObject.isEmpty()) {
 								eventAsMap.put("u'correct_map", correctMapObject);
 							}
-							activityAsMap.put("event", eventAsMap);
+							if(!eventAsMap.isEmpty()) {
+								activityAsMap.put("event", eventAsMap);
+							} else {
+								activityAsMap.put("event", "NA");
+							}
 							
 							if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
 								activityList.add(activityAsMap);

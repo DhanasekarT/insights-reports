@@ -193,42 +193,36 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 		File csvfile = new File(setFilePath(fileName));
 		@SuppressWarnings("resource")
 		PrintStream stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(csvfile, true)));
-
+		int i = 0;
 		for (Map<String, Object> map : resultSet) {
 
 			if (isNewFile) {
 				// print header row
-				String headerLine = new String();
+				int loopCount = 0 ;
 				for (Map.Entry<String, Object> entry : map.entrySet()) {
-					if (headerLine.length() == 0) {
-						headerLine = entry.getKey();
-						stream.print(entry.getKey());
-					} else {
-						stream.print("|" + entry.getKey());
-					}
-					isNewFile = false;
+					stream.print(loopCount == 0 ? entry.getKey() : "|" + entry.getKey());
+					loopCount++;
 				}
-				// print new line
-				stream.println("");
-			} else {
-				// print row values
-				stream.println("");
-				String rowLine = new String();
-				for (Map.Entry<String, Object> entry : map.entrySet()) {
-					if (rowLine.length() == 0) {
-						rowLine = entry.getValue().toString();
-						stream.print(entry.getValue());
-					} else {
-						stream.print("|" + entry.getValue());
-					}
-				}
-				rowLine = null;
+				isNewFile = false;
 				// print new line
 				stream.println("");
 			}
-		}
-		stream.println("");
 
+			// print row values
+			StringBuffer rowLine = new StringBuffer(); 
+			int loopCount = 0;
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+				rowLine = (loopCount == 0 ? rowLine.append(entry.getValue()) : rowLine.append("|" + entry.getValue()));
+				loopCount++;
+			}
+			stream.print(rowLine);
+			//System.out.println("Row No : "+i);
+			//System.out.println("debugLine >>> "+rowLine);
+			i++;
+			
+			// print new line
+			stream.println("");
+		}
 		return getFilePath(fileName);
 	}
 	
