@@ -23,6 +23,8 @@ public class ErrorConstants {
 	
 	public static final  String E108 = "E108";
 	
+	public static final String E109 = "E109";
+	
 	/**
 	 * Error fields
 	 */
@@ -63,6 +65,8 @@ public class ErrorConstants {
 	public static final  String AGGREGATION_BUCKET = " Aggregation bucket";
 	
 	public static final  String GRANULARITY_BUCKET = "Granularity bucket";
+	
+	public static final  String RANGE_BUCKET = "Range bucket";
 	
 	public static final  String BUCKET_ERROR = "Building the {0} logic failed!";
 	

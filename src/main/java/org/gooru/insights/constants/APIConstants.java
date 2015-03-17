@@ -100,6 +100,10 @@ public class APIConstants {
 	
 	public final static String AGGREGATE_ATTRIBUTE = "aggregateAttribute";
 	
+	public final static String RANGE_ATTRIBUTE = "rangeAttribute";
+	
+	public final static String MULTIPLE_GROUPBY = "multipleGroupby";
+	
 	public final static String LOGICAL_OPERATOR = "logicalOperator";
 	
 	public final static String FILTERS = "filterAtributes";
@@ -228,7 +232,7 @@ public class APIConstants {
 		HAS_FEILDS("hasFields"), HAS_DATASOURCE("hasDataSource"), HAS_GRANULARITY("hasGranularity"), 
 		HAS_GROUPBY("hasGroupBy"), HAS_INTERVALS("hasIntervals"), HAS_FILTER("hasFilter"), 
 		HAS_AGGREGATE("hasAggregate"), HAS_PAGINATION("hasPagination"), HAS_LIMIT("hasLimit"), 
-		HAS_Offset("hasOffset"), HAS_SORTBY("hasSortBy"), HAS_SORTORDER("hasSortOrder");
+		HAS_Offset("hasOffset"), HAS_SORTBY("hasSortBy"), HAS_SORTORDER("hasSortOrder"),HAS_RANGE("hasRange");
 
 		private String name;
 

@@ -37,6 +37,7 @@ import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsRangeDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -295,6 +296,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		processedData.put(Hasdatas.HAS_GROUPBY.check(), false);
 		processedData.put(Hasdatas.HAS_FILTER.check(), false);
 		processedData.put(Hasdatas.HAS_AGGREGATE.check(), false);
+		processedData.put(Hasdatas.HAS_RANGE.check(), false);
 		processedData.put(Hasdatas.HAS_LIMIT.check(), false);
 		processedData.put(Hasdatas.HAS_Offset.check(), false);
 		processedData.put(Hasdatas.HAS_SORTBY.check(), false);
@@ -385,6 +387,21 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		}else if(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check())){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.GROUP_BY));
 		}
+		/**
+		 * Range filter validation.Here groupBy field shouldn't be empty
+		 */
+		if(checkNull(requestParamsDTO.getRanges())) {
+			for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
+				if(!checkNull(ranges.getFrom()) && !checkNull(ranges.getTo())) {
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.RANGE_ATTRIBUTE));				
+				} 
+			}
+			if(requestParamsDTO.getGroupBy().split(APIConstants.SEPARATOR).length > 1) {
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E109,APIConstants.MULTIPLE_GROUPBY));
+			}
+			processedData.put(APIConstants.Hasdatas.HAS_RANGE.check(), true);
+		}
+		
 		
 		/**
 		 * granularity should be a valid acceptable field 

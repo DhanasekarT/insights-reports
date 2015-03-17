@@ -24,6 +24,8 @@ public class RequestParamsDTO implements Serializable {
 	
 	RequestParamsFiltersDTO filters;
 	
+	List<RequestParamsRangeDTO> ranges;
+	
 	private List<Map<String,String>> aggregations;
 	
 	private String intervals;
@@ -69,6 +71,14 @@ public class RequestParamsDTO implements Serializable {
 
 	public RequestParamsPaginationDTO getPagination() {
 		return pagination;
+	}
+
+	public List<RequestParamsRangeDTO> getRanges() {
+		return ranges;
+	}
+
+	public void setRanges(List<RequestParamsRangeDTO> ranges) {
+		this.ranges = ranges;
 	}
 
 	public void setPagination(RequestParamsPaginationDTO paginate) {
