@@ -16,6 +16,7 @@ import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
@@ -682,6 +683,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					try{
 						Map<String, Object> activityAsMap = new HashMap<String, Object>();
 						if (activityJsonObject.get("eventName").toString().matches(XAPI_SUPPORTED_EVENTS)) {
+							//System.out.println("Processing Activity..");
 							/* Unique Activity Id */
 							activityAsMap.put("id", activityJsonObject.get("eventId"));
 							
@@ -790,9 +792,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							}
 							if (userIp != null && !userIp.equalsIgnoreCase("127.0.0.1")) {
 								try {
-									ServerLocation location = geoLocationService.getLocation(userIp);
+									/*ServerLocation location = geoLocationService.getLocation(userIp);
 									stateCode = location.getRegion().split("[\\(\\)]")[0];
-									countryCode = location.getCountryCode().split("[\\(\\)]")[0];
+									countryCode = location.getCountryCode().split("[\\(\\)]")[0];*/
 									InetAddress inetAddress = InetAddress.getByName(userIp);
 									hostName = inetAddress.getCanonicalHostName();
 									
@@ -810,8 +812,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								countryCode = "NA";
 							}
 							activityAsMap.put("ip", hostName != null ? hostName : "NA");
-							activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
-							activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
+							//activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
+							//activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 							
 							/* result, meta & event property */
 							String eventName = activityJsonObject.get("eventName").toString();
@@ -857,19 +859,20 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 											hintMode = "None";
 										}
 										
-										correctMap.put("u'correctness", resultString);
+										correctMap.put("correctness", resultString);
 										correctMap.put("hint", hint);
 										correctMap.put("hint_mode", hintMode);
 										
 										if (!correctMap.isEmpty()) {
 											correctMapObject.put(id, correctMap);
 										}
-										eventAsMap.put("u'grade", score);
-										eventAsMap.put("u'max_grade", 1);
-										eventAsMap.put("u'done", "true");
-										eventAsMap.put("u'problem_id", id);
-										eventAsMap.put("u'attempts", attemptCount);
-										eventAsMap.put("u'success", resultString);
+										eventAsMap.put("grade", score);
+										eventAsMap.put("max_grade", 1);
+										eventAsMap.put("done", "true");
+										eventAsMap.put("problem_id", id);
+										eventAsMap.put("attempts", attemptCount);
+										eventAsMap.put("success", resultString);
+										activityAsMap.put("result", resultString);
 										rawScoreAsMap.put("min", 0);
 										rawScoreAsMap.put("max", 1);
 									}
@@ -896,10 +899,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString())
 												&& activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
 											metaAsMap.put("completion", Boolean.valueOf("true"));
-											eventAsMap.put("u'done", "true");
+											eventAsMap.put("done", "true");
 										} else {
 											metaAsMap.put("completion", Boolean.valueOf("false"));
-											eventAsMap.put("u'done", "false");
+											eventAsMap.put("done", "false");
 										}
 									}
 
@@ -911,8 +914,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if (!activityJsonObject.isNull("sessionToken") && StringUtils.isNotBlank(activityJsonObject.get("sessionToken").toString())) {
 								metaAsMap.put("session_token", activityJsonObject.get("sessionToken").toString());
 							}
+							if(!activityAsMap.containsKey("result")) {
+								activityAsMap.put("result", "");
+							}
 							if (!metaAsMap.isEmpty()) {
-								activityAsMap.put("meta", metaAsMap);
+								ObjectMapper objectMapper = new ObjectMapper();
+								activityAsMap.put("meta", objectMapper.writeValueAsString(metaAsMap));
 							} else {
 								activityAsMap.put("meta", "NA");
 							}
@@ -921,10 +928,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								eventAsMap.put("id", id);
 							}
 							if (!correctMapObject.isEmpty()) {
-								eventAsMap.put("u'correct_map", correctMapObject);
+								eventAsMap.put("correct_map", correctMapObject);
 							}
 							if(!eventAsMap.isEmpty()) {
-								activityAsMap.put("event", eventAsMap);
+								ObjectMapper objectMapper = new ObjectMapper();
+								activityAsMap.put("event", objectMapper.writeValueAsString(eventAsMap));
 							} else {
 								activityAsMap.put("event", "NA");
 							}
@@ -932,6 +940,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
 								activityList.add(activityAsMap);
 							}
+							
 						}
 					
 					} catch(Exception e) {
