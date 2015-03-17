@@ -795,22 +795,24 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									countryCode = location.getCountryCode().split("[\\(\\)]")[0];
 									InetAddress inetAddress = InetAddress.getByName(userIp);
 									hostName = inetAddress.getCanonicalHostName();
-									activityAsMap.put("ip", hostName);
-									activityAsMap.put("state_code", stateCode);
-									activityAsMap.put("country_code", countryCode);
+									
 									//activityAsMap.put("userIp", userIp);
 								} catch (Exception e) {
 									e.printStackTrace();
-									activityAsMap.put("ip", hostName != null ? hostName : "NA");
-									activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
-									activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
+									hostName = "NA";
+									stateCode = "NA";
+									countryCode = "NA";
 								}
+								
 							} else {
-								activityAsMap.put("ip", hostName != null ? hostName : "NA");
-								activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
-								activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
+								hostName = "NA";
+								stateCode = "NA";
+								countryCode = "NA";
 							}
-
+							activityAsMap.put("ip", hostName != null ? hostName : "NA");
+							activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
+							activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
+							
 							/* result, meta & event property */
 							String eventName = activityJsonObject.get("eventName").toString();
 							Map<String, Object> metaAsMap = new HashMap<String, Object>(3);
@@ -887,6 +889,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									}
 									rawScoreAsMap.put("raw", score);
 									metaAsMap.put("score", rawScoreAsMap);
+									if (eventAsMap.isEmpty()) {
+										eventAsMap.put("id", id);
+									}
 									if (eventName.toString().endsWith("play")) {
 										if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString())
 												&& activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
@@ -902,6 +907,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							}
 							if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
 								metaAsMap.put("parent", activityJsonObject.get("parentGooruId").toString());
+							}
+							if (!activityJsonObject.isNull("sessionToken") && StringUtils.isNotBlank(activityJsonObject.get("sessionToken").toString())) {
+								metaAsMap.put("session_token", activityJsonObject.get("sessionToken").toString());
 							}
 							if (!metaAsMap.isEmpty()) {
 								activityAsMap.put("meta", metaAsMap);
@@ -931,7 +939,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					}
 				}
 			}
-			System.out.println("activityList >>" +activityList);
+			//System.out.println("activityList >>" +activityList);
 		}
 		return activityList;
 	}

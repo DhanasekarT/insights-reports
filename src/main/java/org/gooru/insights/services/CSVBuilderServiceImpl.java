@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
@@ -216,12 +217,11 @@ public class CSVBuilderServiceImpl implements CSVBuilderService{
 				loopCount++;
 			}
 			stream.print(rowLine);
-			//System.out.println("Row No : "+i);
-			//System.out.println("debugLine >>> "+rowLine);
 			i++;
 			
 			// print new line
 			stream.println("");
+			stream.flush();
 		}
 		return getFilePath(fileName);
 	}
