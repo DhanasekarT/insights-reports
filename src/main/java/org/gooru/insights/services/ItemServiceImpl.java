@@ -801,17 +801,17 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									//activityAsMap.put("userIp", userIp);
 								} catch (Exception e) {
 									e.printStackTrace();
-									hostName = "NA";
-									stateCode = "NA";
-									countryCode = "NA";
+									hostName = "UNRES";
+									/*stateCode = "UNRES";
+									countryCode = "UNRES";*/
 								}
 								
 							} else {
-								hostName = "NA";
-								stateCode = "NA";
-								countryCode = "NA";
+								hostName = "UNRES";
+								/*stateCode = "UNRES";
+								countryCode = "UNRES";*/
 							}
-							activityAsMap.put("ip", hostName != null ? hostName : "NA");
+							activityAsMap.put("ip", hostName != null ? hostName : "UNRES");
 							//activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
 							//activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 							
