@@ -672,10 +672,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		if (activityArray.length() > 0) {
 			/*System.out.println("activityArray Length :" +activityArray.length());
 			int skippedCount = 0;*/
-			String previousEventTime = null;
 			String currentEventTime = null;
-			String previousSessionToken = null;
+			String nextEventTime = null;
 			String currentSessionToken = null;
+			String nextSessionToken = null;
 			Long secsToNext = 0L;
 			for (int index = 0; index < activityArray.length(); index++) {
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
@@ -683,7 +683,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					try{
 						Map<String, Object> activityAsMap = new HashMap<String, Object>();
 						if (activityJsonObject.get("eventName").toString().matches(XAPI_SUPPORTED_EVENTS)) {
-							//System.out.println("Processing Activity..");
+							System.out.println("Processing Activity..");
 							/* Unique Activity Id */
 							activityAsMap.put("id", activityJsonObject.get("eventId"));
 							
@@ -699,17 +699,30 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if (!activityJsonObject.isNull("sessionToken") && StringUtils.isNotBlank(activityJsonObject.get("sessionToken").toString())) {
 								currentSessionToken = activityJsonObject.get("sessionToken").toString();
 							}
-							if (currentEventTime != null && previousEventTime != null && previousSessionToken != null && currentSessionToken != null && currentSessionToken.equalsIgnoreCase(previousSessionToken)) {
+							if((index+1) < activityArray.length()) {
+								if((!activityArray.getJSONObject(index+1).isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString()))
+										|| (StringUtils.isNotBlank(activityJsonObject.get("startTime").toString()) && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString()))) {
+									if (!activityJsonObject.isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString())) {
+										nextEventTime = activityArray.getJSONObject(index + 1).get("startTime").toString();
+									} else if (!activityJsonObject.isNull("startTime") && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString())) {
+										nextEventTime = activityArray.getJSONObject(index + 1).get("startTime").toString();
+									}
+								}
+								//System.out.println(activityArray.getJSONObject(index+1).get("eventTime"));
+								if (!activityArray.getJSONObject(index+1).isNull("sessionToken") && StringUtils.isNotBlank(activityArray.getJSONObject(index+1).get("sessionToken").toString())) {
+									nextSessionToken = activityArray.getJSONObject(index+1).get("sessionToken").toString();
+								}
+							}
+							
+							if (currentEventTime != null && nextEventTime != null && nextSessionToken != null && currentSessionToken != null && currentSessionToken.equalsIgnoreCase(nextSessionToken)) {
 								SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 								try {
-									secsToNext = (formatter.parse(currentEventTime).getTime() - formatter.parse(previousEventTime).getTime()) / 1000;
+									secsToNext = (formatter.parse(nextEventTime).getTime() - formatter.parse(currentEventTime).getTime()) / 1000;
 								} catch (ParseException e) {
 									e.printStackTrace();
 								}
 							}
 							activityAsMap.put("secs_to_next", secsToNext.longValue());
-							previousEventTime = currentEventTime;
-							previousSessionToken = currentSessionToken;
 
 							/* Actor property */
 							String mailId = null;
@@ -722,12 +735,18 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								mailId = UUID.randomUUID() + "@goorulearning.org";
 							}
 							activityAsMap.put("actor", mailId);
-
+							
+							String eventType = null;
 							/* Verb property */
 							Map<String, Object> verbAsMap = new HashMap<String, Object>();
+							String verb = null;
 							businessLogicService.generateVerbProperty(activityJsonObject, verbAsMap, errorAsMap);
 							if(!verbAsMap.isEmpty()) {
-								activityAsMap.put("verb", verbAsMap.get("id").toString().substring(42));
+								verb = verbAsMap.get("id").toString().substring(42);
+								activityAsMap.put("verb", verb);
+								if(verb.equalsIgnoreCase("experienced")) {
+									eventType = "play";
+								}
 							}
 							
 							/* object_name property */
@@ -811,7 +830,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								/*stateCode = "UNRES";
 								countryCode = "UNRES";*/
 							}
-							activityAsMap.put("ip", hostName != null ? hostName : "UNRES");
+							activityAsMap.put("ip", hostName != null && !hostName.equalsIgnoreCase(userIp) ? hostName : "UNRES");
 							//activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
 							//activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 							
@@ -836,6 +855,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									score = Integer.valueOf(activityJsonObject.get("score").toString());
 
 									if ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
+										eventType = "problem_check";
 										if (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
 											int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
 											attemptCount = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
@@ -917,6 +937,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if(!activityAsMap.containsKey("result")) {
 								activityAsMap.put("result", "");
 							}
+							activityAsMap.put("event_type", eventType != null ? eventType : "");
+
 							if (!metaAsMap.isEmpty()) {
 								ObjectMapper objectMapper = new ObjectMapper();
 								activityAsMap.put("meta", objectMapper.writeValueAsString(metaAsMap));
