@@ -26,8 +26,8 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram.Interval;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
+import org.elasticsearch.search.aggregations.bucket.range.RangeBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
-import org.elasticsearch.search.aggregations.metrics.sum.SumBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
@@ -39,6 +39,7 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
+import org.gooru.insights.models.RequestParamsRangeDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
@@ -264,13 +265,16 @@ public class BaseESServiceImpl implements BaseESService {
 			buildGranularityBuckets(indices,requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 
-		}else if (validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
+		} else if(validatedData.get(Hasdatas.HAS_RANGE.check()) && validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
+			searchRequestBuilder.setNoFields();
+			buildRangeBuckets(indices,requestParamsDTO,searchRequestBuilder,metricsName);
+		} else if (validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
 
 			searchRequestBuilder.setNoFields();
 			buildBuckets(indices,requestParamsDTO, searchRequestBuilder,metricsName);
 			hasAggregate = true;
 		
-		}else  {
+		}  else {
 			Set<String> filterFields = new HashSet<String>();
 			if(validatedData.get(Hasdatas.HAS_FEILDS.check())){
 				if(!requestParamsDTO.getFields().equalsIgnoreCase(APIConstants.WILD_CARD)){
@@ -411,6 +415,26 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 
+	private void buildRangeBuckets(String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
+		try {
+			String fieldName = businessLogicService.esFields(index, requestParamsDTO.getGroupBy());
+			RangeBuilder rangeAggregation = new RangeBuilder(requestParamsDTO.getGroupBy()).field(fieldName);
+				for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
+					if(baseAPIService.checkNull(ranges.getFrom()) && baseAPIService.checkNull(ranges.getTo())) {
+						rangeAggregation.addRange(ranges.getFrom(), ranges.getTo());
+					} else if(baseAPIService.checkNull(ranges.getFrom())) {
+						rangeAggregation.addUnboundedFrom(ranges.getFrom());
+					} else if(baseAPIService.checkNull(ranges.getTo())) {
+						rangeAggregation.addUnboundedTo(ranges.getTo());
+					}
+				}
+				rangeBucketAggregation(index, requestParamsDTO, rangeAggregation, metricsName);
+				searchRequestBuilder.addAggregation(rangeAggregation);
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.RANGE_BUCKET )+e);
+		}
+	}
+	
 	/**
 	 * This function will build a granularity bucket
 	 * @param index This is the source index name
@@ -643,6 +667,30 @@ public class BaseESServiceImpl implements BaseESService {
 			}
 		}
 	}
+
+	private void rangeBucketAggregation(String index, RequestParamsDTO requestParamsDTO, RangeBuilder rangebuilder, Map<String, String> metricsName) {
+
+		if (!requestParamsDTO.getAggregations().isEmpty()) {
+			try {
+				Gson gson = new Gson();
+				String requestJsonArray = gson.toJson(requestParamsDTO.getAggregations());
+				JSONArray jsonArray = new JSONArray(requestJsonArray);
+
+				for (int i = 0; i < jsonArray.length(); i++) {
+
+					JSONObject jsonObject;
+					jsonObject = new JSONObject(jsonArray.get(i).toString());
+					String requestValue = jsonObject.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
+					String fieldName = businessLogicService.esFields(index, jsonObject.getString(requestValue));
+					includeRangeBucketAggregation(rangebuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), requestValue, fieldName);
+					metricsName.put(jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) != null ? jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) : fieldName,
+							requestValue);
+				}
+			} catch (Exception e) {
+				throw new ReportGenerationException(ErrorConstants.AGGREGATION_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET)+e);
+			}
+		}
+	}
 	
 	private void granularityBucketAggregation(String index, RequestParamsDTO requestParamsDTO, DateHistogramBuilder dateHistogramBuilder, Map<String, String> metricsName) {
 
@@ -686,6 +734,27 @@ public class BaseESServiceImpl implements BaseESService {
 			}
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET)+e);
+		} 
+	}
+
+	private void includeRangeBucketAggregation(RangeBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
+
+		try {
+			if(APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)){
+			mainFilter.subAggregation(AggregationBuilders.sum(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.AVG.getField().equalsIgnoreCase(aggregateType)){
+				mainFilter.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.MAX.getField().equalsIgnoreCase(aggregateType)){
+				mainFilter.subAggregation(AggregationBuilders.max(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.MIN.getField().equalsIgnoreCase(aggregateType)){
+				mainFilter.subAggregation(AggregationBuilders.min(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.COUNT.getField().equalsIgnoreCase(aggregateType)){
+				mainFilter.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.DISTINCT.getField().equalsIgnoreCase(aggregateType)){
+				mainFilter.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+			}
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET)+e);
 		} 
 	}
 	
