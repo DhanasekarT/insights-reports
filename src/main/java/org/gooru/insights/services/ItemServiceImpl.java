@@ -703,7 +703,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								if((!activityArray.getJSONObject(index+1).isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString()))
 										|| (StringUtils.isNotBlank(activityJsonObject.get("startTime").toString()) && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString()))) {
 									if (!activityJsonObject.isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString())) {
-										nextEventTime = activityArray.getJSONObject(index + 1).get("startTime").toString();
+										nextEventTime = activityArray.getJSONObject(index + 1).get("eventTime").toString();
 									} else if (!activityJsonObject.isNull("startTime") && StringUtils.isNotBlank(activityJsonObject.get("startTime").toString())) {
 										nextEventTime = activityArray.getJSONObject(index + 1).get("startTime").toString();
 									}
