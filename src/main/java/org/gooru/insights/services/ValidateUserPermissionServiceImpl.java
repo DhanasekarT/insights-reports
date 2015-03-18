@@ -96,7 +96,8 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 			}
 		}
 		if (notAllow) {
-			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, APIConstants.EMPTY));
+			 errorMap.put(403, MessageHandler.getMessage(ErrorConstants.E104, APIConstants.EMPTY));
+//			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, APIConstants.EMPTY));
 		}
 		/*
 		 * if(isFilterAvailable && !notAllow){ errorMap.put(200, E1012); }
