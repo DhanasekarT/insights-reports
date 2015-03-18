@@ -302,7 +302,7 @@ public class APIConstants {
 		NAME("name"), AGGREGATIONS("aggregations"), FIELD("field"), 
 		BUCKETS("buckets"), TOTAL_ROWS("totalRows"), KEY("key"), 
 		DOC_COUNT("doc_count"), KEY_AS_STRING("key_as_string"), SOURCE("_source"), 
-		HITS("hits"), TOTAL("total"), FIELDS("fields"), 
+		HITS("hits"), TOTAL("total"), FIELDS("fields"),FROM("from"),TO("to"),FROM_AS_STRING("from_as_string"),TO_AS_STRING("to_as_string"), 
 		FILTERS("filters");
 
 		private String field;

@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -483,7 +484,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return requestParamsDTO;
 	}
 
-	public List<Map<String, Object>> customizeJSON(String[] groupBy, String resultData, Map<String, String> metrics, boolean hasFilter, ResponseParamDTO<Map<String, Object>> responseParamDTO,
+	public List<Map<String, Object>> customizeJSON(String[] groupBy, String resultData, Map<String, String> metrics, Map<String,Boolean> validatedData, ResponseParamDTO<Map<String, Object>> responseParamDTO,
 			int limit) {
 
 		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
@@ -492,7 +493,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			Integer totalRows = 0;
 			JSONObject json = new JSONObject(resultData);
 			json = new JSONObject(json.get(APIConstants.FormulaFields.AGGREGATIONS.getField()).toString());
-			if (hasFilter) {
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
 				json = new JSONObject(json.get(APIConstants.FormulaFields.FILTERS.getField()).toString());
 			}
 
@@ -518,10 +519,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 							break;
 						}
 						if (counter + 1 == (groupBy.length)) {
-							fetchMetrics(newJson, dataList, metrics, groupBy, counter);
+							fetchMetrics(newJson, dataList, metrics, groupBy, counter, validatedData);
 						} else {
 							hasSubAggregate = true;
-							iterateInternalObject(newJson, subJsonArray, groupBy, counter, key);
+							iterateInternalObject(newJson, subJsonArray, groupBy, counter, key,validatedData);
 						}
 					}
 
@@ -540,7 +541,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return dataList;
 	}
 
-	private void fetchMetrics(JSONObject newJson, List<Map<String, Object>> dataList, Map<String, String> metrics, String[] groupBy, Integer counter) throws JSONException {
+	private void fetchMetrics(JSONObject newJson, List<Map<String, Object>> dataList, Map<String, String> metrics, String[] groupBy, Integer counter,Map<String,Boolean> validatedData) throws JSONException {
 		Map<String, Object> resultMap = new LinkedHashMap<String, Object>();
 		for (Map.Entry<String, String> entry : metrics.entrySet()) {
 			if (newJson.has(entry.getValue())) {
@@ -549,10 +550,18 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				newJson.remove(entry.getValue());
 			}
 		}
+		if(validatedData.get(Hasdatas.HAS_RANGE.check())) {
+			newJson.remove(APIConstants.FormulaFields.FROM.getField());
+			newJson.remove(APIConstants.FormulaFields.TO.getField());
+			newJson.remove(APIConstants.FormulaFields.FROM_AS_STRING.getField());
+			newJson.remove(APIConstants.FormulaFields.TO_AS_STRING.getField());
+			
+		} else {
 		newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
 		newJson.remove(APIConstants.FormulaFields.KEY_AS_STRING.getField());
 		newJson.remove(APIConstants.FormulaFields.KEY.getField());
 		newJson.remove(APIConstants.FormulaFields.BUCKETS.getField());
+		}
 		Iterator<String> dataKeys = newJson.sortedKeys();
 		while (dataKeys.hasNext()) {
 			String dataKey = dataKeys.next();
@@ -561,18 +570,25 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		dataList.add(resultMap);
 	}
 
-	private void iterateInternalObject(JSONObject newJson, JSONArray subJsonArray, String[] groupBy, Integer counter, Object key) throws JSONException {
+	private void iterateInternalObject(JSONObject newJson, JSONArray subJsonArray, String[] groupBy, Integer counter, Object key,Map<String,Boolean> validatedData) throws JSONException {
 		JSONArray tempArray = new JSONArray();
 		JSONObject dataJson = new JSONObject(newJson.get(groupBy[counter + 1]).toString());
 		tempArray = new JSONArray(dataJson.get(APIConstants.FormulaFields.BUCKETS.getField()).toString());
 		for (int j = 0; j < tempArray.length(); j++) {
 			JSONObject subJson = new JSONObject(tempArray.get(j).toString());
 			subJson.put(groupBy[counter], key);
-			newJson.remove(groupBy[counter + 1]);
-			newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
-			newJson.remove(APIConstants.FormulaFields.KEY_AS_STRING.getField());
-			newJson.remove(APIConstants.FormulaFields.KEY.getField());
-			newJson.remove(APIConstants.FormulaFields.BUCKETS.getField());
+			if(validatedData.get(Hasdatas.HAS_RANGE.check())) {
+				newJson.remove(APIConstants.FormulaFields.FROM.getField());
+				newJson.remove(APIConstants.FormulaFields.TO.getField());
+				newJson.remove(APIConstants.FormulaFields.FROM_AS_STRING.getField());
+				newJson.remove(APIConstants.FormulaFields.TO_AS_STRING.getField());
+			} else {
+				newJson.remove(groupBy[counter + 1]);
+				newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
+				newJson.remove(APIConstants.FormulaFields.KEY_AS_STRING.getField());
+				newJson.remove(APIConstants.FormulaFields.KEY.getField());
+				newJson.remove(APIConstants.FormulaFields.BUCKETS.getField());
+			}
 			Iterator<String> dataKeys = newJson.sortedKeys();
 			while (dataKeys.hasNext()) {
 				String dataKey = dataKeys.next();

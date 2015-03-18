@@ -15,8 +15,8 @@ import org.json.JSONException;
 
 public interface BusinessLogicService {
 
-	List<Map<String,Object>> customizeJSON(String[] groupBy,String resultData,Map<String,String> metrics,boolean hasFilter,ResponseParamDTO<Map<String,Object>> responseParamDTO,int limit);
-
+	List<Map<String,Object>> customizeJSON(String[] groupBy,String resultData,Map<String,String> metrics,Map<String,Boolean> validatedData,ResponseParamDTO<Map<String,Object>> responseParamDTO,int limit);
+	
 	List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys);
 
 	List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey);

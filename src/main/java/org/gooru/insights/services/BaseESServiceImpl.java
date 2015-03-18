@@ -267,7 +267,8 @@ public class BaseESServiceImpl implements BaseESService {
 
 		} else if(validatedData.get(Hasdatas.HAS_RANGE.check()) && validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
 			searchRequestBuilder.setNoFields();
-			buildRangeBuckets(indices,requestParamsDTO,searchRequestBuilder,metricsName);
+			buildRangeBuckets(indices,requestParamsDTO,searchRequestBuilder,metricsName,validatedData);
+			hasAggregate = true;
 		} else if (validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
 
 			searchRequestBuilder.setNoFields();
@@ -319,7 +320,7 @@ public class BaseESServiceImpl implements BaseESService {
 				}
 			}
 			String groupBy[] = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
-			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(groupBy, result, metricsName, validatedData.get(Hasdatas.HAS_FILTER.check()),responseParamDTO,limit);
+			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(groupBy, result, metricsName, validatedData,responseParamDTO,limit);
 			
 			if(!validatedData.get(Hasdatas.HAS_GRANULARITY.check())){
 				queryResult = businessLogicService.customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
@@ -415,8 +416,9 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 
-	private void buildRangeBuckets(String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName) {
+	private void buildRangeBuckets(String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder,Map<String,String> metricsName,Map<String, Boolean> validatedData) {
 		try {
+			
 			String fieldName = businessLogicService.esFields(index, requestParamsDTO.getGroupBy());
 			RangeBuilder rangeAggregation = new RangeBuilder(requestParamsDTO.getGroupBy()).field(fieldName);
 				for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
@@ -429,7 +431,14 @@ public class BaseESServiceImpl implements BaseESService {
 					}
 				}
 				rangeBucketAggregation(index, requestParamsDTO, rangeAggregation, metricsName);
-				searchRequestBuilder.addAggregation(rangeAggregation);
+				FilterAggregationBuilder filterBuilder = null;
+				if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+					filterBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter());
+					filterBuilder.subAggregation(rangeAggregation);
+					searchRequestBuilder.addAggregation(filterBuilder);
+				} else {
+				    searchRequestBuilder.addAggregation(rangeAggregation);
+				}
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.RANGE_BUCKET )+e);
 		}
