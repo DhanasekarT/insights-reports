@@ -6,7 +6,7 @@
 	<artifactId>insights-app</artifactId>
 	<packaging>war</packaging>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>reports-api${env}</name>
+	<name>reports-api</name>
 	<url>http://maven.apache.org</url>
 	<build>
 		<directory>${my.build.directory}</directory>
@@ -33,7 +33,7 @@
 				<version>2.0.2</version>
 				<configuration>
 					<webappDirectory>${CATALINA_HOME}/webapps/reports-api</webappDirectory>
-					<warName>insights-app</warName>
+					<warName>reports-api</warName>
 					<dependentWarExcludes>
 						**/jdbc.properties,**/hibernate.cfg.xml,**/sql-map-config.xml,**/web.xml,WEB-INF/classes/META-INF/**
 					</dependentWarExcludes>
