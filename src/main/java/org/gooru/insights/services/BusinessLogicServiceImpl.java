@@ -555,6 +555,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			newJson.remove(APIConstants.FormulaFields.TO.getField());
 			newJson.remove(APIConstants.FormulaFields.FROM_AS_STRING.getField());
 			newJson.remove(APIConstants.FormulaFields.TO_AS_STRING.getField());
+			newJson.remove(APIConstants.FormulaFields.KEY.getField());
+			newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
 			
 		} else {
 		newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
@@ -582,6 +584,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				newJson.remove(APIConstants.FormulaFields.TO.getField());
 				newJson.remove(APIConstants.FormulaFields.FROM_AS_STRING.getField());
 				newJson.remove(APIConstants.FormulaFields.TO_AS_STRING.getField());
+				newJson.remove(APIConstants.FormulaFields.KEY.getField());
+				newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
 			} else {
 				newJson.remove(groupBy[counter + 1]);
 				newJson.remove(APIConstants.FormulaFields.DOC_COUNT.getField());
