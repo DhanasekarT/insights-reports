@@ -100,7 +100,7 @@ public class BaseESServiceImpl implements BaseESService {
 			groupConcat(dataList, resultList, usedFilter);
 		}
 		
-		if(checkPoint.get(Hasdatas.HAS_GROUPBY.check()) && checkPoint.get(Hasdatas.HAS_GRANULARITY.check())){
+		if(checkPoint.get(Hasdatas.HAS_GROUPBY.check()) && (checkPoint.get(Hasdatas.HAS_GRANULARITY.check()) || checkPoint.get(Hasdatas.HAS_RANGE.check()))){
 			String groupBy[] = requestParamsDTO.getGroupBy().split(",");
 			dataList = businessLogicService.formatAggregateKeyValueJson(dataList, groupBy[groupBy.length-1]);
 			dataList = businessLogicService.aggregatePaginate(requestParamsDTO.getPagination(), dataList, checkPoint);		
