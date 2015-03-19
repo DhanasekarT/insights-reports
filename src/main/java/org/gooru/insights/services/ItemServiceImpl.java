@@ -332,8 +332,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
 			//generateReportFile(reportType, resultSet, errorMap,fileName,true);
-			sessionzationofEvent(reportType, resultSet, userMap, dataMap, errorMap, resultFileName, true);
 			int totalRows = (Integer) dataMap.get("totalRows");
+			if(totalRows > 0){
+				sessionzationofEvent(reportType, resultSet, userMap, dataMap, errorMap, resultFileName, true);
+			}
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
@@ -362,54 +364,56 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		}
 	}
 
-	public void sessionzationofEvent(String reportType, JSONArray activityArray,Map<String, Object> userMap,Map<String, Object> dataMap, Map<Integer, String> errorMap,String fileName,boolean isNewFile) throws NumberFormatException, JSONException{
-		
+	public void sessionzationofEvent(String reportType, JSONArray activityArray,Map<String, Object> userMap,Map<String, Object> dataMap, Map<Integer, String> errorMap,String fileName,boolean isNewFile) {
+		try {
 
-		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,"event-sessionzation");
-		
-		if(val == null){
-			errorMap.put(400, E1018);
-		}
-		
-		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
-		
-		RequestParamsDTO systemRequestParamsDTO = null;
-		
-		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
-				
-		for (int index = 0; index < activityArray.length(); index++) {
-			JSONObject activityJsonObject = activityArray.getJSONObject(index);
-			for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
-				List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
-				RequestParamsFilterFieldsDTO systemfieldsDetails = null;
-				systemfieldsDetails = new RequestParamsFilterFieldsDTO();
-				systemfieldsDetails.setFieldName("sessionToken");
-				systemfieldsDetails.setOperator("in");
-				systemfieldsDetails.setValueType("String");
-				systemfieldsDetails.setType("selector");
-				systemfieldsDetails.setValue(activityJsonObject.get("sessionToken").toString());
-				systemFields.add(systemfieldsDetails);
-				systemFieldsDTO.setFields(systemFields);
+			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, "event-sessionzation");
+
+			if (val == null) {
+				errorMap.put(400, E1018);
 			}
-			systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf("" + activityJsonObject.get("limit")));
 
-			serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+			ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
 
-			String datas = serializer.deepSerialize(systemRequestParamsDTO);
+			RequestParamsDTO systemRequestParamsDTO = null;
 
-			System.out.print("\n newObject : " + datas);
+			systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 
-			JSONArray resultSet = null;
-			
-			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			generateReportFile(reportType, resultSet, errorMap,fileName,isNewFile);
-			
-			if(isNewFile){
-				isNewFile = false;
+			for (int index = 0; index < activityArray.length(); index++) {
+				JSONObject activityJsonObject = activityArray.getJSONObject(index);
+				for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
+					List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
+					RequestParamsFilterFieldsDTO systemfieldsDetails = null;
+					systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+					systemfieldsDetails.setFieldName("sessionToken");
+					systemfieldsDetails.setOperator("in");
+					systemfieldsDetails.setValueType("String");
+					systemfieldsDetails.setType("selector");
+					systemfieldsDetails.setValue(activityJsonObject.get("sessionToken").toString());
+					systemFields.add(systemfieldsDetails);
+					systemFieldsDTO.setFields(systemFields);
+				}
+				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf("" + activityJsonObject.get("eventCount")));
+
+				serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+
+				String datas = serializer.deepSerialize(systemRequestParamsDTO);
+
+				System.out.print("\n session - newObject : " + datas);
+
+				JSONArray resultSet = null;
+
+				resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+				generateReportFile(reportType, resultSet, errorMap, fileName, isNewFile);
+				System.out.print("isNewFile:" + isNewFile);
+				if (isNewFile) {
+					isNewFile = false;
+				}
+
 			}
-			
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-
 	}
 	
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
