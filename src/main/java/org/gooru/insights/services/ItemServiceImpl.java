@@ -331,7 +331,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		if (columns.getStringValue("query", null) != null) {
 			try {
 			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			generateReportFile(reportType, resultSet, dataMap, errorMap,fileName,true);
+			//generateReportFile(reportType, resultSet, errorMap,fileName,true);
+			sessionzationofEvent(reportType, resultSet, userMap, dataMap, errorMap, resultFileName, true);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
@@ -341,7 +342,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
 						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
 						
-						generateReportFile(reportType, array, dataMap, errorMap,fileName,false);
+						//generateReportFile(reportType, array, errorMap,fileName,false);
+						sessionzationofEvent(reportType, array, userMap, dataMap, errorMap, resultFileName, false);
+						
 						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
@@ -359,6 +362,56 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		}
 	}
 
+	public void sessionzationofEvent(String reportType, JSONArray activityArray,Map<String, Object> userMap,Map<String, Object> dataMap, Map<Integer, String> errorMap,String fileName,boolean isNewFile) throws NumberFormatException, JSONException{
+		
+
+		Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS,"event-sessionzation");
+		
+		if(val == null){
+			errorMap.put(400, E1018);
+		}
+		
+		ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		
+		RequestParamsDTO systemRequestParamsDTO = null;
+		
+		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+				
+		for (int index = 0; index < activityArray.length(); index++) {
+			JSONObject activityJsonObject = activityArray.getJSONObject(index);
+			for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
+				List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
+				RequestParamsFilterFieldsDTO systemfieldsDetails = null;
+				systemfieldsDetails = new RequestParamsFilterFieldsDTO();
+				systemfieldsDetails.setFieldName("sessionToken");
+				systemfieldsDetails.setOperator("in");
+				systemfieldsDetails.setValueType("String");
+				systemfieldsDetails.setType("selector");
+				systemfieldsDetails.setValue(activityJsonObject.get("sessionToken").toString());
+				systemFields.add(systemfieldsDetails);
+				systemFieldsDTO.setFields(systemFields);
+			}
+			systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf("" + activityJsonObject.get("limit")));
+
+			serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+
+			String datas = serializer.deepSerialize(systemRequestParamsDTO);
+
+			System.out.print("\n newObject : " + datas);
+
+			JSONArray resultSet = null;
+			
+			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+			generateReportFile(reportType, resultSet, errorMap,fileName,isNewFile);
+			
+			if(isNewFile){
+				isNewFile = false;
+			}
+			
+		}
+
+	}
+	
 	public JSONArray getPartyReport(HttpServletRequest request,String reportType, Map<String, Object> dataMap, Map<String, Object> userMap, Map<Integer, String> errorMap) {
 		RequestParamsDTO systemRequestParamsDTO = null;
 		boolean isMerged = false;
@@ -425,7 +478,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public String generateReportFile(String reportType, JSONArray activityArray, Map<String, Object> dataMap, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
+	public String generateReportFile(String reportType, JSONArray activityArray, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
 		try {
 			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
