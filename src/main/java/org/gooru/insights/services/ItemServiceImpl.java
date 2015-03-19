@@ -1,6 +1,5 @@
 package org.gooru.insights.services;
 
-import java.net.InetAddress;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
-import org.gooru.insights.models.ServerLocation;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -814,13 +812,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									/*ServerLocation location = geoLocationService.getLocation(userIp);
 									stateCode = location.getRegion().split("[\\(\\)]")[0];
 									countryCode = location.getCountryCode().split("[\\(\\)]")[0];*/
-									InetAddress inetAddress = InetAddress.getByName(userIp);
-									hostName = inetAddress.getCanonicalHostName();
-									
+									hostName = getHostName(userIp);
+									if (!hostName.trim().equalsIgnoreCase("UNRES") && !hostName.trim().equalsIgnoreCase(userIp.trim())) {
+										String[] strArray = hostName.split("\\.");
+										hostName = strArray[strArray.length - 2] + "." + strArray[strArray.length - 1];
+									}
 									//activityAsMap.put("userIp", userIp);
 								} catch (Exception e) {
-									e.printStackTrace();
 									hostName = "UNRES";
+									e.printStackTrace();
 									/*stateCode = "UNRES";
 									countryCode = "UNRES";*/
 								}
@@ -830,7 +830,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								/*stateCode = "UNRES";
 								countryCode = "UNRES";*/
 							}
-							activityAsMap.put("ip", hostName != null && !hostName.equalsIgnoreCase(userIp) ? hostName : "UNRES");
+							activityAsMap.put("ip", (hostName != null && !hostName.trim().equalsIgnoreCase(userIp.trim()) && !hostName.trim().equalsIgnoreCase("UNRES")) ? hostName : "UNRES");
 							//activityAsMap.put("state_code", stateCode!= null ? stateCode : "NA");
 							//activityAsMap.put("country_code", countryCode != null ? countryCode : "NA");
 							
@@ -840,6 +840,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							Map<String, Object> correctMap = new HashMap<String, Object>(4);
 							Map<String, Object> correctMapObject = new HashMap<String, Object>(1);
 							Map<String, Object> eventAsMap = new HashMap<String, Object>();
+							Map<String, Object> submissionAsMap = new HashMap<String, Object>();
+							Map<String, Object> submissionDetailAsMap = new HashMap<String, Object>();
 							if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
 									|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
 									&& activityJsonObject.get("eventName").toString().endsWith("play")) {
@@ -882,6 +884,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										correctMap.put("correctness", resultString);
 										correctMap.put("hint", hint);
 										correctMap.put("hint_mode", hintMode);
+										
+										submissionDetailAsMap.put("correct", resultString.equalsIgnoreCase("correct") ? Boolean.valueOf("true") : Boolean.valueOf("false"));
 										
 										if (!correctMap.isEmpty()) {
 											correctMapObject.put(id, correctMap);
@@ -993,6 +997,65 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
 		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
+	}
+	
+	private String getHostName(final String ip) {
+		 String retVal = null;
+		   final String[] bytes = ip.split("\\.");
+		   if (bytes.length == 4)
+		   {
+		      try
+		      {
+		         final java.util.Hashtable<String, String> env = new java.util.Hashtable<String, String>();
+		         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+		         final javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
+		         final String reverseDnsDomain = bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0] + ".in-addr.arpa";
+		         final javax.naming.directory.Attributes attrs = ctx.getAttributes(reverseDnsDomain, new String[]
+		         {
+		            "PTR",
+		         });
+		         for (final javax.naming.NamingEnumeration<? extends javax.naming.directory.Attribute> ae = attrs.getAll(); ae.hasMoreElements();)
+		         {
+		            final javax.naming.directory.Attribute attr = ae.next();
+		            final String attrId = attr.getID();
+		            for (final java.util.Enumeration<?> vals = attr.getAll(); vals.hasMoreElements();)
+		            {
+		               String value = vals.nextElement().toString();
+		               // System.out.println(attrId + ": " + value);
+
+		               if ("PTR".equals(attrId))
+		               {
+		                  final int len = value.length();
+		                  if (value.charAt(len - 1) == '.')
+		                  {
+		                     // Strip out trailing period
+		                     value = value.substring(0, len - 1);
+		                  }
+		                  retVal = value;
+		               }
+		            }
+		         }
+		         ctx.close();
+		      }
+		      catch (final javax.naming.NamingException e)
+		      {
+		         // No reverse DNS that we could find, try with InetAddress
+		         System.out.print(""); // NO-OP
+		      }
+		   }
+
+		   if (null == retVal)
+		   {
+		      try
+		      {
+		         retVal = java.net.InetAddress.getByName(ip).getCanonicalHostName();
+		      }
+		      catch (final java.net.UnknownHostException e1)
+		      {
+		         retVal = "UNRES";
+		      }
+		   }
+		   return retVal;
 	}
 	
 }
