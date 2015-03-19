@@ -58,6 +58,9 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	@Autowired
 	private ValidateUserPermissionService validateUserPermissionService;
 	
+	@Autowired
+	private BusinessLogicService businessLogicService;
+	
 	public RequestParamsDTO buildRequestParameters(String data) {
 		try {
 			return data != null ? deserialize(data, RequestParamsDTO.class) : null;
@@ -556,7 +559,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
 				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
-			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
+//			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
+			return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
 		}
 		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
 			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
