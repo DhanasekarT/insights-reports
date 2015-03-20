@@ -7,7 +7,7 @@
   <session-factory>
   	<!-- We're using MySQL database so the dialect needs to MySQL as well-->
 <!--    <property name="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</property>-->
-	<property name="hibernate.dialect">com.mysql.jdbc.Driver</property>
+	<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
     <!-- Enable this to see the SQL statements in the logs-->
     	<property name="show_sql">true</property>
     <!-- This will drop our existing database and re-create a new one.

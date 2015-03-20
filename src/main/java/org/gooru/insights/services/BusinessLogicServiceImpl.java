@@ -1340,7 +1340,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			return esFields.toString();
 		}
 		
-		@Autowired
+		@Override
 		public void generateActorProperty(JSONObject activityJsonObject, Map<String, Object> actorAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			actorAsMap.put("objectType", "Agent");
 			if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
@@ -1363,8 +1363,8 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}*/
 			
 		}
-
-		@Autowired
+		
+		@Override
 		public void generateVerbProperty(JSONObject activityJsonObject, Map<String, Object> verbAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String verb = null;
 			String eventName = activityJsonObject.get("eventName").toString();
@@ -1429,7 +1429,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 
 		}
 		
-		@Autowired
+		@Override
 		public void generateObjectProperty(JSONObject activityJsonObject, Map<String, Object> objectAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			Map<String, Object> definitionAsMap = new HashMap<String, Object>(4);
 			Map<String, Object> nameAsMap = new HashMap<String, Object>(1);
@@ -1498,7 +1498,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}
 		}
 		
-		@Autowired
+		@Override
 		public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			List<Map<String, Object>> parentList = new ArrayList<Map<String, Object>>();
 			Map<String, Object> parentAsMap = new HashMap<String, Object>(2);
@@ -1530,7 +1530,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			
 		}
 
-		@Autowired
+		@Override
 		public void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception {
 			String eventName = activityJsonObject.get("eventName").toString();
 			if (eventName.toString().endsWith("play")) {
@@ -1609,7 +1609,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService,ESConstant
 			}
 		}
 		
-		@Autowired
+		@Override
 		public String getHostName(final String ip) {
 			 String retVal = null;
 			   final String[] bytes = ip.split("\\.");

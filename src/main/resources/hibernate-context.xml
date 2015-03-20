@@ -27,7 +27,7 @@
 		
 	<bean id="gooruSlaveDataSource" class="org.apache.commons.dbcp.BasicDataSource"
 		destroy-method="close">
-		<property name="driverClassName" value="${hibernate.connection.driver_class}" />
+		<property name="driverClassName" value="${gooru.hibernate.connection.driver_class}" />
 		<property name="url" value="${gooru.hibernate.connection.url}" />
 		<property name="username" value="${gooru.hibernate.connection.username}" />
 		<property name="password" value="${gooru.hibernate.connection.password}" />
