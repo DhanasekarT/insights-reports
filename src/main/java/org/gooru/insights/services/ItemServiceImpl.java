@@ -938,6 +938,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										String answerGooruOid = null;
 										String questionType = null;	
 										String userAnsweredText = null;
+										Map<String, String> rawAnswerAsMap = new HashMap<String, String>();
+										Map<String, String> userAnswerAsMap = new HashMap<String, String>();
 										if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
 											questionType = activityJsonObject.get("questionType").toString();
 										}
@@ -946,7 +948,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 												if(object != null && object.length > 0) {
 													answerText = object[1].toString();
 												}
-												eventAsMap.put("answers", new HashMap<String, String>().put(id, answerText));
+												rawAnswerAsMap.put(id, answerText);
+												eventAsMap.put("answers", rawAnswerAsMap);
 												//System.out.println("answerText >" + baseRepository.getAnswerByQuestionId(id));
 										}
 										if (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
@@ -977,7 +980,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 														userAnsweredText = answer.get("text").toString();
 													}
 													submissionDetailAsMap.put("answer", userAnsweredText);
-													stateDetailAsMap.put("student_answers", new HashMap<String, Object>().put(id, userAnsweredText));
+													userAnswerAsMap.put(id, userAnsweredText);
+													stateDetailAsMap.put("student_answers", userAnswerAsMap);
 												}
 											}
 										} else if (score >= 1) {
@@ -1089,6 +1093,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 								}
 							}
+
+							if (eventAsMap.isEmpty()) {
+								eventAsMap.put("id", id);
+							}
+							
 							if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().contains("comment"))
 									&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
 								eventAsMap.put("response", activityJsonObject.get("text"));
@@ -1119,10 +1128,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								activityAsMap.put("meta", objectMapper.writeValueAsString(metaAsMap));
 							} else {
 								activityAsMap.put("meta", "NA");
-							}
-
-							if (eventAsMap.isEmpty()) {
-								eventAsMap.put("id", id);
 							}
 							
 							if(!eventAsMap.isEmpty()) {
