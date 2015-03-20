@@ -778,6 +778,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 								try {
 									secsToNext = (formatter.parse(nextEventTime).getTime() - formatter.parse(currentEventTime).getTime()) / 1000;
+									if(secsToNext < 0) {
+										secsToNext = 0L;
+									}
 								} catch (ParseException e) {
 									e.printStackTrace();
 								}
@@ -836,6 +839,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								}
 							} else if(verb.matches("loggedIn|loggedOut")) {
 								typeName = "application";
+							} else if(activityJsonObject.get("eventId").toString().equalsIgnoreCase("CA6F9EB6-A537-47CA-88B9-BCC7F02A0A05")){
+								typeName = "video/youtube";
 							} else {
 								typeName = "NA";
 							}
@@ -911,7 +916,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							Map<String, Object> submissionAsMap = new HashMap<String, Object>();
 							Map<String, Object> submissionDetailAsMap = new HashMap<String, Object>();
 							Map<String, Object> stateAsMap = new HashMap<String, Object>();
-							Map<String, Object> stateDetailAsMap = new HashMap<String, Object>();
 
 							if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
 									|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
@@ -962,7 +966,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 												}
 												score = attemptStatus[recentAttempt];
 											}
-											if (!activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString()) && !questionType.equalsIgnoreCase("MA")) {
+											if (attemptCount > 0 && !activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString()) && !questionType.equalsIgnoreCase("MA")) {
 												Map<String, Object> attemptMap = new HashMap<String, Object>();
 												String answerObject = activityJsonObject.get("answerObject").toString();
 												ObjectMapper mapper = new ObjectMapper();
@@ -972,16 +976,20 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 												} catch (Exception e) {
 													e.printStackTrace();
 												}
-												List<Map<String, Object>> answerList = new ArrayList<Map<String, Object>>();
-												answerList = (List<Map<String, Object>>) attemptMap.get("attempt"+attemptCount);
-												for (Map<String, Object> answer : answerList) {
-													//System.out.println(answer.get("text"));
-													if(answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
-														userAnsweredText = answer.get("text").toString();
-													}
-													submissionDetailAsMap.put("answer", userAnsweredText);
-													userAnswerAsMap.put(id, userAnsweredText);
-													stateDetailAsMap.put("student_answers", userAnswerAsMap);
+												if (!attemptMap.isEmpty()) {
+													List<Map<String, Object>> answerList = new ArrayList<Map<String, Object>>();
+													answerList = (List<Map<String, Object>>) attemptMap.get("attempt" + attemptCount);
+														if (answerList.size() > 0) {
+															for (Map<String, Object> answer : answerList) {
+																// System.out.println(answer.get("text"));
+																if (answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
+																	userAnsweredText = answer.get("text").toString();
+																}
+																submissionDetailAsMap.put("answer", userAnsweredText);
+																userAnswerAsMap.put(id, userAnsweredText);
+																stateAsMap.put("student_answers", userAnswerAsMap);
+															}
+														}
 												}
 											}
 										} else if (score >= 1) {
@@ -989,14 +997,15 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										}
 										resultString = score > 0 ? "correct" : "incorrect";
 										
-										if (!activityJsonObject.isNull("hints") && StringUtils.isNotBlank(activityJsonObject.get("hints").toString()) && !activityJsonObject.get("hints").toString().equalsIgnoreCase("{}")) {
+										/*if (!activityJsonObject.isNull("hints") && StringUtils.isNotBlank(activityJsonObject.get("hints").toString()) && !activityJsonObject.get("hints").toString().equalsIgnoreCase("{}")) {
 											hint = activityJsonObject.get("hints").toString();
 											hintMode = "on_request";
 										} else {
 											hint = null;
 											hintMode = "None";
-										}
-										
+										}*/
+										hint = null;
+										hintMode = "None";
 										correctMap.put("correctness", resultString);
 										correctMap.put("hint", hint);
 										correctMap.put("hint_mode", hintMode);
@@ -1038,8 +1047,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										
 										//State Property
 										//TODO user's answer
-										stateDetailAsMap.put("seed", null);
-										stateDetailAsMap.put("done", "true");
+										stateAsMap.put("seed", null);
+										stateAsMap.put("done", "true");
 
 										if (!correctMap.isEmpty()) {
 											correctMapObject.put(id, correctMap);
@@ -1054,7 +1063,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										rawScoreAsMap.put("max", 1);
 										if (!correctMapObject.isEmpty()) {
 											eventAsMap.put("correct_map", correctMapObject);
-											stateDetailAsMap.put("correct_map", correctMapObject);
+											stateAsMap.put("correct_map", correctMapObject);
 										}
 										
 									}
@@ -1081,14 +1090,14 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString())
 												&& activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
 											metaAsMap.put("completion", Boolean.valueOf("true"));
-											stateDetailAsMap.put("done", "true");
+											stateAsMap.put("done", "true");
 										} else {
 											metaAsMap.put("completion", Boolean.valueOf("false"));
-											stateDetailAsMap.put("done", "false");
+											stateAsMap.put("done", "false");
 										}
 									}
-									if(!stateDetailAsMap.isEmpty()) {
-										eventAsMap.put("state", stateDetailAsMap);
+									if(!stateAsMap.isEmpty()) {
+										eventAsMap.put("state", stateAsMap);
 									}
 
 								}
