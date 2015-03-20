@@ -68,4 +68,6 @@ public interface BusinessLogicService {
 	public void generateContextProperty(JSONObject activityJsonObject, Map<String, Object> contextAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
 
 	void generateResultProperty(JSONObject activityJsonObject, Map<String, Object> resultAsMap, Map<Integer, String> errorAsMap) throws JSONException, Exception;
+
+	public String getHostName(final String ip);
 }

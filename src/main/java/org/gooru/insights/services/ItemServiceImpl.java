@@ -16,11 +16,14 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.columnFamilies;
 import org.gooru.insights.constants.CassandraConstants.keyspaces;
+import org.gooru.insights.constants.DataUtils;
 import org.gooru.insights.constants.ErrorCodes;
 import org.gooru.insights.constants.TypeConverter;
+import org.gooru.insights.dao.BaseRepository;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
@@ -70,9 +73,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 	@Autowired
 	GeoLocationService geoLocationService;
 	
+	@Autowired
+	BaseRepository baseRepository;
+	
 	JSONSerializer serializer = new JSONSerializer();
 
-	private int EXPORT_ROW_LIMIT = 100;
+	private int EXPORT_ROW_LIMIT = 50;
 
 	 private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
 	 
@@ -334,7 +340,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			//generateReportFile(reportType, resultSet, errorMap,fileName,true);
 			int totalRows = (Integer) dataMap.get("totalRows");
 			if(totalRows > 0){
-				sessionzationofEvent(reportType, resultSet, userMap, dataMap, errorMap, resultFileName, true);
+				sessionizeEvent(reportType, resultSet, userMap, dataMap, errorMap, fileName, true);
 			}
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
@@ -345,7 +351,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
 						
 						//generateReportFile(reportType, array, errorMap,fileName,false);
-						sessionzationofEvent(reportType, array, userMap, dataMap, errorMap, resultFileName, false);
+						sessionizeEvent(reportType, array, userMap, dataMap, errorMap, fileName, false);
 						
 						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
@@ -364,7 +370,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		}
 	}
 
-	public void sessionzationofEvent(String reportType, JSONArray activityArray,Map<String, Object> userMap,Map<String, Object> dataMap, Map<Integer, String> errorMap,String fileName,boolean isNewFile) {
+	public void sessionizeEvent(String reportType, JSONArray activityArray,Map<String, Object> userMap,Map<String, Object> dataMap, Map<Integer, String> errorMap,String fileName,boolean isNewFile) {
 		try {
 
 			Column<String> val = baseCassandraService.readColumnValue(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), DI_REPORTS, "event-sessionzation");
@@ -374,12 +380,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			}
 
 			ColumnList<String> columns = baseCassandraService.read(keyspaces.INSIGHTS.keyspace(), columnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
-
 			RequestParamsDTO systemRequestParamsDTO = null;
-
 			systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 
 			for (int index = 0; index < activityArray.length(); index++) {
+				List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
 				for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
 					List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
@@ -404,7 +409,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				JSONArray resultSet = null;
 
 				resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-				generateReportFile(reportType, resultSet, errorMap, fileName, isNewFile);
+				generateReportFile(reportType, resultSet, activityList, errorMap, fileName, isNewFile);
+				csvBuilderService.generateCSVReportPipeSeperatedValues(activityList, fileName, isNewFile);
 				System.out.print("isNewFile:" + isNewFile);
 				if (isNewFile) {
 					isNewFile = false;
@@ -482,18 +488,17 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		return new JSONArray();
 	}
-	public String generateReportFile(String reportType, JSONArray activityArray, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
+	public String generateReportFile(String reportType, JSONArray activityArray, List<Map<String, Object>> activityList, Map<Integer, String> errorData,String fileName,boolean isNewFile) {
 		try {
-			List<Map<String, Object>> activityList = new ArrayList<Map<String, Object>>();
 			// ReportData is generated here
 			if(reportType.equalsIgnoreCase("xapi")) {
 				getReportDataList(activityArray, activityList, errorData);
 				fileName = csvBuilderService.generateCSVMapReport(activityList, fileName,isNewFile);
 			} else if(reportType.equalsIgnoreCase("xapi-edx-hybrid")) {
 				getXAPIEdxHybridDataList(activityArray, activityList, errorData);
-				fileName = csvBuilderService.generateCSVReportPipeSeperatedValues(activityList, fileName, isNewFile);
+				//fileName = csvBuilderService.generateCSVReportPipeSeperatedValues(activityList, fileName, isNewFile);
 			}
-			return fileName;
+			return null;
 		} catch (Exception e) {
 			errorData.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 			return null;
@@ -778,7 +783,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								}
 							}
 							activityAsMap.put("secs_to_next", secsToNext.longValue());
-
+							if((!activityJsonObject.isNull("course") && StringUtils.isNotBlank(activityJsonObject.get("course").toString())) && activityJsonObject.get("course").toString().contains("20670")) {
 							/* Actor property */
 							String mailId = null;
 							if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
@@ -813,6 +818,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								} else if (!activityJsonObject.isNull("gooru_oid") && StringUtils.isNotBlank(activityJsonObject.get("gooru_oid").toString())) {
 									id = activityJsonObject.get("gooru_oid").toString();
 								}
+							} else if(verb.matches("loggedIn|loggedOut")) {
+								id = "Gooru";
 							}
 							activityAsMap.put("object_name", id);
 							
@@ -827,6 +834,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								} else if (typeName.matches(COLLECTION_TYPES)) {
 									type = "collection";
 								}
+							} else if(verb.matches("loggedIn|loggedOut")) {
+								typeName = "application";
 							} else {
 								typeName = "NA";
 							}
@@ -850,6 +859,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							/* page property */
 							if (type != null) {
 								activityAsMap.put("page", "http://www.goorulearning.org/#" + type + "-play&id=" + id + "&pn=" + type);
+							} else if(verb.matches("loggedIn|loggedOut")){
+								activityAsMap.put("page", "http://www.goorulearning.org");
 							} else {
 								activityAsMap.put("page", "NA");
 							}
@@ -869,7 +880,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									/*ServerLocation location = geoLocationService.getLocation(userIp);
 									stateCode = location.getRegion().split("[\\(\\)]")[0];
 									countryCode = location.getCountryCode().split("[\\(\\)]")[0];*/
-									hostName = getHostName(userIp);
+									hostName = businessLogicService.getHostName(userIp);
 									if (!hostName.trim().equalsIgnoreCase("UNRES") && !hostName.trim().equalsIgnoreCase(userIp.trim())) {
 										String[] strArray = hostName.split("\\.");
 										hostName = strArray[strArray.length - 2] + "." + strArray[strArray.length - 1];
@@ -899,6 +910,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							Map<String, Object> eventAsMap = new HashMap<String, Object>();
 							Map<String, Object> submissionAsMap = new HashMap<String, Object>();
 							Map<String, Object> submissionDetailAsMap = new HashMap<String, Object>();
+							Map<String, Object> stateAsMap = new HashMap<String, Object>();
+							Map<String, Object> stateDetailAsMap = new HashMap<String, Object>();
+
 							if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
 									|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
 									&& activityJsonObject.get("eventName").toString().endsWith("play")) {
@@ -915,6 +929,26 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 									if ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
 										eventType = "problem_check";
+										String questionText = null;
+										if (!activityJsonObject.isNull("title") && StringUtils.isNotBlank(activityJsonObject.get("title").toString())) {
+											questionText = activityJsonObject.get("title").toString();
+											submissionDetailAsMap.put("question", StringUtils.isNotBlank(questionText) ? questionText : null);
+										}
+										String answerText = null;
+										String answerGooruOid = null;
+										String questionType = null;	
+										String userAnsweredText = null;
+										if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
+											questionType = activityJsonObject.get("questionType").toString();
+										}
+										if (!questionType.equalsIgnoreCase("MA")) {
+												Object[] object = baseRepository.getAnswerByQuestionId(id);
+												if(object != null && object.length > 0) {
+													answerText = object[1].toString();
+												}
+												eventAsMap.put("answers", new HashMap<String, String>().put(id, answerText));
+												//System.out.println("answerText >" + baseRepository.getAnswerByQuestionId(id));
+										}
 										if (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString())) {
 											int[] attemptStatus = TypeConverter.stringToIntArray(activityJsonObject.get("attemptStatus").toString());
 											attemptCount = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
@@ -924,6 +958,27 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 													recentAttempt = recentAttempt - 1;
 												}
 												score = attemptStatus[recentAttempt];
+											}
+											if (!activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString()) && !questionType.equalsIgnoreCase("MA")) {
+												Map<String, Object> attemptMap = new HashMap<String, Object>();
+												String answerObject = activityJsonObject.get("answerObject").toString();
+												ObjectMapper mapper = new ObjectMapper();
+												try {
+													attemptMap = mapper.readValue(answerObject, new TypeReference<HashMap<String, Object>>() {
+													});
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+												List<Map<String, Object>> answerList = new ArrayList<Map<String, Object>>();
+												answerList = (List<Map<String, Object>>) attemptMap.get("attempt"+attemptCount);
+												for (Map<String, Object> answer : answerList) {
+													//System.out.println(answer.get("text"));
+													if(answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
+														userAnsweredText = answer.get("text").toString();
+													}
+													submissionDetailAsMap.put("answer", userAnsweredText);
+													stateDetailAsMap.put("student_answers", new HashMap<String, Object>().put(id, userAnsweredText));
+												}
 											}
 										} else if (score >= 1) {
 											score = 1;
@@ -941,53 +996,112 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										correctMap.put("correctness", resultString);
 										correctMap.put("hint", hint);
 										correctMap.put("hint_mode", hintMode);
-										
+										correctMap.put("msg", "");
+										correctMap.put("npoints", null);
+										correctMap.put("queuestate", null);
+
+										// Submission Property
 										submissionDetailAsMap.put("correct", resultString.equalsIgnoreCase("correct") ? Boolean.valueOf("true") : Boolean.valueOf("false"));
+										//TODO user's answer
+										String inputType = null;
+										if(questionType.matches("MA|MC")) {
+											inputType = "radiogroup";
+										} else if(questionType.matches("FIB|OE")) {
+											inputType = "textline";
+										} else if(questionType.matches("T/F")) {
+											inputType = "choicegroup";
+										}
+											
+										if(inputType != null) {
+											submissionDetailAsMap.put("input_type", inputType);
+										}
+										String responseType = null;
+										if(questionType.matches("MA|MC|T/F")) {
+											responseType = "choiceresponse";
+										} else if(questionType.matches("FIB|OE")) {
+											responseType = "choiceresponse";
+										}
+										if(responseType != null) {
+											submissionDetailAsMap.put("response_type", responseType);
+										}
+										submissionDetailAsMap.put("variant", "");
+										if(!submissionDetailAsMap.isEmpty()) {
+											submissionAsMap.put(id, submissionDetailAsMap);
+										}
+										if(!submissionAsMap.isEmpty()) {
+											eventAsMap.put("submission", submissionAsMap);
+										}
 										
+										//State Property
+										//TODO user's answer
+										stateDetailAsMap.put("seed", null);
+										stateDetailAsMap.put("done", "true");
+
 										if (!correctMap.isEmpty()) {
 											correctMapObject.put(id, correctMap);
 										}
 										eventAsMap.put("grade", score);
 										eventAsMap.put("max_grade", 1);
-										eventAsMap.put("done", "true");
 										eventAsMap.put("problem_id", id);
 										eventAsMap.put("attempts", attemptCount);
 										eventAsMap.put("success", resultString);
 										activityAsMap.put("result", resultString);
 										rawScoreAsMap.put("min", 0);
 										rawScoreAsMap.put("max", 1);
-									}
-									
-									if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
-											&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0 && eventName.toString().equalsIgnoreCase("collection.play")) {
-										Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount")
-												.toString()) : 0;
-										if (questionCount >= score) {
-											rawScoreAsMap.put("min", 0);
-											rawScoreAsMap.put("max", questionCount);
+										if (!correctMapObject.isEmpty()) {
+											eventAsMap.put("correct_map", correctMapObject);
+											stateDetailAsMap.put("correct_map", correctMapObject);
 										}
+										
 									}
-									if (eventName.toString().equalsIgnoreCase("collection.play")
-											&& (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))) {
-										score = Integer.valueOf(activityJsonObject.get("newScore").toString());
+									if (eventName.toString().equalsIgnoreCase("collection.play")) {
+										if ((!activityJsonObject.isNull("questionCount") && StringUtils.isNotBlank(activityJsonObject.get("questionCount").toString()))
+												&& Integer.valueOf(activityJsonObject.get("questionCount").toString()) != 0) {
+											Integer questionCount = Integer.valueOf(activityJsonObject.get("questionCount").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("questionCount")
+													.toString()) : 0;
+											if (questionCount >= score) {
+												rawScoreAsMap.put("min", 0);
+												rawScoreAsMap.put("max", questionCount);
+											}
+										}
+										if ((!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))) {
+											score = Integer.valueOf(activityJsonObject.get("newScore").toString());
+										}
 									}
 									rawScoreAsMap.put("raw", score);
 									metaAsMap.put("score", rawScoreAsMap);
-									if (eventAsMap.isEmpty()) {
+									if (eventAsMap.isEmpty() && id != null) {
 										eventAsMap.put("id", id);
 									}
 									if (eventName.toString().endsWith("play")) {
 										if (!activityJsonObject.isNull("type") && StringUtils.isNotBlank(activityJsonObject.get("type").toString())
 												&& activityJsonObject.get("type").toString().equalsIgnoreCase("stop")) {
 											metaAsMap.put("completion", Boolean.valueOf("true"));
-											eventAsMap.put("done", "true");
+											stateDetailAsMap.put("done", "true");
 										} else {
 											metaAsMap.put("completion", Boolean.valueOf("false"));
-											eventAsMap.put("done", "false");
+											stateDetailAsMap.put("done", "false");
 										}
+									}
+									if(!stateDetailAsMap.isEmpty()) {
+										eventAsMap.put("state", stateDetailAsMap);
 									}
 
 								}
+							}
+							if ((eventName.toString().equalsIgnoreCase("item.review") || eventName.toString().contains("comment"))
+									&& (!activityJsonObject.isNull("text") && StringUtils.isNotBlank(activityJsonObject.get("text").toString()))) {
+								eventAsMap.put("response", activityJsonObject.get("text"));
+							}
+							if (eventName.toString().equalsIgnoreCase("item.rate")) {
+								if(!activityJsonObject.isNull("rate") && StringUtils.isNotBlank(activityJsonObject.get("rate").toString())) {
+									eventAsMap.put("response", Integer.valueOf(activityJsonObject.get("rate").toString()) > 0 ? Integer.valueOf(activityJsonObject.get("rate").toString()) : 1);
+								} else if (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString())) {
+									eventAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));
+								}
+							}
+							if (eventName.toString().contains("reaction") && (!activityJsonObject.isNull("reactionType") && StringUtils.isNotBlank(activityJsonObject.get("reactionType").toString()))) {
+								eventAsMap.put("response", DataUtils.getReactionAsInt(activityJsonObject.get("reactionType").toString()));
 							}
 							if (!activityJsonObject.isNull("parentGooruId") && StringUtils.isNotBlank(activityJsonObject.get("parentGooruId").toString())) {
 								metaAsMap.put("parent", activityJsonObject.get("parentGooruId").toString());
@@ -1010,9 +1124,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							if (eventAsMap.isEmpty()) {
 								eventAsMap.put("id", id);
 							}
-							if (!correctMapObject.isEmpty()) {
-								eventAsMap.put("correct_map", correctMapObject);
-							}
+							
 							if(!eventAsMap.isEmpty()) {
 								ObjectMapper objectMapper = new ObjectMapper();
 								activityAsMap.put("event", objectMapper.writeValueAsString(eventAsMap));
@@ -1025,7 +1137,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							}
 							
 						}
-					
+						}
 					} catch(Exception e) {
 						e.printStackTrace();
 					}
@@ -1054,65 +1166,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	public Map<String, Object> getUserObjectData(String sessionToken, Map<Integer, String> errorMap) {
 		return baseConnectionService.getUserObjectData(sessionToken, errorMap);
-	}
-	
-	private String getHostName(final String ip) {
-		 String retVal = null;
-		   final String[] bytes = ip.split("\\.");
-		   if (bytes.length == 4)
-		   {
-		      try
-		      {
-		         final java.util.Hashtable<String, String> env = new java.util.Hashtable<String, String>();
-		         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-		         final javax.naming.directory.DirContext ctx = new javax.naming.directory.InitialDirContext(env);
-		         final String reverseDnsDomain = bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0] + ".in-addr.arpa";
-		         final javax.naming.directory.Attributes attrs = ctx.getAttributes(reverseDnsDomain, new String[]
-		         {
-		            "PTR",
-		         });
-		         for (final javax.naming.NamingEnumeration<? extends javax.naming.directory.Attribute> ae = attrs.getAll(); ae.hasMoreElements();)
-		         {
-		            final javax.naming.directory.Attribute attr = ae.next();
-		            final String attrId = attr.getID();
-		            for (final java.util.Enumeration<?> vals = attr.getAll(); vals.hasMoreElements();)
-		            {
-		               String value = vals.nextElement().toString();
-		               // System.out.println(attrId + ": " + value);
-
-		               if ("PTR".equals(attrId))
-		               {
-		                  final int len = value.length();
-		                  if (value.charAt(len - 1) == '.')
-		                  {
-		                     // Strip out trailing period
-		                     value = value.substring(0, len - 1);
-		                  }
-		                  retVal = value;
-		               }
-		            }
-		         }
-		         ctx.close();
-		      }
-		      catch (final javax.naming.NamingException e)
-		      {
-		         // No reverse DNS that we could find, try with InetAddress
-		         System.out.print(""); // NO-OP
-		      }
-		   }
-
-		   if (null == retVal)
-		   {
-		      try
-		      {
-		         retVal = java.net.InetAddress.getByName(ip).getCanonicalHostName();
-		      }
-		      catch (final java.net.UnknownHostException e1)
-		      {
-		         retVal = "UNRES";
-		      }
-		   }
-		   return retVal;
 	}
 	
 }
