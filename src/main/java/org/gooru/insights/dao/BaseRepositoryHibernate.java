@@ -19,13 +19,13 @@ public class BaseRepositoryHibernate implements BaseRepository {
 
 	@Override
 	public Object[] getAnswerByQuestionId(String questionId) {
-		String sql = "select c.gooru_oid as answer_gooru_oid, answer_text from content c inner join assessment_answer a on a.question_id = c.content_id where is_correct = 1 and c.gooru_oid ='" + questionId + "' limit 1";
+		String sql = "SELECT c.gooru_oid AS answer_gooru_oid, answer_text FROM content c INNER JOIN assessment_answer a ON a.question_id = c.content_id WHERE is_correct = 1 AND c.gooru_oid ='" + questionId + "' LIMIT 1";
 		return (Object[]) sessionFactory.getCurrentSession().createSQLQuery(sql).list().get(0);
 	}
 	
 	@Override
 	public List<Map<String, String>> getAnswerDataList(String questionId) {
-		String sql = "select c.gooru_oid as answer_gooru_oid, answer_text from content c inner join assessment_answer a on a.question_id = c.content_id where is_correct = 1 and c.gooru_oid ='" + questionId + "' ";
+		String sql = "SELECT c.gooru_oid AS answer_gooru_oid, answer_text FROM content c INNER JOIN assessment_answer a ON a.question_id = c.content_id WHERE is_correct = 1 AND c.gooru_oid ='" + questionId + "' ";
 		SQLQuery result = sessionFactory.getCurrentSession().createSQLQuery(sql);
 		List<Map<String, String>> answerList = new ArrayList<Map<String, String>>();
 		Map<String, String> value = new HashMap<String, String>();
@@ -40,8 +40,14 @@ public class BaseRepositoryHibernate implements BaseRepository {
 	
 	@Override
 	public List<Object[]> getAnswerByAnswerId(String questionId) {
-		String sql = "select c.gooru_oid as answer_gooru_oid, answer_text from content c inner join assessment_answer a on a.answer_id = c.content_id where is_correct = 1 and c.gooru_oid ='" + questionId + "' limit 1";
+		String sql = "SELECT c.gooru_oid AS answer_gooru_oid, answer_text FROM content c INNER JOIN assessment_answer a ON a.answer_id = c.content_id WHERE is_correct = 1 AND c.gooru_oid ='" + questionId + "' limit 1";
 		return sessionFactory.getCurrentSession().createSQLQuery(sql).list();
+	}
+	
+	@Override
+	public String getHintText(long hintId) {
+		String sql = "SELECT hint_text FROM assessment_hint WHERE hint_id =" + hintId;
+		return sessionFactory.getCurrentSession().createSQLQuery(sql).list().get(0).toString();
 	}
 	
 }
