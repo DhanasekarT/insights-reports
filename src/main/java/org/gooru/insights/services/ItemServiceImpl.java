@@ -345,8 +345,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			}
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
-					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
-						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
+					for (int offset = EXPORT_ROW_LIMIT+1; offset <= totalRows;) {
+						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + (offset)));
 						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
 						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
 						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
@@ -354,7 +354,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						//generateReportFile(reportType, array, errorMap,fileName,false);
 						sessionizeEvent(reportType, array, userMap, dataMap, errorMap, fileName, false);
 						
-						offset += EXPORT_ROW_LIMIT;
+						offset += EXPORT_ROW_LIMIT+1;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
@@ -420,7 +420,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					generateReportFile(reportType, resultSet, errorMap, fileName, isNewFile);
 				}
 				if (totalRows > EXPORT_ROW_LIMIT) {
-					for (int offset = EXPORT_ROW_LIMIT; offset <= totalRows;) {
+					for (int offset = EXPORT_ROW_LIMIT+1; offset <= totalRows;) {
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
 						// JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
 						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
@@ -431,7 +431,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						if (isNewFile) {
 							isNewFile = false;
 						}
-						offset += EXPORT_ROW_LIMIT;
+						offset += EXPORT_ROW_LIMIT+1;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
@@ -765,13 +765,13 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			String currentSessionToken = null;
 			String nextSessionToken = null;
 			SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" );
-			Map<String, Object> verbAsMap = new HashMap<String, Object>();
+			Map<String, Object> verbAsMap;
 			Map<String, Object> dataAsMap = new HashMap<String, Object>(12);
 			for (int index = 0; index < activityArray.length(); index++) {
 				try{
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
 				if (!activityJsonObject.isNull("eventId") && StringUtils.isNotBlank(activityJsonObject.get("eventId").toString())) {
-						Map<String, Object> activityAsMap = new HashMap<String, Object>();
+						Map<String, Object> activityAsMap;
 						if (activityJsonObject.get("eventName").toString().matches(XAPI_SUPPORTED_EVENTS)) {
 							
 							String eventName = activityJsonObject.get("eventName").toString();
@@ -801,81 +801,89 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 									nextSessionToken = activityArray.getJSONObject(index+1).get("sessionToken").toString();
 								}
 							}
-							
-							if (!activityJsonObject.isNull("resourceTypeId")
-									&& StringUtils.isNotBlank(activityJsonObject.get("resourceTypeId").toString())
-									&& (Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002)) {
+							String questionType = null;
+							if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
+								questionType = activityJsonObject.get("questionType").toString();
+							}
+							if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
+									&& (!activityJsonObject.isNull("resourceTypeId") && StringUtils.isNotBlank(activityJsonObject.get("resourceTypeId").toString())
+											&& (Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002)) 
+											&& ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))
+													&& (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString()) && Integer
+															.valueOf(activityJsonObject.get("attemptCount").toString()) > 0)
+													&& (!activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString()) 
+															&& !questionType.equalsIgnoreCase("MA")))) {
 								Integer score = 0;
 								Integer attemptCount;
 								String userAnswer = null;
-								String questionType = null;
-								if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
-									questionType = activityJsonObject.get("questionType").toString();
-								}
 								score = Integer.valueOf(activityJsonObject.get("score").toString());
-								if ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))
-										&& (!activityJsonObject.isNull("attemptCount") && StringUtils.isNotBlank(activityJsonObject.get("attemptCount").toString()) && Integer
-												.valueOf(activityJsonObject.get("attemptCount").toString()) > 0)
-										&& (!activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString()) && !questionType.equalsIgnoreCase("MA"))) {
-									attemptCount = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
+								attemptCount = Integer.valueOf(activityJsonObject.get("attemptCount").toString());
 
-									Map<String, Object> attemptMap = new HashMap<String, Object>();
-									String userAnswerJsonString = activityJsonObject.get("answerObject").toString();
-									ObjectMapper mapper = new ObjectMapper();
-									try {
-										attemptMap = mapper.readValue(userAnswerJsonString, new TypeReference<HashMap<String, Object>>() {
-										});
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-									if (!attemptMap.isEmpty()) {
-										for (int attemptIndex = 1; attemptIndex <= attemptCount; attemptIndex++) {
+								Map<String, Object> attemptMap = new HashMap<String, Object>();
+								String userAnswerJsonString = activityJsonObject.get("answerObject").toString();
+								ObjectMapper mapper = new ObjectMapper();
+								try {
+									attemptMap = mapper.readValue(userAnswerJsonString, new TypeReference<HashMap<String, Object>>() {
+									});
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+								if (!attemptMap.isEmpty()) {
+									for (int attemptIndex = 1; attemptIndex <= attemptCount; attemptIndex++) {
 										List<Map<String, Object>> answerList = (List<Map<String, Object>>) attemptMap.get("attempt" + attemptIndex);
-											if (answerList.size() > 0) {
-												for (Map<String, Object> answer : answerList) {
-													if (answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
-														userAnswer = answer.get("text").toString();
-														score = Integer.valueOf(answer.get("status").toString());
-														dataAsMap.put("userAnswer", userAnswer);
-														dataAsMap.put("attemptScore", score);
-														dataAsMap.put("attemptCount", 1);
-														Date date = new Date(Long.valueOf(answer.get("timeStamp").toString()));
-														String currentAttemptEventTime = formatter.format(date);
-														dataAsMap.put("currentAttemptEventTime", currentAttemptEventTime); 
-														if ((attemptIndex + 1) <= attemptCount) {
-															List<Map<String, Object>> nextAnswerList = new ArrayList<Map<String, Object>>();
-															nextAnswerList = (List<Map<String, Object>>) attemptMap.get("attempt" + attemptIndex + 1);
-															for (Map<String, Object> nextAnswer : nextAnswerList) {
-																Date nextDate = new Date(Long.valueOf(nextAnswer.get("timeStamp").toString()));
-																String nextAttemptEventTime = formatter.format(nextDate);
-																String nextAttemptSessionToken = currentSessionToken;
-																dataAsMap.put("nextAttemptEventTime", nextAttemptEventTime); 
-																dataAsMap.put("nextAttemptSessionToken", nextAttemptSessionToken);
-															}
-														}
-													}
+										if (answerList.size() > 0) {
+											for (Map<String, Object> answer : answerList) {
+												if (answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
+													userAnswer = answer.get("text").toString();
+													score = Integer.valueOf(answer.get("status").toString());
+
+													Date date = new Date(Long.valueOf(answer.get("timeStamp").toString()));
+													String currentAttemptEventTime = formatter.format(date);
+													dataAsMap.put("currentAttemptEventTime", currentAttemptEventTime);
+													dataAsMap.put("userAnswer", userAnswer);
+													dataAsMap.put("attemptScore", score);
+													dataAsMap.put("attemptCount", 1);
+
 												}
 											}
-											dataAsMap.put("currentEventTime", currentEventTime);
-											dataAsMap.put("nextEventTime", nextEventTime);
-											dataAsMap.put("currentSessionToken", currentSessionToken);
-											dataAsMap.put("nextSessionToken", nextSessionToken);
-											generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
-											if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
-												activityList.add(activityAsMap);
+											Integer nextAttemptIndex = (attemptIndex + 1);
+											if (nextAttemptIndex <= attemptCount) {
+												List<Map<String, Object>> nextAnswerList = new ArrayList<Map<String, Object>>();
+												nextAnswerList = (List<Map<String, Object>>) attemptMap.get("attempt" + nextAttemptIndex);
+												for (Map<String, Object> nextAnswer : nextAnswerList) {
+													Date nextDate = new Date(Long.valueOf(nextAnswer.get("timeStamp").toString()));
+													String nextAttemptEventTime = formatter.format(nextDate);
+													String nextAttemptSessionToken = currentSessionToken;
+													dataAsMap.put("nextAttemptEventTime", nextAttemptEventTime);
+													dataAsMap.put("nextAttemptSessionToken", nextAttemptSessionToken);
+												}
 											}
+										}
+										dataAsMap.put("attemptActivityId", UUID.randomUUID());
+										dataAsMap.put("currentEventTime", currentEventTime);
+										dataAsMap.put("nextEventTime", nextEventTime);
+										dataAsMap.put("currentSessionToken", currentSessionToken);
+										dataAsMap.put("nextSessionToken", nextSessionToken);
+										activityAsMap = new HashMap<String, Object>();
+										verbAsMap = new HashMap<String, Object>();
+										generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
+										if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
+											activityList.add(activityAsMap);
 										}
 									}
 								}
-							}
-							dataAsMap = new HashMap<String, Object>();
-							dataAsMap.put("currentEventTime", currentEventTime);
-							dataAsMap.put("nextEventTime", nextEventTime);
-							dataAsMap.put("currentSessionToken", currentSessionToken);
-							dataAsMap.put("nextSessionToken", nextSessionToken);
-							generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
-							if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
-								activityList.add(activityAsMap);
+							} else {
+								dataAsMap = new HashMap<String, Object>();
+								dataAsMap.put("currentEventTime", currentEventTime);
+								dataAsMap.put("nextEventTime", nextEventTime);
+								dataAsMap.put("currentSessionToken", currentSessionToken);
+								dataAsMap.put("nextSessionToken", nextSessionToken);
+								activityAsMap = new HashMap<String, Object>();
+								verbAsMap = new HashMap<String, Object>();
+								generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
+								if (!activityAsMap.isEmpty() && !verbAsMap.isEmpty()) {
+									activityList.add(activityAsMap);
+								}
 							}
 						}
 					} 
@@ -893,6 +901,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		System.out.println("Processing Activity..");
 		/* Unique Activity Id */
 		activityAsMap.put("id", activityJsonObject.get("eventId"));
+		if(dataMap.containsKey("attemptActivityId") && dataMap.get("attemptActivityId") != null) {
+			activityAsMap.put("id", dataMap.get("attemptActivityId").toString());
+		}
 		
 		SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" );
 		String currentEventTime = null;
@@ -1109,40 +1120,21 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							}
 							if (attemptCount > 0 && !activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString())
 									&& !questionType.equalsIgnoreCase("MA")) {
-								Map<String, Object> attemptMap = new HashMap<String, Object>();
-								String userAnswerJsonString = activityJsonObject.get("answerObject").toString();
-								ObjectMapper mapper = new ObjectMapper();
-								try {
-									attemptMap = mapper.readValue(userAnswerJsonString, new TypeReference<HashMap<String, Object>>() {
-									});
-								} catch (Exception e) {
-									e.printStackTrace();
+								
+								if(dataMap.containsKey("userAnswer") && dataMap.get("userAnswer") != null) {
+									userAnswer = dataMap.get("userAnswer").toString();
 								}
-								if (!attemptMap.isEmpty()) {
-									List<Map<String, Object>> answerList = new ArrayList<Map<String, Object>>();
-									answerList = (List<Map<String, Object>>) attemptMap.get("attempt" + attemptCount);
-									if (answerList.size() > 0) {
-										for (Map<String, Object> answer : answerList) {
-											// System.out.println(answer.get("text"));
-											
-											if (answer.containsKey("text") && StringUtils.isNotBlank(answer.get("text").toString())) {
-												userAnswer = answer.get("text").toString();
-											}
-											if(dataMap.containsKey("userAnswer") && dataMap.get("userAnswer") != null) {
-												userAnswer = dataMap.get("userAnswer").toString();
-											}
-											if(dataMap.containsKey("attemptScore") && dataMap.get("attemptScore") != null) {
-												score = Integer.valueOf(dataMap.get("attemptScore").toString());
-											}
-											if(dataMap.containsKey("attemptCount") && dataMap.get("attemptCount") != null) {
-												attemptCount = Integer.valueOf(dataMap.get("attemptCount").toString());
-											}
-											submissionDetailAsMap.put("answer", userAnswer);
-											Map<String, String> userAnswerAsMap = new HashMap<String, String>(1);
-											userAnswerAsMap.put(id, userAnswer);
-											stateAsMap.put("student_answers", userAnswerAsMap);
-										}
-									}
+								if(dataMap.containsKey("attemptScore") && dataMap.get("attemptScore") != null) {
+									score = Integer.valueOf(dataMap.get("attemptScore").toString());
+								}
+								if(dataMap.containsKey("attemptCount") && dataMap.get("attemptCount") != null) {
+									attemptCount = Integer.valueOf(dataMap.get("attemptCount").toString());
+								}
+								if(userAnswer != null) {
+								submissionDetailAsMap.put("answer", userAnswer);
+								Map<String, String> userAnswerAsMap = new HashMap<String, String>(1);
+								userAnswerAsMap.put(id, userAnswer);
+								stateAsMap.put("student_answers", userAnswerAsMap);
 								}
 							}
 						} else if (score >= 1) {
