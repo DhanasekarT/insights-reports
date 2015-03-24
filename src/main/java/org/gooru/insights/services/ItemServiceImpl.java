@@ -343,6 +343,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			if(totalRows > 0){
 				sessionizeEvent(reportType, resultSet, userMap, dataMap, errorMap, fileName, true);
 			}
+			
 			System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT+1; offset <= totalRows;) {
@@ -354,7 +355,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						//generateReportFile(reportType, array, errorMap,fileName,false);
 						sessionizeEvent(reportType, array, userMap, dataMap, errorMap, fileName, false);
 						
-						offset += EXPORT_ROW_LIMIT+1;
+						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
@@ -431,7 +432,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						if (isNewFile) {
 							isNewFile = false;
 						}
-						offset += EXPORT_ROW_LIMIT+1;
+						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
@@ -1214,7 +1215,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						stateAsMap.put("seed", null);
 						stateAsMap.put("done", attemptCount >= 1 ? Boolean.valueOf("true") : Boolean.valueOf("false"));
 
-						if (!correctMap.isEmpty()) {
+						if (!correctMap.isEmpty() && attemptCount > 0) {
 							correctMapObject.put(id, correctMap);
 							eventAsMap.put("correct_map", correctMapObject);
 							stateAsMap.put("correct_map", correctMapObject);
@@ -1293,7 +1294,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			if (!activityAsMap.containsKey("result")) {
 				activityAsMap.put("result", "");
 			}
-			activityAsMap.put("event_type", eventType != null ? eventType : "");
+			activityAsMap.put("event_type", eventType != null ? eventType : verb);
 
 			if (!metaAsMap.isEmpty()) {
 				ObjectMapper objectMapper = new ObjectMapper();
