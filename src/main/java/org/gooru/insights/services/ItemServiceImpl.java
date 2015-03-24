@@ -267,10 +267,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		
 		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 		
-		Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
-		systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
-		String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
-		
 		for(RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
 			List<RequestParamsFilterFieldsDTO> systemFields = new ArrayList<RequestParamsFilterFieldsDTO>();
 			for (String key : filtersMap.keySet()) {
@@ -320,7 +316,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				}
 			}
 		}
-				
 
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
 		
@@ -337,36 +332,44 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		String resultFileName = "http://www.goorulearning.org/insights/api/v2/report/"+fileName;
 		if (columns.getStringValue("query", null) != null) {
 			try {
-			resultSet = generateQuery(datas, dataMap, userMap, errorMap);
-			//generateReportFile(reportType, resultSet, errorMap,fileName,true);
-			int totalRows = (Integer) dataMap.get("totalRows");
-			if(totalRows > 0){
-				sessionizeEvent(reportType, resultSet, userMap, dataMap, errorMap, fileName, true);
-			}
-			
-			System.out.print("totalRows : " + totalRows);
+
+				resultSet = generateQuery(datas, dataMap, userMap, errorMap);
+				// generateReportFile(reportType, resultSet, errorMap,fileName,true);
+				int totalRows = (Integer) dataMap.get("totalRows");
+				if (totalRows > 0) {
+					sessionizeEvent(reportType, resultSet, userMap, dataMap, errorMap, fileName, true);
+				}
+				Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+				systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
+				String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
+
+				System.out.print("totalRows : " + totalRows);
 				if (!filtersMap.containsKey("limit") && totalRows > EXPORT_ROW_LIMIT) {
-					for (int offset = EXPORT_ROW_LIMIT+1; offset <= totalRows;) {
+					for (int offset = EXPORT_ROW_LIMIT + 1; offset <= totalRows;) {
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + (offset)));
-						//JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
-						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);						
+						// JSONArray array = generateQuery(serializer.deepSerialize(systemRequestParamsDTO), dataMap, userMap, errorMap);
+						serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+						String paginatedData = serializer.deepSerialize(systemRequestParamsDTO);
+						System.out.print("\n newObject for bucket pagination: " + paginatedData);
+
+						List<Map<String, Object>> resultList = esService.generateQuery(systemRequestParamsDTO, indices, checkPoint, dataMap, errorMap);
 						JSONArray array = businessLogicService.buildAggregateJSON(resultList);
-						
-						//generateReportFile(reportType, array, errorMap,fileName,false);
+
+						// generateReportFile(reportType, array, errorMap,fileName,false);
 						sessionizeEvent(reportType, array, userMap, dataMap, errorMap, fileName, false);
-						
+
 						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
 				}
-			
+
 				if (totalRows > 0) {
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Please download the attachement ", resultFileName);
-				}else{
+				} else {
 					mailService.sendMail(emailId, "xAPI - Formatted report", "Oops!,We don't see any records for you request.");
 				}
-				} catch (Exception e) {
+			} catch (Exception e) {
 					errorMap.put(500, "At this time, we are unable to process your request. Please try again by changing your request or contact developer");
 				}			
 		}
