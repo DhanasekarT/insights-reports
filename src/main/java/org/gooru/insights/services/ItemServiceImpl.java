@@ -389,10 +389,6 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
 			System.out.println("SessionToken count >> " + activityArray.length());
 
-			Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
-			systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
-			String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
-			
 			for (int index = 0; index < activityArray.length(); index++) {
 				JSONObject activityJsonObject = activityArray.getJSONObject(index);
 				for (RequestParamsFilterDetailDTO systemFieldsDTO : systemRequestParamsDTO.getFilter()) {
@@ -423,6 +419,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 				if (totalRows > 0) {
 					generateReportFile(reportType, resultSet, errorMap, fileName, isNewFile);
 				}
+
+				Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
+				systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
+				String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
+				
 				if (totalRows > EXPORT_ROW_LIMIT) {
 					for (int offset = EXPORT_ROW_LIMIT+1; offset <= totalRows;) {
 						systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf("" + offset));
@@ -1134,11 +1135,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								if(dataMap.containsKey("attemptCount") && dataMap.get("attemptCount") != null) {
 									attemptCount = Integer.valueOf(dataMap.get("attemptCount").toString());
 								}
-								if(userAnswer != null) {
-								submissionDetailAsMap.put("answer", userAnswer);
-								Map<String, String> userAnswerAsMap = new HashMap<String, String>(1);
-								userAnswerAsMap.put(id, userAnswer);
-								stateAsMap.put("student_answers", userAnswerAsMap);
+								if (userAnswer != null) {
+									submissionDetailAsMap.put("answer", userAnswer);
+									Map<String, String> userAnswerAsMap = new HashMap<String, String>(1);
+									userAnswerAsMap.put(id, userAnswer);
+									stateAsMap.put("student_answers", userAnswerAsMap);
 								}
 							}
 						} else if (score >= 1) {
@@ -1160,23 +1161,24 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								StringBuffer hintText = new StringBuffer();
 								for (Entry<String, String> hintSet : hintAsMap.entrySet()) {
 									String hintValue = baseRepository.getHintText(Long.valueOf(hintSet.getKey()));
-									if (hintText.length() == 0) {
-										hintText.append(hintValue);
-									} else {
-										hintText.append("~" + hintValue);
+									if (StringUtils.isNotBlank(hintValue)) {
+										if (hintText.length() == 0) {
+											hintText.append(hintValue);
+										} else {
+											hintText.append("~" + hintValue);
+										}
+										hint = hintText;
 									}
-									hint = hintText;
 								}
 							}
-							hintMode = "on_request";
-						} else {
-							hint = null;
-							hintMode = "None";
-						}
+							if(hint != null) {
+								hintMode = "on_request";
+							}
+						} 
 
 						correctMap.put("correctness", resultString);
-						correctMap.put("hint", hint);
-						correctMap.put("hint_mode", hintMode);
+						correctMap.put("hint", hint != null ? hint : null);
+						correctMap.put("hint_mode", hintMode != null ? hintMode : "None");
 						correctMap.put("msg", "");
 						correctMap.put("npoints", null);
 						correctMap.put("queuestate", null);
