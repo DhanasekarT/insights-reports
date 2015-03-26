@@ -420,6 +420,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 					generateReportFile(reportType, resultSet, errorMap, fileName, isNewFile);
 				}
 
+				System.out.print("isNewFile:" + isNewFile);
+				if (isNewFile) {
+					isNewFile = false;
+				}
+				
 				Map<String, Boolean> checkPoint = baseAPIService.validateData(systemRequestParamsDTO);
 				systemRequestParamsDTO = baseAPIService.validateUserRole(systemRequestParamsDTO, userMap, errorMap);
 				String[] indices = baseAPIService.getIndices(systemRequestParamsDTO.getDataSource().toLowerCase());
@@ -433,18 +438,11 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 						// generateReportFile(reportType, array, errorMap,fileName,false);
 						generateReportFile(reportType, array, errorMap, fileName, isNewFile);
-						if (isNewFile) {
-							isNewFile = false;
-						}
 						offset += EXPORT_ROW_LIMIT;
 						Thread.sleep(EXPORT_ROW_LIMIT);
 						System.out.print("\nOffset: " + offset);
 					}
 					systemRequestParamsDTO.getPagination().setOffset(0);
-				}
-				System.out.print("isNewFile:" + isNewFile);
-				if (isNewFile) {
-					isNewFile = false;
 				}
 
 			}
@@ -1088,7 +1086,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						&& (Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1002 || Integer.valueOf(activityJsonObject.get("resourceTypeId").toString()) == 1020)) {
 					Map<String, Object> rawScoreAsMap = new HashMap<String, Object>(3);
 					Integer score = 0;
-					score = Integer.valueOf(activityJsonObject.get("score").toString());
+					if(!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString())) {
+						score = Integer.valueOf(activityJsonObject.get("score").toString());
+					}
 
 					if ((eventName.toString().equalsIgnoreCase("resource.play") || eventName.toString().equalsIgnoreCase("collection.resource.play"))) {
 						eventType = "problem_check";
@@ -1103,7 +1103,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
 							questionType = activityJsonObject.get("questionType").toString();
 						}
-						if (!questionType.equalsIgnoreCase("MA")) {
+						if (questionType != null && !questionType.equalsIgnoreCase("MA")) {
 							Object[] object = baseRepository.getAnswerByQuestionId(id);
 							if (object != null && object.length > 0) {
 								answerText = object[1].toString();
@@ -1124,7 +1124,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								score = attemptStatus[recentAttempt];
 							}
 							if (attemptCount > 0 && !activityJsonObject.isNull("answerObject") && StringUtils.isNotBlank(activityJsonObject.get("answerObject").toString())
-									&& !questionType.equalsIgnoreCase("MA")) {
+									&& (questionType != null && !questionType.equalsIgnoreCase("MA"))) {
 								
 								if(dataMap.containsKey("userAnswer") && dataMap.get("userAnswer") != null) {
 									userAnswer = dataMap.get("userAnswer").toString();
@@ -1188,7 +1188,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						
 						// TODO user's answer type
 						String inputType = null;
-						if (questionType.matches("MA|MC")) {
+						if (questionType != null && questionType.matches("MA|MC")) {
 							inputType = "radiogroup";
 						} else if (questionType.matches("FIB|OE")) {
 							inputType = "textline";
@@ -1200,7 +1200,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 							submissionDetailAsMap.put("input_type", inputType);
 						}
 						String responseType = null;
-						if (questionType.matches("MA|MC|T/F")) {
+						if (questionType != null && questionType.matches("MA|MC|T/F")) {
 							responseType = "choiceresponse";
 						} else if (questionType.matches("FIB|OE")) {
 							responseType = "choiceresponse";
