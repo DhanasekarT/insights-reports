@@ -1112,9 +1112,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			Map<String, Object> submissionDetailAsMap = new HashMap<String, Object>(6);
 			Map<String, Object> stateAsMap = new HashMap<String, Object>(5);
 
-			if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
-				|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
-				&& activityJsonObject.get("eventName").toString().endsWith("play")) {
+			if (activityJsonObject.get("eventName").toString().endsWith("play")) {
 				String resultString = null;
 				StringBuffer hint = null;
 				String hintMode = null;
