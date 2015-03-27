@@ -1226,22 +1226,24 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						
 						// TODO user's answer type
 						String inputType = null;
-						if (questionType != null && questionType.matches("MA|MC")) {
-							inputType = "radiogroup";
-						} else if (questionType.matches("FIB|OE")) {
-							inputType = "textline";
-						} else if (questionType.matches("T/F")) {
-							inputType = "choicegroup";
+						String responseType = null;
+						if (questionType != null) {
+							if (questionType.matches("MA|MC")) {
+								inputType = "radiogroup";
+							} else if (questionType.matches("FIB|OE")) {
+								inputType = "textline";
+							} else if (questionType.matches("T/F")) {
+								inputType = "choicegroup";
+							}
+							if (questionType != null && questionType.matches("MA|MC|T/F")) {
+								responseType = "choiceresponse";
+							} else if (questionType.matches("FIB|OE")) {
+								responseType = "choiceresponse";
+							}
 						}
 
 						if (inputType != null) {
 							submissionDetailAsMap.put("input_type", inputType);
-						}
-						String responseType = null;
-						if (questionType != null && questionType.matches("MA|MC|T/F")) {
-							responseType = "choiceresponse";
-						} else if (questionType.matches("FIB|OE")) {
-							responseType = "choiceresponse";
 						}
 						if (responseType != null) {
 							submissionDetailAsMap.put("response_type", responseType);
