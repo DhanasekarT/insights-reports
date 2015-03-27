@@ -81,6 +81,10 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 
 	private int EXPORT_ROW_LIMIT = 50;
 
+	private String previousMailId = null;
+	
+	private String lastPreviousSessionToken = null;
+	
 	 private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
 	 
 	public JSONArray processApi(String data, Map<String, Object> dataMap, Map<Integer, String> errorMap) {
@@ -767,6 +771,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			String nextEventTime = null;
 			String currentSessionToken = null;
 			String nextSessionToken = null;
+			String previousSessionToken = null;
 			SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" );
 			Map<String, Object> verbAsMap;
 			Map<String, Object> dataAsMap = new HashMap<String, Object>(12);
@@ -778,7 +783,7 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 						if (activityJsonObject.get("eventName").toString().matches(XAPI_SUPPORTED_EVENTS)) {
 							
 							String eventName = activityJsonObject.get("eventName").toString();
-							
+									
 							/* Time of Activity */
 							if (!activityJsonObject.isNull("eventTime") && StringUtils.isNotBlank(activityJsonObject.get("eventTime").toString())) {
 								currentEventTime = activityJsonObject.get("eventTime").toString();
@@ -799,11 +804,39 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										nextEventTime = activityArray.getJSONObject(index + 1).get("startTime").toString();
 									}
 								}
-								//System.out.println(activityArray.getJSONObject(index+1).get("eventTime"));
 								if (!activityArray.getJSONObject(index+1).isNull("sessionToken") && StringUtils.isNotBlank(activityArray.getJSONObject(index+1).get("sessionToken").toString())) {
 									nextSessionToken = activityArray.getJSONObject(index+1).get("sessionToken").toString();
 								}
 							}
+							
+							String lastPreviousSessionToken = null;
+							if (index > 0) {
+								if (!activityArray.getJSONObject(index - 1).isNull("sessionToken") && StringUtils.isNotBlank(activityArray.getJSONObject(index - 1).get("sessionToken").toString())) {
+									previousSessionToken = activityArray.getJSONObject(index - 1).get("sessionToken").toString();
+								}
+								if(!activityArray.getJSONObject(activityArray.length() -1).isNull("sessionToken") && StringUtils.isNotBlank(activityArray.getJSONObject(activityArray.length() -1).get("sessionToken").toString())) {
+									lastPreviousSessionToken = activityArray.getJSONObject(activityArray.length() -1).get("sessionToken").toString();
+								}
+							} else if(index == 0) {
+								previousSessionToken = lastPreviousSessionToken;
+							}
+							
+							/* Actor of Activity */
+							String mailId = null;
+
+							if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
+								mailId = activityJsonObject.get("emailId").toString();
+							} else if (!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())
+									&& activityJsonObject.get("gooruUId").toString().equalsIgnoreCase("ANONYMOUS")) {
+								mailId = "Anonymous@goorulearning.org";
+							} else {
+								mailId = UUID.randomUUID() + "@goorulearning.org";
+								if(currentSessionToken.equalsIgnoreCase(previousSessionToken) && previousMailId != null) {
+									mailId = previousMailId;
+								}
+							}
+							previousMailId = mailId;
+							
 							String questionType = null;
 							if (!activityJsonObject.isNull("questionType") && StringUtils.isNotBlank(activityJsonObject.get("questionType").toString())) {
 								questionType = activityJsonObject.get("questionType").toString();
@@ -867,6 +900,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 										dataAsMap.put("nextEventTime", nextEventTime);
 										dataAsMap.put("currentSessionToken", currentSessionToken);
 										dataAsMap.put("nextSessionToken", nextSessionToken);
+										dataAsMap.put("previousSessionToken", previousSessionToken);
+										dataAsMap.put("mailId", mailId);
 										activityAsMap = new HashMap<String, Object>();
 										verbAsMap = new HashMap<String, Object>();
 										generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
@@ -881,6 +916,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 								dataAsMap.put("nextEventTime", nextEventTime);
 								dataAsMap.put("currentSessionToken", currentSessionToken);
 								dataAsMap.put("nextSessionToken", nextSessionToken);
+								dataAsMap.put("previousSessionToken", previousSessionToken);
+								dataAsMap.put("mailId", mailId);
 								activityAsMap = new HashMap<String, Object>();
 								verbAsMap = new HashMap<String, Object>();
 								generateXAPIEdxHybridData(activityArray, activityJsonObject, activityAsMap, verbAsMap, dataAsMap, errorAsMap);
@@ -912,10 +949,12 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		String currentEventTime = null;
 		String nextEventTime = null;
 		Long secsToNext = 0L;
+		String previousSessionToken = null;
 		String currentSessionToken = null;
 		String nextSessionToken = null;
 		String currentAttemptEventTime = null;
 		String nextAttemptEventTime = null;
+		String mailId = null;
 		if(dataMap.containsKey("currentEventTime") && dataMap.get("currentEventTime") != null) {
 			currentEventTime = dataMap.get("currentEventTime").toString();
 		}
@@ -928,6 +967,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		if(dataMap.containsKey("nextSessionToken") && dataMap.get("nextSessionToken") != null) {
 			nextSessionToken = dataMap.get("nextSessionToken").toString();
 		}
+		if(dataMap.containsKey("previousSessionToken") && dataMap.get("previousSessionToken") != null) {
+			previousSessionToken = dataMap.get("previousSessionToken").toString();
+		}
 		if(dataMap.containsKey("currentAttemptEventTime") && dataMap.get("currentAttemptEventTime") != null) {
 			currentAttemptEventTime = dataMap.get("currentAttemptEventTime").toString();
 		}
@@ -936,6 +978,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		}
 		if(dataMap.containsKey("nextAttemptSessionToken") && dataMap.get("nextAttemptSessionToken") != null) {
 			nextSessionToken = dataMap.get("nextAttemptSessionToken").toString();
+		}
+		if(dataMap.containsKey("mailId") && dataMap.get("mailId") != null) {
+			mailId = dataMap.get("mailId").toString();
 		}
 		
 		if(currentAttemptEventTime != null && nextAttemptEventTime != null) {
@@ -961,16 +1006,9 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 		if ((!activityJsonObject.isNull("course") && StringUtils.isNotBlank(activityJsonObject.get("course").toString()))
 				&& activityJsonObject.get("course").toString().contains("20670")) {
 			/* Actor property */
-			String mailId = null;
-			if (!activityJsonObject.isNull("emailId") && StringUtils.isNotBlank(activityJsonObject.get("emailId").toString())) {
-				mailId = activityJsonObject.get("emailId").toString();
-			} else if (!activityJsonObject.isNull("gooruUId") && StringUtils.isNotBlank(activityJsonObject.get("gooruUId").toString())
-					&& activityJsonObject.get("gooruUId").toString().equalsIgnoreCase("ANONYMOUS")) {
-				mailId = "Anonymous@goorulearning.org";
-			} else {
-				mailId = UUID.randomUUID() + "@goorulearning.org";
+			if(mailId != null) {
+				activityAsMap.put("actor", mailId);
 			}
-			activityAsMap.put("actor", mailId);
 
 			String eventType = null;
 			/* Verb property */
@@ -1075,8 +1113,8 @@ public class ItemServiceImpl implements ItemService, APIConstants,ErrorCodes {
 			Map<String, Object> stateAsMap = new HashMap<String, Object>(5);
 
 			if ((!activityJsonObject.isNull("score") && StringUtils.isNotBlank(activityJsonObject.get("score").toString()))
-					|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
-					&& activityJsonObject.get("eventName").toString().endsWith("play")) {
+				|| (!activityJsonObject.isNull("newScore") && StringUtils.isNotBlank(activityJsonObject.get("newScore").toString()))
+				&& activityJsonObject.get("eventName").toString().endsWith("play")) {
 				String resultString = null;
 				StringBuffer hint = null;
 				String hintMode = null;
