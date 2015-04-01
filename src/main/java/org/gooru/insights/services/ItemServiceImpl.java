@@ -202,7 +202,7 @@ public class ItemServiceImpl implements ItemService {
 
 	}
 
-	public ResponseParamDTO<Map<String,String>> clearQuery(String id) {
+	public ResponseParamDTO<Map<String,String>> clearQuery(String traceId,String id) {
 		ResponseParamDTO<Map<String,String>> responseParamDTO = new ResponseParamDTO<Map<String,String>>();
 		Map<String, String> dataMap = new HashMap<String, String>();
 		String message = APIConstants.EMPTY;
@@ -288,7 +288,7 @@ public class ItemServiceImpl implements ItemService {
 		return requestId;
 	}
 	
-	public ResponseParamDTO<Map<Integer,String>> manageReports(String action,String reportName,String data){
+	public ResponseParamDTO<Map<Integer,String>> manageReports(String traceId,String action,String reportName,String data){
 		
 		 ResponseParamDTO<Map<Integer,String>> responseParamDTO = new ResponseParamDTO<Map<Integer,String>>();
 		 Map<Integer,String> resultMap = new HashMap<Integer, String>();
@@ -343,7 +343,7 @@ public class ItemServiceImpl implements ItemService {
 		return baseConnectionService.getUserObjectData(traceId,sessionToken);
 	}
 
-	public ResponseParamDTO<Map<String,String>> insertKey(String data){
+	public ResponseParamDTO<Map<String,String>> insertKey(String traceId,String data){
 		ResponseParamDTO<Map<String,String>> responseParamDTO = new ResponseParamDTO<Map<String,String>>();
 		Map<String,String> resultData = new HashMap<String, String>();
 		if(redisService.insertKey(data)){

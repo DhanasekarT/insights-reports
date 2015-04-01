@@ -14,15 +14,15 @@ public interface ItemService {
 	
 	ResponseParamDTO<Map<String, Object>> processApi(String traceId,String data, String sessionToken)throws Exception;
 	
-	ResponseParamDTO<Map<String, String>> clearQuery(String id);
+	ResponseParamDTO<Map<String, String>> clearQuery(String traceId,String id);
 	
 	ResponseParamDTO<Map<String,Object>> getQuery(String traceId,String id,String sessionToken);
 	
 	ResponseParamDTO<Map<String,Object>> getCacheData(String traceId,String id,String sessionToken);
 	
-	ResponseParamDTO<Map<String,String>> insertKey(String data);
+	ResponseParamDTO<Map<String,String>> insertKey(String traceId,String data);
 	
-	ResponseParamDTO<Map<Integer,String>> manageReports(String action,String reportName,String data);
+	ResponseParamDTO<Map<Integer,String>> manageReports(String traceId,String action,String reportName,String data);
 	
 	ResponseParamDTO<Map<String,Object>> serverStatus();
 
