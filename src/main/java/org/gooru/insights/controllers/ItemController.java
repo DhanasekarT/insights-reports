@@ -44,10 +44,10 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = false) String data,
 			@RequestParam(value = "sessionToken", required = true) String sessionToken, HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.generateQuery(data, sessionToken, null));
+		return getModel(itemService.generateQuery(getTraceId(request),data, sessionToken, null));
 	}
 	
 	/**
@@ -66,7 +66,7 @@ public class ItemController extends BaseController{
 	public ModelAndView manageReports(HttpServletRequest request, @PathVariable(value = "action") String action, @RequestParam(value = "reportName", required = true) String reportName,
 			@RequestParam(value = "sessionToken", required = true) String sessionToken, @RequestBody String data, HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.manageReports(action, reportName, data));
+		return getModel(itemService.manageReports(getTraceId(request),action, reportName, data));
 	}
 	
 	/**
@@ -83,7 +83,7 @@ public class ItemController extends BaseController{
 	public ModelAndView getPartyReports(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,
 			HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.getPartyReport(request, reportType, sessionToken));
+		return getModel(itemService.getPartyReport(getTraceId(request),request, reportType, sessionToken));
 	}
 	
 	/**
@@ -92,11 +92,12 @@ public class ItemController extends BaseController{
 	 * @param queryId is the unique query id for each query
 	 * @param response is the client HTTPResponse
 	 * @return Model view object
+	 * @throws Exception 
 	 */
 	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
-	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response){
+	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response) throws Exception{
 	
-		return getModel(itemService.clearQuery(queryId));
+		return getModel(itemService.clearQuery(getTraceId(request),queryId));
 	}
 	
 	/**
@@ -106,12 +107,13 @@ public class ItemController extends BaseController{
 	 * @param sessionToken is the Gooru user token
 	 * @param response is the client HTTPResponse
 	 * @return Model view object
+	 * @throws Exception 
 	 */
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
+	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
 		
-		return getModel(itemService.getQuery(queryId,sessionToken));
+		return getModel(itemService.getQuery(getTraceId(request),queryId,sessionToken));
 	}
 
 	/**
@@ -121,12 +123,13 @@ public class ItemController extends BaseController{
 	 * @param sessionToken is the Gooru user token
 	 * @param response is the client HTTPResponse
 	 * @return Model view object
+	 * @throws Exception 
 	 */
 	@RequestMapping(value="/list",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response){
+	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
 		 
-		return getModel(getItemService().getCacheData(queryId,sessionToken));
+		return getModel(getItemService().getCacheData(getTraceId(request),queryId,sessionToken));
 	}
 	
 	/**
@@ -135,12 +138,13 @@ public class ItemController extends BaseController{
 	 * @param data is the API query to store in redis
 	 * @param response is the client HTTPResponse
 	 * @return Model view object
+	 * @throws Exception 
 	 */
 	@RequestMapping(value="/keys",method =RequestMethod.PUT)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView putRedisData(HttpServletRequest request,@RequestBody String data ,HttpServletResponse response){
+	public ModelAndView putRedisData(HttpServletRequest request,@RequestBody String data ,HttpServletResponse response) throws Exception{
 		
-		return getModel(getItemService().insertKey(data));
+		return getModel(getItemService().insertKey(getTraceId(request),data));
 	}
 	
 	/**
@@ -165,9 +169,9 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = true) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
+	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = false) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
 		
-		return getModel(getItemService().processApi(data,sessionToken));
+		return getModel(getItemService().processApi(getTraceId(request),data,sessionToken));
 	}
 	
 	/**

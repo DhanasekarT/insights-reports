@@ -34,7 +34,7 @@ public interface BaseConnectionService {
 	
 	Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
 	
-	Map<String,Object> getUserObjectData(String sessionToken);
+	Map<String,Object> getUserObjectData(String traceId,String sessionToken);
 	
 	Map<String, String> getFieldArrayHandler();
 	

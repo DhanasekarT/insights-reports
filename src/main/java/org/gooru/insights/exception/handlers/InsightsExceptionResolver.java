@@ -6,12 +6,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Numbers;
 import org.gooru.insights.models.ResponseParamDTO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 
@@ -19,13 +18,17 @@ import flexjson.JSONSerializer;
 
 public class InsightsExceptionResolver extends SimpleMappingExceptionResolver {
 
-	private final Logger logger = LoggerFactory.getLogger(InsightsExceptionResolver.class);
+	private static final String DEFAULT_ERROR = "Internal Server Error!!!";
+	
+	private static final String DEVELOPER_MESSAGE = "developerMessage";
 
-	private final static String RESOLVER_DEBUG_MESSAGE = "Debug in Resolver:";
+	private static final String MAIL_To = "mailTo";
+
+	private static final String SUPPORT_EMAIL_ID = "support@goorulearning.org";
+
+	private static final String STATUS_CODE = "statusCode";
 	
-	private final static String RESOLVER_ERROR_MESSAGE = "Error in Resolver:";
-	
-	private final static String DEFAULT_ERROR = "DEFAULT_ERROR";
+	private static final String DEFAULT_TRACEID = "traceId Not-Specified";
 
 
 	/**
@@ -38,7 +41,8 @@ public class InsightsExceptionResolver extends SimpleMappingExceptionResolver {
 		ResponseParamDTO<Map<Object, Object>> responseDTO = new ResponseParamDTO<Map<Object, Object>>();
 		Map<Object, Object> errorMap = new HashMap<Object, Object>();
 		Integer statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-
+		String traceId = request.getAttribute("traceId") != null ? request.getAttribute("traceId").toString() : DEFAULT_TRACEID;
+		
 		if (ex instanceof BadRequestException) {
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;
 		} if (ex instanceof AccessDeniedException) {
@@ -48,12 +52,14 @@ public class InsightsExceptionResolver extends SimpleMappingExceptionResolver {
 		}
 
 		if (statusCode.toString().startsWith(Numbers.FOUR.getNumber())) {
-			logger.debug(RESOLVER_DEBUG_MESSAGE, ex);
-			errorMap.put(statusCode, ex.getMessage());
+			InsightsLogger.debug(traceId, ex);
+			errorMap.put(DEVELOPER_MESSAGE, ex.getMessage());
 		} else if (statusCode.toString().startsWith(Numbers.FIVE.getNumber())) {
-			logger.error(RESOLVER_ERROR_MESSAGE, ex);
-			errorMap.put(statusCode, MessageHandler.getMessage(DEFAULT_ERROR));
+			InsightsLogger.error(traceId, ex);
+			errorMap.put(DEVELOPER_MESSAGE, DEFAULT_ERROR);
 		}
+		errorMap.put(STATUS_CODE, statusCode);
+		errorMap.put(MAIL_To, SUPPORT_EMAIL_ID);
 
 		response.setStatus(statusCode);
 		responseDTO.setMessage(errorMap);

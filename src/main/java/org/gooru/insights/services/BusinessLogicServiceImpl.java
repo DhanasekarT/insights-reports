@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
@@ -22,8 +22,6 @@ import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +31,6 @@ import com.google.gson.reflect.TypeToken;
 @Service
 public class BusinessLogicServiceImpl implements BusinessLogicService {
 
-	private static final Logger logger = LoggerFactory.getLogger(BusinessLogicServiceImpl.class);
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
@@ -227,7 +224,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return data;
 	}
 
-	public List<Map<String, Object>> getSource(String result) {
+	public List<Map<String, Object>> getSource(String traceId,String result) {
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 		try {
 			Gson gson = new Gson();
@@ -243,12 +240,12 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				resultList.add(dataMap);
 			}
 		} catch (JSONException e) {
-			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON)+e);
+			InsightsLogger.error(traceId,ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON), e);
 		}
 		return resultList;
 	}
 
-	public List<Map<String, Object>> getRecords(String index, ResponseParamDTO<Map<String, Object>> responseParamDTO, String data, String dataKey) throws Exception {
+	public List<Map<String, Object>> getRecords(String traceId,String index, ResponseParamDTO<Map<String, Object>> responseParamDTO, String data, String dataKey) throws Exception {
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
@@ -363,7 +360,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			}
 			return resultList;
 		} catch (JSONException e) {
-			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON));
+			InsightsLogger.error(traceId,ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON), e);
 		}
 		return resultList;
 	}
@@ -397,7 +394,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		}
 	}
 
-	public List<Map<String, Object>> getMultiGetRecords(String[] indices, Map<String, Map<String, String>> comparekey, String data, Map<Integer, String> errorRecord, String dataKey) {
+	public List<Map<String, Object>> getMultiGetRecords(String traceId,String[] indices, Map<String, Map<String, String>> comparekey, String data, Map<Integer, String> errorRecord, String dataKey) {
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
@@ -463,7 +460,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			}
 			return resultList;
 		} catch (JSONException e) {
-			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON)+e);
+			InsightsLogger.error(traceId,ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.JSON) ,e);
 		}
 		return resultList;
 	}
@@ -484,7 +481,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return requestParamsDTO;
 	}
 
-	public List<Map<String, Object>> customizeJSON(String[] groupBy, String resultData, Map<String, String> metrics, Map<String,Boolean> validatedData, ResponseParamDTO<Map<String, Object>> responseParamDTO,
+	public List<Map<String, Object>> customizeJSON(String traceId,String[] groupBy, String resultData, Map<String, String> metrics, Map<String,Boolean> validatedData, ResponseParamDTO<Map<String, Object>> responseParamDTO,
 			int limit) {
 
 		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
@@ -536,7 +533,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 				counter++;
 			}
 		} catch (JSONException e) {
-			logger.error(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.DATA_TYPE)+e);
+			InsightsLogger.error(traceId,ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.DATA_TYPE), e);
 		}
 		return dataList;
 	}

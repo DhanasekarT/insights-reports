@@ -503,7 +503,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		return indices;
 	}
 
-	public RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
+	public RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
 		
 		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
 
@@ -512,7 +512,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		logger.info(APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
 		logger.info(APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
 		
-		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
+		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
 			return requestParamsDTO;
 		}
 
@@ -521,7 +521,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
 		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
 
-		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
+		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
 		
 		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
 			validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
@@ -570,7 +570,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		if (!userFilterOrgValues.isEmpty()) {
 			validateUserPermissionService.validateOrganization(requestParamsDTO, partyPermissions, errorMap, userFilterOrgValues);
 		} else {
-			String allowedParty = validateUserPermissionService.getAllowedParties(requestParamsDTO, partyPermissions);
+			String allowedParty = validateUserPermissionService.getAllowedParties(traceId,requestParamsDTO, partyPermissions);
 			if (!StringUtils.isBlank(allowedParty)) {
 				if(requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)){
 					validateUserPermissionService.addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);

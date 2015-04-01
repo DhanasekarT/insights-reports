@@ -19,6 +19,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
@@ -52,8 +53,6 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 @Component
 public class BaseConnectionServiceImpl implements BaseConnectionService {
 
-	private static final Logger logger = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
-	
 	private static Client devClient;
 	
 	private static Client prodClient;
@@ -368,7 +367,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		
 	}
 	
-	public Map<String, Object> getUserObjectData(String sessionToken) {
+	public Map<String, Object> getUserObjectData(String traceId,String sessionToken) {
 
 		String result = redisService.getDirectValue(APIConstants.GOORU_PREFIX + sessionToken);
 		Map<String, Object> userMap = new LinkedHashMap<String, Object>();
@@ -397,7 +396,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				}
 				partyPermissions.put(key, permissionSet);
 			}
-			logger.info(APIConstants.PARTY_PERMISSION_MESSAGE + permissionSet);
+			InsightsLogger.info(traceId, APIConstants.PARTY_PERMISSION_MESSAGE + permissionSet);
 			userMap.put(APIConstants.PERMISSIONS, partyPermissions);
 		} catch (Exception e) {
 			throw new ReportGenerationException(MessageHandler.getMessage(ErrorConstants.E101));

@@ -6,7 +6,6 @@ import java.util.ResourceBundle;
 import javax.annotation.PostConstruct;
 
 import org.gooru.insights.services.BaseConnectionService;
-import org.gooru.insights.services.BaseConnectionServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

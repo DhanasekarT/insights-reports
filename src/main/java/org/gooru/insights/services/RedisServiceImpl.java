@@ -8,12 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.DateFormats;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -30,8 +29,6 @@ public class RedisServiceImpl implements RedisService {
 	private static final StringRedisSerializer STRING_SERIALIZER = new StringRedisSerializer();
 
 	private static final LongSerializer LONG_SERIALIZER = LongSerializer.INSTANCE;
-
-	private static final Logger log = LoggerFactory.getLogger(RedisServiceImpl.class);
 
 	@Autowired(required = false)
 	private RedisTemplate<String, Long> redisLongTemplate = new RedisTemplate();
@@ -149,7 +146,7 @@ public class RedisServiceImpl implements RedisService {
 		}
 	}
 
-	public <M> String putCache(String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO) {
+	public <M> String putCache(String traceId,String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO) {
 
 		UUID queryId = UUID.randomUUID();
 		String KEY_PREFIX = APIConstants.EMPTY;
@@ -162,8 +159,7 @@ public class RedisServiceImpl implements RedisService {
 		putStringValue(KEY_PREFIX + queryId.toString(), query.trim());
 		putStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).deepSerialize(responseParamDTO));
 		putStringValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim(), queryId.toString());
-
-		log.info(APIConstants.NEW_QUERY + queryId);
+		InsightsLogger.info(traceId, APIConstants.NEW_QUERY + queryId);
 		return queryId.toString();
 
 	}

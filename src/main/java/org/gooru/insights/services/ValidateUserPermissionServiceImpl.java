@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.ErrorConstants;
@@ -15,15 +16,12 @@ import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService {
 
-	Logger log = org.slf4j.LoggerFactory.getLogger(ValidateUserPermissionServiceImpl.class);
-	
 	@Autowired
 	private BusinessLogicService businessLogicService;
 	
@@ -184,7 +182,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		return userFilter;
 	}
 
-	public String getRoleBasedParty(Map<String, Set<String>> partyPermissions, String permission) {
+	public String getRoleBasedParty(String traceId,Map<String, Set<String>> partyPermissions, String permission) {
 		StringBuilder allowedOrg = new StringBuilder();
 		for (Map.Entry<String, Set<String>> entry : partyPermissions.entrySet()) {
 			if (entry.getValue().contains(permission)) {
@@ -195,12 +193,11 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		if (allowedOrg.length() == 0 && !permission.matches(APIConstants.RESTRICTEDPERMISSION)) {
 			allowedOrg.append(APIConstants.DEFAULTORGUID);
 		}
-
-		log.info(APIConstants.ALLOWED_ORG,allowedOrg.toString());
+		InsightsLogger.info(traceId, APIConstants.ALLOWED_ORG+allowedOrg.toString());
 		return allowedOrg.toString();
 	}
 
-	public String getAllowedParties(RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions) {
+	public String getAllowedParties(String traceId,RequestParamsDTO requestParamsDTO, Map<String, Set<String>> partyPermissions) {
 		String allowedParty = null;
 		if ((requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) || (requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES)) && !StringUtils.isBlank(requestParamsDTO.getGroupBy())
 				&& requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)) {
@@ -212,7 +209,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		} else if (requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES)) {
 			allowedParty = APIConstants.AP_PARTY_OWN_CONTENT_USAGE;
 		}
-		return getRoleBasedParty(partyPermissions, allowedParty);
+		return getRoleBasedParty(traceId,partyPermissions, allowedParty);
 	}
 
 }

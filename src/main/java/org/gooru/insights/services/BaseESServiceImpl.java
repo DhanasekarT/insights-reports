@@ -29,6 +29,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.range.RangeBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ESConstants;
@@ -44,8 +45,6 @@ import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -54,8 +53,6 @@ import com.google.gson.Gson;
 @Service
 public class BaseESServiceImpl implements BaseESService {
 
-	private static final Logger logger = LoggerFactory.getLogger(BaseESServiceImpl.class);
-	
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
@@ -65,7 +62,7 @@ public class BaseESServiceImpl implements BaseESService {
 	@Autowired
 	private BusinessLogicService businessLogicService;
 	
-	public ResponseParamDTO<Map<String,Object>> generateQuery(RequestParamsDTO requestParamsDTO,
+	public ResponseParamDTO<Map<String,Object>> generateQuery(String traceId,RequestParamsDTO requestParamsDTO,
 			String[] indices,
 			Map<String,Boolean> checkPoint) throws Exception{
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
@@ -73,7 +70,7 @@ public class BaseESServiceImpl implements BaseESService {
 		 * Do Core Get
 		 */
 		Map<String,Object> filters = new HashMap<String,Object>();
-		List<Map<String,Object>> dataList = coreGet(requestParamsDTO,responseParamDTO,indices[0],checkPoint,filters);
+		List<Map<String,Object>> dataList = coreGet(traceId,requestParamsDTO,responseParamDTO,indices[0],checkPoint,filters);
 		
 		if(dataList.isEmpty()){
 		return responseParamDTO;
@@ -91,7 +88,7 @@ public class BaseESServiceImpl implements BaseESService {
 			Set<String> usedFilter = new HashSet<String>();
 			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
 
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,indices[i], new String[]{}, checkPoint,filters,dataList.size(),usedFilter);
+			List<Map<String,Object>> resultList = multiGet(traceId,requestParamsDTO,indices[i], new String[]{}, checkPoint,filters,dataList.size(),usedFilter);
 			
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filters.putAll(innerFilterMap);
@@ -146,14 +143,14 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 	
-	public ResponseParamDTO<Map<String,Object>> getItem(RequestParamsDTO requestParamsDTO,
+	public ResponseParamDTO<Map<String,Object>> getItem(String traceId,RequestParamsDTO requestParamsDTO,
 			String[] indices,
 			Map<String,Boolean> validatedData,Map<String,Object> dataMap,Map<Integer,String> errorRecord) throws Exception {
 		
 		List<Map<String,Object>> dataList = new ArrayList<Map<String,Object>>();
 		Map<String,Object> filterMap = new HashMap<String,Object>();
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
-		dataList = coreGet(requestParamsDTO,responseParamDTO,indices[0],validatedData,filterMap);
+		dataList = coreGet(traceId,requestParamsDTO,responseParamDTO,indices[0],validatedData,filterMap);
 		
 		if(dataList.isEmpty())
 		return responseParamDTO;			
@@ -163,7 +160,7 @@ public class BaseESServiceImpl implements BaseESService {
 		for(int i=1;i<indices.length;i++){
 			Set<String> usedFilter = new HashSet<String>();
 			Map<String,Object> innerFilterMap = new HashMap<String,Object>();
-			List<Map<String,Object>> resultList = multiGet(requestParamsDTO,indices[i], new String[]{}, validatedData,filterMap,dataList.size(),usedFilter);
+			List<Map<String,Object>> resultList = multiGet(traceId,requestParamsDTO,indices[i], new String[]{}, validatedData,filterMap,dataList.size(),usedFilter);
 			innerFilterMap = businessLogicService.fetchFilters(indices[i], resultList);
 			filterMap.putAll(innerFilterMap);
 			dataList = businessLogicService.leftJoin(dataList, resultList,usedFilter);
@@ -184,7 +181,7 @@ public class BaseESServiceImpl implements BaseESService {
 	 * @param usedFilter
 	 * @return
 	 */
-	private List<Map<String,Object>> multiGet(RequestParamsDTO requestParamsDTO,
+	private List<Map<String,Object>> multiGet(String traceId,RequestParamsDTO requestParamsDTO,
 			String indices, String[] types,
 			Map<String,Boolean> validatedData,Map<String,Object> filterMap,int limit,Set<String> usedFilter) throws Exception{
 		
@@ -231,7 +228,7 @@ public class BaseESServiceImpl implements BaseESService {
 			throw new ReportGenerationException(ErrorConstants.QUERY_ERROR+searchRequestBuilder.toString());
 		}
 		
-		resultList = businessLogicService.getRecords(indices,null,result, dataKey);
+		resultList = businessLogicService.getRecords(traceId,indices,null,result, dataKey);
 		
 		return resultList;
 	}
@@ -245,7 +242,7 @@ public class BaseESServiceImpl implements BaseESService {
 	 * @return List of aggregated data
 	 * @throws Exception 
 	 */
-	public List<Map<String,Object>> coreGet(RequestParamsDTO requestParamsDTO,ResponseParamDTO<Map<String,Object>> responseParamDTO,
+	public List<Map<String,Object>> coreGet(String traceId,RequestParamsDTO requestParamsDTO,ResponseParamDTO<Map<String,Object>> responseParamDTO,
 			String indices,
 			Map<String,Boolean> validatedData,Map<String,Object> filters) throws Exception {
 		
@@ -272,7 +269,7 @@ public class BaseESServiceImpl implements BaseESService {
 		} else if (validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
 
 			searchRequestBuilder.setNoFields();
-			buildBuckets(indices,requestParamsDTO, searchRequestBuilder,metricsName);
+			buildBuckets(traceId,indices,requestParamsDTO, searchRequestBuilder,metricsName);
 			hasAggregate = true;
 		
 		}  else {
@@ -305,7 +302,7 @@ public class BaseESServiceImpl implements BaseESService {
 				performPagination(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
 		try{
-			logger.info(APIConstants.QUERY+searchRequestBuilder);
+			InsightsLogger.info(traceId, APIConstants.QUERY+searchRequestBuilder);
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			throw new ReportGenerationException(ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, APIConstants.QUERY));
@@ -320,7 +317,7 @@ public class BaseESServiceImpl implements BaseESService {
 				}
 			}
 			String groupBy[] = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
-			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(groupBy, result, metricsName, validatedData,responseParamDTO,limit);
+			List<Map<String,Object>> queryResult = businessLogicService.customizeJSON(traceId,groupBy, result, metricsName, validatedData,responseParamDTO,limit);
 			
 			if(!validatedData.get(Hasdatas.HAS_GRANULARITY.check())){
 				queryResult = businessLogicService.customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
@@ -330,7 +327,7 @@ public class BaseESServiceImpl implements BaseESService {
 			
 			return queryResult;
 		}else{
-			return businessLogicService.getRecords(indices,responseParamDTO,result,dataKey);
+			return businessLogicService.getRecords(traceId,indices,responseParamDTO,result,dataKey);
 		}
 	}
 	
@@ -376,7 +373,7 @@ public class BaseESServiceImpl implements BaseESService {
 	 * @param metricsName is the name of metric functions
 	 * @throws unable to build the bucket
 	 */
-	private void buildBuckets(String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder, Map<String, String> metricsName) {
+	private void buildBuckets(String traceId,String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder, Map<String, String> metricsName) {
 
 		try {
 			TermsBuilder termBuilder = null;
@@ -412,7 +409,7 @@ public class BaseESServiceImpl implements BaseESService {
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 		} catch (Exception e) {
-			logger.error(ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.AGGREGATION_BUCKET )+e);
+			InsightsLogger.error(traceId, ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.AGGREGATION_BUCKET ),e);
 		}
 	}
 
@@ -667,9 +664,9 @@ public class BaseESServiceImpl implements BaseESService {
 					jsonObject = new JSONObject(jsonArray.get(i).toString());
 					String requestValue = jsonObject.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
 					String fieldName = businessLogicService.esFields(index, jsonObject.getString(requestValue));
-					includeBucketAggregation(termBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), requestValue, fieldName);
+					includeBucketAggregation(termBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), APIConstants.FormulaFields.FIELD.getField()+i, fieldName);
 					metricsName.put(jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) != null ? jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) : fieldName,
-							requestValue);
+							APIConstants.FormulaFields.FIELD.getField()+i);
 				}
 			} catch (Exception e) {
 				throw new ReportGenerationException(ErrorConstants.AGGREGATION_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET)+e);
@@ -715,9 +712,9 @@ public class BaseESServiceImpl implements BaseESService {
 
 					String requestValues = jsonObject.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
 					String fieldName = businessLogicService.esFields(index, jsonObject.get(requestValues).toString());
-					includeGranularityAggregation(dateHistogramBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), requestValues, fieldName);
+					includeGranularityAggregation(dateHistogramBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), APIConstants.FormulaFields.FIELD.getField()+i, fieldName);
 					metricsName.put(jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) != null ? jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) : fieldName,
-							requestValues);
+							APIConstants.FormulaFields.FIELD.getField()+i);
 				}
 			} catch (Exception e) {
 				throw new ReportGenerationException(ErrorConstants.AGGREGATION_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.GRANULARITY_BUCKET)+e);

@@ -33,7 +33,9 @@ public class EntityOperation implements Serializable {
 	private static final long serialVersionUID = 2007539524878855125L;
 	
 	private Integer entityOperationId;
+	
 	private String entityName;
+	
 	private String operationName;
 
 	public String getOperationName() {

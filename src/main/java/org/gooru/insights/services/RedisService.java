@@ -33,6 +33,6 @@ public interface RedisService {
 	
 	String putDirectValue(String key,String value);
 	
-	public <M> String putCache(String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO);
+	public <M> String putCache(String traceId,String query, Map<String, Object> userMap, ResponseParamDTO<M> responseParamDTO);
 
 }

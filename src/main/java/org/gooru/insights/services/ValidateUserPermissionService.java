@@ -25,7 +25,7 @@ import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 	
 	 List<RequestParamsFilterDetailDTO> addSystemUserOrgFilter(List<RequestParamsFilterDetailDTO> userFilter, String userOrgUId);
 	
-	 String getAllowedParties(RequestParamsDTO requestParamsDTO,Map<String, Set<String>> partyPermissions);
+	 String getAllowedParties(String traceId,RequestParamsDTO requestParamsDTO,Map<String, Set<String>> partyPermissions);
 	 
-	 public String getRoleBasedParty(Map<String, Set<String>> partyPermissions, String permission);
+	 public String getRoleBasedParty(String traceId,Map<String, Set<String>> partyPermissions, String permission);
 }

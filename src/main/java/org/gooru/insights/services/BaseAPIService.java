@@ -30,7 +30,7 @@ public interface BaseAPIService {
 	
 	Set<String> convertStringtoSet(String inputDatas);
 	
-	RequestParamsDTO validateUserRole(RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
+	RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
 	
 	String[] getIndices(String names);
 	
