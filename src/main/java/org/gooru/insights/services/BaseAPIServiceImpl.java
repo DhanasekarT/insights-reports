@@ -308,14 +308,17 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 */
 		if (checkNull(requestParamsDTO.getDataSource())) {
 			for(String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)){
+			boolean validDataSource = false;
 				for(String indexName : baseConnectionService.getIndexMap().keySet()){
-			if(!indexName.toUpperCase().equals(dataSource.toUpperCase())){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.DATA_SOURCE,dataSource}));
-			}else{
+			if(indexName.toUpperCase().equalsIgnoreCase(dataSource)){
+				validDataSource = true;
 				if(baseConnectionService.getFields().containsKey(baseConnectionService.getIndexMap().get(indexName))){	
 					fieldData.addAll(baseConnectionService.getFields().get(baseConnectionService.getIndexMap().get(indexName)).keySet());
 				}
-				}
+			}
+			}
+				if(!validDataSource){
+					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.DATA_SOURCE,dataSource}));
 				}
 			}
 			processedData.put(Hasdatas.HAS_DATASOURCE.check(), true);
