@@ -48,8 +48,6 @@ import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ClientResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,8 +67,6 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	private ColumnList<String> entityOperationsRole;
 
 	private static final String TRACE_ID = "aspect";
-	
-	private Logger logger = LoggerFactory.getLogger(MethodAuthorizationAspect.class);
 	
 	@Autowired
 	private RedisService redisService;
@@ -327,7 +323,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		String operations = authorizeOperations.operations();
 		for (String op : operations.split(APIConstants.COMMA)) {
 			String roles = entityOperationsRole.getColumnByName(op).getStringValue();
-			logger.info(APIConstants.ROLES + roles + APIConstants.COLON + userRole.contains(roles));
+			InsightsLogger.info(TRACE_ID, APIConstants.ROLES + roles + APIConstants.COLON + userRole.contains(roles));
 			for (String role : roles.split(",")) {
 				if ((userRole.contains(role))) {
 					return true;

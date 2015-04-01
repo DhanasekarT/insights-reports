@@ -308,11 +308,13 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 */
 		if (checkNull(requestParamsDTO.getDataSource())) {
 			for(String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)){
-			if(!baseConnectionService.getIndexMap().containsKey(dataSource)){
+				for(String indexName : baseConnectionService.getIndexMap().keySet()){
+			if(!indexName.toUpperCase().equals(dataSource.toUpperCase())){
 				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.DATA_SOURCE,dataSource}));
 			}else{
-				if(baseConnectionService.getFields().containsKey(baseConnectionService.getIndexMap().get(dataSource))){	
-					fieldData.addAll(baseConnectionService.getFields().get(baseConnectionService.getIndexMap().get(dataSource)).keySet());
+				if(baseConnectionService.getFields().containsKey(baseConnectionService.getIndexMap().get(indexName))){	
+					fieldData.addAll(baseConnectionService.getFields().get(baseConnectionService.getIndexMap().get(indexName)).keySet());
+				}
 				}
 				}
 			}

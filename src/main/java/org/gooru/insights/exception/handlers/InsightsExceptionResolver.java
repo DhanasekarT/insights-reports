@@ -45,7 +45,7 @@ public class InsightsExceptionResolver extends SimpleMappingExceptionResolver {
 		
 		if (ex instanceof BadRequestException) {
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;
-		} if (ex instanceof AccessDeniedException) {
+		}else if (ex instanceof AccessDeniedException) {
 			statusCode = HttpServletResponse.SC_FORBIDDEN;
 		} else {
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
