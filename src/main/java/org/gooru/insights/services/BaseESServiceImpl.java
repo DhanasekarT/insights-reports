@@ -420,11 +420,11 @@ public class BaseESServiceImpl implements BaseESService {
 			RangeBuilder rangeAggregation = new RangeBuilder(requestParamsDTO.getGroupBy()).field(fieldName);
 				for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
 					if(baseAPIService.checkNull(ranges.getFrom()) && baseAPIService.checkNull(ranges.getTo())) {
-						rangeAggregation.addRange(ranges.getFrom(), ranges.getTo());
+						rangeAggregation.addRange(ranges.getFrom(), ranges.getTo()+1);
 					} else if(baseAPIService.checkNull(ranges.getFrom())) {
 						rangeAggregation.addUnboundedFrom(ranges.getFrom());
 					} else if(baseAPIService.checkNull(ranges.getTo())) {
-						rangeAggregation.addUnboundedTo(ranges.getTo());
+						rangeAggregation.addUnboundedTo(ranges.getTo()+1);
 					}
 				}
 				rangeBucketAggregation(index, requestParamsDTO, rangeAggregation, metricsName);
