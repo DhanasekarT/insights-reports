@@ -39,13 +39,11 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	}
 
 	public Map<String, Object> getUserFiltersAndValues(List<RequestParamsFilterDetailDTO> filters) {
-		Map<String, Object> userFiltersValue = null;
-		Set<String> userValue = null;
-		Set<String> orgValue = null;
+		Map<String, Object> userFiltersValue = new HashMap<String, Object>();
+		Set<String> userValue = new HashSet<String>();
+		Set<String> orgValue = new HashSet<String>();
 		if (filters != null) {
-			userFiltersValue = new HashMap<String, Object>();
-			userValue = new HashSet<String>();
-			orgValue = new HashSet<String>();
+			
 			for (RequestParamsFilterDetailDTO fieldData : filters) {
 				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
 					Set<Object> values = new HashSet<Object>();
@@ -65,9 +63,9 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 					}
 				}
 			}
-			userFiltersValue.put("orgFilters", orgValue);
-			userFiltersValue.put("userFilters", userValue);
 		}
+		userFiltersValue.put("orgFilters", orgValue);
+		userFiltersValue.put("userFilters", userValue);
 
 		return userFiltersValue;
 	}

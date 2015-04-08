@@ -253,16 +253,15 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	private int compareTo(Map<String,Object> m1,Map<String,Object> m2,String name){
 		if (m1.get(name) instanceof String) {
 			return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
+		} else if (m1.get(name) instanceof Double) {
+			return ((Double) m1.get(name)).compareTo((Double) m2.get(name));
 		} else if (m1.get(name) instanceof Long) {
 			return ((Long) m1.get(name)).compareTo((Long) m2.get(name));
 		} else if (m1.get(name) instanceof Integer) {
 			return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
-		} else if (m1.get(name) instanceof Double) {
-			return ((Double) m1.get(name)).compareTo((Double) m2.get(name));
-		}
+		} 
 		return 0;
 	}
-
 
 	public JSONArray formatKeyValueJson(List<Map<String, Object>> dataMap, String key) throws org.json.JSONException {
 
@@ -368,6 +367,23 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		}
 		
 		/**
+		 * granularity should be a valid acceptable field 
+		 */
+		if (checkNull(requestParamsDTO.getGranularity())) {
+			boolean isValid = false;
+			for(String granularity : APIConstants.GRANULARITY){
+				if(requestParamsDTO.getGranularity().endsWith(granularity)){
+					isValid = true;
+					break;
+				}
+			}
+			if(!isValid){
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GRANULARITY_NAME,requestParamsDTO.getGranularity()}));
+			}
+			processedData.put(APIConstants.Hasdatas.HAS_GRANULARITY.check(), true);
+		}
+		
+		/**
 		 * If the aggregation is given then groupBy should not be EMPTY and vice versa.
 		 */
 		if (checkNull(requestParamsDTO.getGroupBy())) {
@@ -387,7 +403,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GROUP_BY,errorField.toString()}));
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_GROUPBY.check(), true);
-		}else if(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check())){
+		}else if(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check()) || processedData.get(APIConstants.Hasdatas.HAS_GRANULARITY.check())){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.GROUP_BY));
 		}
 		/**
@@ -403,24 +419,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E109,APIConstants.MULTIPLE_GROUPBY));
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_RANGE.check(), true);
-		}
-		
-		
-		/**
-		 * granularity should be a valid acceptable field 
-		 */
-		if (checkNull(requestParamsDTO.getGranularity())) {
-			boolean isValid = false;
-			for(String granularity : APIConstants.GRANULARITY){
-				if(requestParamsDTO.getGranularity().endsWith(granularity)){
-					isValid = true;
-					break;
-				}
-			}
-			if(!isValid){
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GRANULARITY_NAME,requestParamsDTO.getGranularity()}));
-			}
-			processedData.put(APIConstants.Hasdatas.HAS_GRANULARITY.check(), true);
 		}
 		
 		/**

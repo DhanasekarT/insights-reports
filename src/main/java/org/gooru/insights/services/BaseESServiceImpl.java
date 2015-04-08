@@ -269,7 +269,7 @@ public class BaseESServiceImpl implements BaseESService {
 		} else if (validatedData.get(Hasdatas.HAS_GROUPBY.check())) {
 
 			searchRequestBuilder.setNoFields();
-			buildBuckets(traceId,indices,requestParamsDTO, searchRequestBuilder,metricsName);
+			buildBuckets(traceId,indices,requestParamsDTO, searchRequestBuilder,metricsName,validatedData);
 			hasAggregate = true;
 		
 		}  else {
@@ -373,7 +373,7 @@ public class BaseESServiceImpl implements BaseESService {
 	 * @param metricsName is the name of metric functions
 	 * @throws unable to build the bucket
 	 */
-	private void buildBuckets(String traceId,String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder, Map<String, String> metricsName) {
+	private void buildBuckets(String traceId,String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder, Map<String, String> metricsName, Map<String, Boolean> validatedData) {
 
 		try {
 			TermsBuilder termBuilder = null;
@@ -391,6 +391,7 @@ public class BaseESServiceImpl implements BaseESService {
 				}
 				if (i == groupBy.length - 1) {
 					bucketAggregation(index, requestParamsDTO, termBuilder, metricsName);
+					includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder, null, metricsName);
 					termBuilder.size(0);
 				}
 			}

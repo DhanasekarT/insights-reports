@@ -21,6 +21,8 @@ public class InsightsLogger {
 	
 	private static final String COMMA = ",";
 	
+	private static final String PACKAGE_NAME = "org.gooru.insights";
+	
 	public static void error(String traceId,Exception exception){
 		logger.error(TRACE_ID+traceId+COMMA+EXCEPTION+exception+COMMA+convertArrayToString(exception.getStackTrace()));
 	}
@@ -48,7 +50,7 @@ public class InsightsLogger {
 	private static String convertArrayToString(StackTraceElement[] stackTraceElements){
 		StringBuffer stringBuffer = new StringBuffer();
 		for(int i=0;i< stackTraceElements.length;i++){
-			if(!stackTraceElements[i].getClassName().contains("org.gooru.insights.api")){
+			if(!stackTraceElements[i].getClassName().contains(PACKAGE_NAME)){
 				continue;
 			}
 			if(stringBuffer.length() > 0){

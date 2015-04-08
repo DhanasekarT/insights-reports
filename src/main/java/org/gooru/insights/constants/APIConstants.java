@@ -136,7 +136,7 @@ public class APIConstants {
 	
 	public final static String EMAIL_ID = "emailId";
 	
-	public final static String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","D","W","M","Y","year","month","quator","week","day"};
+	public final static String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","HOUR","MINUTE","SECOND","H","M","S","D","W","M","Y","year","month","quator","week","day","hour","minute","second"};
 	
 	public final static String QUERY = "query";
 	
