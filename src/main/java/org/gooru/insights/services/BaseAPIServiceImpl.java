@@ -254,11 +254,11 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		if (m1.get(name) instanceof String) {
 			return ((String) m1.get(name).toString().toLowerCase()).compareTo((String) m2.get(name).toString().toLowerCase());
 		} else if (m1.get(name) instanceof Double) {
-			return ((Double) m1.get(name)).compareTo((Double) m2.get(name));
+			return (Double.valueOf(m1.get(name).toString())).compareTo(Double.valueOf(m2.get(name).toString()));
 		} else if (m1.get(name) instanceof Long) {
-			return ((Long) m1.get(name)).compareTo((Long) m2.get(name));
+			return (Long.valueOf(m1.get(name).toString())).compareTo(Long.valueOf(m2.get(name).toString()));
 		} else if (m1.get(name) instanceof Integer) {
-			return ((Integer) m1.get(name)).compareTo((Integer) m2.get(name));
+			return (Integer.valueOf(m1.get(name).toString())).compareTo(Integer.valueOf(m2.get(name).toString()));
 		} 
 		return 0;
 	}
