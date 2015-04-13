@@ -25,6 +25,10 @@ private static final String REQUEST_DATA_ERROR = "Include data parameter!!!";
 	
 	private static final String REQUEST_BODY_ERROR = "Include JSON Body data!!!";
 	
+	private static final String TOKEN_HEADER_PREFIX = "Gooru-Session-Token";
+	
+	private static final String TOKEN_PARAM_PREFIX = "sessionToken";
+	
 	
 	public <M> ModelAndView getModel(ResponseParamDTO<M> data) {
 
@@ -46,6 +50,15 @@ private static final String REQUEST_DATA_ERROR = "Include data parameter!!!";
 		return uuid.toString();
 	}
 
+	public String getSessionToken(HttpServletRequest request) {
+
+		if (request.getHeader(TOKEN_HEADER_PREFIX) != null) {
+			return request.getHeader(TOKEN_HEADER_PREFIX);
+		} else {
+			return request.getParameter(TOKEN_PARAM_PREFIX);
+		}
+	}
+	
 	public String getRequestData(HttpServletRequest request,String requestBody){
 		if(request.getMethod().equalsIgnoreCase("GET")){
 			if(request.getParameter("data") == null){

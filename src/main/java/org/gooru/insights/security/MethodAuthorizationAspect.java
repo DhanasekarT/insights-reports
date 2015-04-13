@@ -68,6 +68,11 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 
 	private static final String TRACE_ID = "aspect";
 	
+	private static final String TOKEN_HEADER_PREFIX = "Gooru-Session-Token";
+	
+	private static final String TOKEN_PARAM_PREFIX = "sessionToken";
+
+	
 	@Autowired
 	private RedisService redisService;
 	
@@ -112,8 +117,8 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 		session = request.getSession(true);
 		}
-				if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
-					sessionToken = request.getParameter("sessionToken");					
+		sessionToken = getSessionToken(request);
+				if(sessionToken != null && !sessionToken.isEmpty()){
 					String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
 					ClientResource client = new ClientResource(address);
 					if (client.getStatus().isSuccess()) {
@@ -160,9 +165,8 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 		session = request.getSession(true);
 		}
-		if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
-			sessionToken = request.getParameter("sessionToken");					
-
+		sessionToken = getSessionToken(request);
+		if(sessionToken != null && !sessionToken.isEmpty()){
 			try{
 			String result = redisService.getDirectValue(GOORU_PREFIX+sessionToken);
 			if(result == null || result.isEmpty()){
@@ -203,96 +207,55 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 	public void accessCheckPointcut() {
 	}
 	
-	public boolean hasOperationsAuthority(AuthorizeOperations authorizeOperations, ProceedingJoinPoint pjp) {
-		
+	public boolean hasOperationsAuthority(
+			AuthorizeOperations authorizeOperations, ProceedingJoinPoint pjp) {
+
 		HttpServletRequest request = null;
 		HttpSession session = null;
 		String sessionToken = null;
-		
+
 		if (RequestContextHolder.getRequestAttributes() != null) {
-		request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-		session = request.getSession(true);
+			request = ((ServletRequestAttributes) RequestContextHolder
+					.getRequestAttributes()).getRequest();
+			session = request.getSession(true);
 		}
-		if(session.getAttribute("token") != null && !session.getAttribute("token").toString().isEmpty()){
-			if(request.getParameter("sessionToken") != null){
-				sessionToken = (String) session.getAttribute("token");
-					if(sessionToken.equalsIgnoreCase(request.getParameter("sessionToken"))) {
+		sessionToken = getSessionToken(request);
+		if (sessionToken != null && !sessionToken.isEmpty()) {
+			String address = endPoint.getColumnByName("constant_value")
+					.getStringValue()
+					+ "/v2/user/token/"
+					+ sessionToken
+					+ "?sessionToken=" + sessionToken;
+			ClientResource client = new ClientResource(address);
+			if (client.getStatus().isSuccess()) {
+				try {
+					Representation representation = client.get();
+					JsonRepresentation jsonRepresentation = new JsonRepresentation(
+							representation);
+					JSONObject jsonObj = jsonRepresentation.getJsonObject();
+					User user = new User();
+					user.setFirstName(jsonObj.getString("firstName"));
+					user.setLastName(jsonObj.getString("lastName"));
+					user.setEmailId(jsonObj.getString("emailId"));
+					user.setGooruUId(jsonObj.getString("gooruUId"));
+					if (hasGooruAdminAuthority(authorizeOperations, jsonObj)) {
+						session.setAttribute("token", sessionToken);
 						return true;
 					}
-					else{
-						if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
-							sessionToken = request.getParameter("sessionToken");					
-							String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
-							ClientResource client = new ClientResource(address);
-							if (client.getStatus().isSuccess()) {
-								try{
-									Representation representation = client.get();
-									JsonRepresentation jsonRepresentation = new JsonRepresentation(
-											representation);
-									JSONObject jsonObj = jsonRepresentation.getJsonObject();
-									User user = new User();
-									user.setFirstName(jsonObj.getString("firstName"));
-									user.setLastName(jsonObj.getString("lastName"));
-									user.setEmailId(jsonObj.getString("emailId"));
-									user.setGooruUId(jsonObj.getString("gooruUId"));
-									if(hasGooruAdminAuthority(authorizeOperations, jsonObj)){
-										session.setAttribute("token", sessionToken);
-										 return true;
-									}
-									 if(hasAuthority(authorizeOperations, jsonObj)){
-										 session.setAttribute("token", sessionToken);
-										 return true;
-									 }else{
-										 return false;
-									 }
-								}catch(Exception e){
-									throw new AccessDeniedException("Invalid sessionToken!");
-								}
-							}else{
-								throw new AccessDeniedException("Invalid sessionToken!");
-							}
-						}else{
-							throw new AccessDeniedException("sessionToken can not be NULL!");
-						}
+					if (hasAuthority(authorizeOperations, jsonObj)) {
+						session.setAttribute("token", sessionToken);
+						return true;
+					} else {
+						return false;
+					}
+				} catch (Exception e) {
+					throw new AccessDeniedException("Invalid sessionToken!");
 				}
-			}else{
-				throw new AccessDeniedException("sessionToken can not be NULL!");
+			} else {
+				throw new AccessDeniedException("Invalid sessionToken!");
 			}
 		} else {
-				if(request.getParameter("sessionToken") != null && ! request.getParameter("sessionToken").isEmpty()){
-					sessionToken = request.getParameter("sessionToken");					
-					String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
-					ClientResource client = new ClientResource(address);
-					if (client.getStatus().isSuccess()) {
-						try{
-							Representation representation = client.get();
-							JsonRepresentation jsonRepresentation = new JsonRepresentation(
-									representation);
-							JSONObject jsonObj = jsonRepresentation.getJsonObject();
-							User user = new User();
-							user.setFirstName(jsonObj.getString("firstName"));
-							user.setLastName(jsonObj.getString("lastName"));
-							user.setEmailId(jsonObj.getString("emailId"));
-							user.setGooruUId(jsonObj.getString("gooruUId"));
-							if(hasGooruAdminAuthority(authorizeOperations, jsonObj)){
-								session.setAttribute("token", sessionToken);
-								 return true;
-							}
-							 if(hasAuthority(authorizeOperations, jsonObj)){
-								 session.setAttribute("token", sessionToken);
-								 return true;
-							 }else{
-								 return false;
-							 }
-						}catch(Exception e){
-							throw new AccessDeniedException("Invalid sessionToken!");
-						}
-					}else{
-						throw new AccessDeniedException("Invalid sessionToken!");
-					}
-				}else{
-					throw new AccessDeniedException("sessionToken can not be NULL!");
-				}
+			throw new AccessDeniedException("sessionToken can not be NULL!");
 		}
 	}
 	
@@ -350,5 +313,14 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 			}
 		}
 		
+	}
+	
+	private String getSessionToken(HttpServletRequest request) {
+
+		if (request.getHeader(TOKEN_HEADER_PREFIX) != null) {
+			return request.getHeader(TOKEN_HEADER_PREFIX);
+		} else {
+			return request.getParameter(TOKEN_PARAM_PREFIX);
+		}
 	}
 }

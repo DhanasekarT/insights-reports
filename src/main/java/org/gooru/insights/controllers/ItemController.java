@@ -45,9 +45,9 @@ public class ItemController extends BaseController{
 	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = false) String data,
-			@RequestParam(value = "sessionToken", required = true) String sessionToken, HttpServletResponse response) throws Exception {
+			HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.generateQuery(getTraceId(request),data, sessionToken, null));
+		return getModel(itemService.generateQuery(getTraceId(request),data, getSessionToken(request), null));
 	}
 	
 	/**
@@ -64,7 +64,7 @@ public class ItemController extends BaseController{
 	@RequestMapping(value = "/{action}/report", method = RequestMethod.POST)
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request, @PathVariable(value = "action") String action, @RequestParam(value = "reportName", required = true) String reportName,
-			@RequestParam(value = "sessionToken", required = true) String sessionToken, @RequestBody String data, HttpServletResponse response) throws Exception {
+			@RequestBody String data, HttpServletResponse response) throws Exception {
 
 		return getModel(itemService.manageReports(getTraceId(request),action, reportName, data));
 	}
@@ -80,10 +80,10 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value = "/report/{reportType}", method = { RequestMethod.GET, RequestMethod.POST })
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getPartyReports(HttpServletRequest request, @PathVariable(value = "reportType") String reportType, @RequestParam(value = "sessionToken", required = true) String sessionToken,
+	public ModelAndView getPartyReports(HttpServletRequest request, @PathVariable(value = "reportType") String reportType,
 			HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.getPartyReport(getTraceId(request),request, reportType, sessionToken));
+		return getModel(itemService.getPartyReport(getTraceId(request),request, reportType, getSessionToken(request)));
 	}
 	
 	/**
@@ -111,9 +111,9 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
+	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,HttpServletResponse response) throws Exception{
 		
-		return getModel(itemService.getQuery(getTraceId(request),queryId,sessionToken));
+		return getModel(itemService.getQuery(getTraceId(request),queryId,getSessionToken(request)));
 	}
 
 	/**
@@ -127,9 +127,9 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value="/list",method =RequestMethod.GET)
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
+	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response) throws Exception{
 		 
-		return getModel(getItemService().getCacheData(getTraceId(request),queryId,sessionToken));
+		return getModel(getItemService().getCacheData(getTraceId(request),queryId,getSessionToken(request)));
 	}
 	
 	/**
@@ -169,9 +169,9 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
 	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
-	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = false) String data,@RequestParam(value="sessionToken",required = true) String sessionToken,HttpServletResponse response) throws Exception{
+	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = false) String data,HttpServletResponse response) throws Exception{
 		
-		return getModel(getItemService().processApi(getTraceId(request),data,sessionToken));
+		return getModel(getItemService().processApi(getTraceId(request),data,getSessionToken(request)));
 	}
 	
 	/**
