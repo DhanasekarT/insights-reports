@@ -1,17 +1,12 @@
 package org.gooru.insights.constants;
 
-import java.util.HashMap;
-import java.util.Map;
+public class ESConstants {
 
-import org.apache.commons.collections.map.HashedMap;
-
-public interface ESConstants {
-
-	public enum esConfigs{
-		ROWKEY("es~connection"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("node_type"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
+	public enum EsConfigs{
+		ROWKEY("es~connection"),DEV_ROWKEY("es~connection~dev"),ES_INDICES("es~indices"),INDEX("index_name"),CLUSTER("cluster_name"),ES_CLUSTER("cluster.name"),NODE("node_type"),HOSTS("host_names"),NODE_CLIENT("node_type"),TRANSPORT_CLIENT("transportClient"),PORTNO("port_no");
 		
 		private String property;
-		esConfigs(String name){
+		EsConfigs(String name){
 		this.property = name;	
 		}
 		public String esConfig(){
@@ -19,11 +14,11 @@ public interface ESConstants {
 		}
 	}
 	
-	public enum esSources{
+	public enum EsSources{
 		SOURCE("_source"),FIELDS("fields");
 		
 		private String property;
-		esSources(String name){
+		EsSources(String name){
 		this.property = name;	
 		}
 		public String esSource(){
@@ -31,29 +26,4 @@ public interface ESConstants {
 		}
 	}
 	
-	public static String[] ALL_INDICES = {"event_logger","content_catalog","taxonomy_catalog","user_catalog"};
-	
-	public enum esIndices{
-		RAW_DATA("rawdata");
-		
-		private String index;
-		esIndices(String name){
-		this.index = name;
-		}
-		public String esIndex(){
-			return index;
-		}
-	}
-	
-	public enum esTypes{
-		EVENT_DETAIL("event_detail");
-		
-		private String type;
-		esTypes(String name){
-		this.type = name;
-		}
-		public String esType(){
-			return type;
-		}
-	}
 }

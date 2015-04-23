@@ -15,14 +15,13 @@
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
 		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
 
-<!-- 	<mvc:annotation-driven /> -->
+	<!-- <mvc:annotation-driven /> -->
 
-<!-- 	<context:component-scan base-package="org.gooru.insights"> -->
-		<!-- <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/> -->
-<!-- 	</context:component-scan> -->
+	<!-- <context:component-scan base-package="org.gooru.insights"> -->
+	<!-- <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/> -->
+	<!-- </context:component-scan> -->
 
-<!-- 	<context:annotation-config /> -->
-
+	<!-- <context:annotation-config /> -->
 	<bean id="tomcatUsername" class="java.lang.String">
 		<constructor-arg>
 			<value>${tomcat.username}</value>
@@ -36,5 +35,17 @@
 	</bean>
 
 
-	
+	<bean id="redisLongTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+		<property name="connectionFactory" ref="redisConnectionFactory" />
+	</bean>
+
+	<bean id="redisStringTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+		<property name="connectionFactory" ref="redisConnectionFactory" />
+	</bean>
+
+	<bean id="redisConnectionFactory"
+		class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+		<property name="port" value="6379" />
+		<property name="hostName" value="${redis.server.host}" />
+	</bean>
 </beans>

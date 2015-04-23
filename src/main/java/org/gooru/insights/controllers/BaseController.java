@@ -1,170 +1,82 @@
 package org.gooru.insights.controllers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONArray;
+import org.gooru.insights.builders.utils.InsightsLogger;
+import org.gooru.insights.builders.utils.MessageHandler;
+import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.exception.handlers.BadRequestException;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mortbay.util.ajax.JSON;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
 
+import flexjson.JSONSerializer;
+
 @Controller
-public class BaseController {
+public class BaseController extends APIConstants{
 
-	Map<String,String> dataData = new HashMap<String,String>();
+private static final String REQUEST_DATA_ERROR = "Include data parameter!!!";
 	
-	protected ModelAndView getModel(JSONArray data,Map<String,String> messageData){
-		return  this.resultSet(data,messageData);
-	}
+	private static final String REQUEST_BODY_ERROR = "Include JSON Body data!!!";
+	
+	private static final String TOKEN_HEADER_PREFIX = "Gooru-Session-Token";
+	
+	private static final String TOKEN_PARAM_PREFIX = "sessionToken";
+	
+	
+	public <M> ModelAndView getModel(ResponseParamDTO<M> data) {
 
-	
-	
-	public void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,Map<Integer,String> errorMap) {
-		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){ 
-		response.setStatus(entry.getKey());
-		 response.setContentType("application/json");
-		 Map<String, Object> resultMap = new HashMap<String, Object>();
-		 try {
-		 
-		 resultMap.put("statusCode", entry.getKey());
-		 resultMap.put("message", entry.getValue());
-		 JSONObject resultJson = new JSONObject(resultMap);
-		 response.getWriter().write(resultJson.toString());
-		 } catch (IOException e) {
-			 e.printStackTrace();
-		 }
-		}
-	}
-	
-	public ModelAndView resultSet(List<String> data,Map<String,String> messageData){
-		ModelAndView model = new ModelAndView("content");
-		model.addObject("content", data);
-		addFilterDate(model, messageData);
-		if(messageData != null){
-		model.addObject("message", messageData);
-		
-		}
-		clearMessage();
+		ModelAndView model = new ModelAndView(MessageHandler.getMessage(APIConstants.VIEW_NAME));
+		model.addObject(MessageHandler.getMessage(APIConstants.RESPONSE_NAME), new JSONSerializer().exclude(EXCLUDE_CLASSES).deepSerialize(data));
 		return model;
 	}
 	
-	public ModelAndView resultSet(JSONArray data,Map<String,String> messageData){
-		ModelAndView model = new ModelAndView("content");
-		try {
-			JSONObject resultMap = new JSONObject();
-				resultMap.put("content",data );
-			addFilterDate(resultMap, messageData);
-			if(messageData != null){
-			resultMap.put("message",messageData );
-			}
-			model.addObject("content", resultMap);
-			clearMessage();
-		} catch (JSONException e) {
-			e.printStackTrace();
+	public String getTraceId(HttpServletRequest request) throws JSONException {
+		Map<String, Object> requestParam = request.getParameterMap();
+		JSONObject jsonObject = new JSONObject();
+		for (Map.Entry<String, Object> entry : requestParam.entrySet()) {
+			jsonObject.put(entry.getKey(), entry.getValue());
 		}
-			return model;
-		}
-	
-	public void addFilterDate(ModelAndView model,Map<String,String> messageData){
-		if(messageData != null){
-	
-			List<Map<String,String>> dateRange = new ArrayList<Map<String,String>>();
-			Map<String,String> filterDate = new HashMap<String,String>();
-			String unixStartDate = null;
-			String unixEndDate = null;
-			String totalRows = null;
-				unixStartDate  = messageData.get("unixStartDate");
-				unixEndDate = messageData.get("unixEndDate");
-				totalRows = messageData.get("totalRows");
-				if(unixStartDate != null){
-					filterDate.put("unixStartDate", unixStartDate);
-					messageData.remove("unixStartDate");
-				}
-				if(unixEndDate != null){
-					filterDate.put("unixEndDate", unixEndDate);
-					messageData.remove("unixEndDate");
-				}
-				if(totalRows != null){
-					messageData.remove("totalRows");
-				}
-			dateRange.add(filterDate);
-			
-			model.addObject("dateRange",dateRange);
-			filterDate = new HashMap<String, String>();
-			dateRange = new ArrayList<Map<String,String>>() ;
-			if(totalRows != null){
-				filterDate.put("totalRows",totalRows);
-				dateRange.add(filterDate);
-				
-			}
-			model.addObject("paginate",filterDate);
+		jsonObject.put("url", request.getRequestURL().toString());
+		UUID uuid = UUID.randomUUID();
+		InsightsLogger.debug(uuid.toString(), jsonObject.toString());
+		request.setAttribute("traceId", uuid.toString());
+		return uuid.toString();
 	}
-	}
-	
-	public void addFilterDate(JSONObject data,Map<String,String> messageData) throws JSONException{
-		if(messageData != null){
-			Map<String,String> filterDate = new HashMap<String,String>();
-			String unixStartDate = null;
-			String unixEndDate = null;
-			Long totalRows;
-				unixStartDate  = messageData.get("unixStartDate");
-				unixEndDate = messageData.get("unixEndDate");
-				totalRows = (messageData.get("totalRows") != null ? Long.valueOf(messageData.get("totalRows")) : 0L );				
-				if(unixStartDate != null){
-					filterDate.put("unixStartDate", unixStartDate);
-					messageData.remove("unixStartDate");
-				}
-				if(unixEndDate != null){
-					filterDate.put("unixEndDate", unixEndDate);
-					messageData.remove("unixEndDate");
-				}
-				if(totalRows != null){
-					messageData.remove("totalRows");
-				}
-			data.put("dateRange", filterDate);
-			Map<String,Long> paginateData = new HashMap<String, Long>();
-			if(totalRows != null){
-			paginateData.put("totalRows",totalRows);
-					
-			}
-			data.put("paginate", paginateData);
-	}
-	}
-	
-	public void sendError(HttpServletResponse response,Map<Integer,String> errorMap){
 
-		try {
-			JSONObject json = new JSONObject();
-			json.put("paginate", new JSONObject());
-			json.put("content", new JSONArray());
-			Map<Object,Object> message = new HashMap<Object, Object>();
-			Integer errorCode =500;
-		for(Map.Entry<Integer,String> entry : errorMap.entrySet()){
-			errorCode =  entry.getKey();
-				message.put(errorCode, entry.getValue()); 
-				json.append("message", message);
+	public String getSessionToken(HttpServletRequest request) {
+
+		if (request.getHeader(TOKEN_HEADER_PREFIX) != null) {
+			return request.getHeader(TOKEN_HEADER_PREFIX);
+		} else {
+			return request.getParameter(TOKEN_PARAM_PREFIX);
 		}
-		response.getWriter().write(json.toString());
-		
-	} catch (Exception e) {
-		e.printStackTrace();
-	}
 	}
 	
-	public Map<String,String> getMessage(){
-	return this.dataData;
+	public String getRequestData(HttpServletRequest request,String requestBody){
+		if(request.getMethod().equalsIgnoreCase("GET")){
+			if(request.getParameter("data") == null){
+				throw new BadRequestException(REQUEST_DATA_ERROR);
+			}
+			return request.getParameter("data").toString();
+		}else {
+			if(requestBody == null){
+				throw new BadRequestException(REQUEST_BODY_ERROR);
+			}
+			return requestBody;
+		}
 	}
 	
-	public void clearMessage(){
-		this.dataData = new HashMap<String,String>();
+	public HttpServletResponse setAllowOrigin(HttpServletResponse response) {
+		response.setHeader("Access-Control-Allow-Origin", "*");
+		response.setHeader("Access-Control-Allow-Headers", "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With");
+		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+		return response;
 	}
-	
 }
