@@ -5,12 +5,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 
 public interface BaseAPIService {
 
 	RequestParamsDTO buildRequestParameters(String data);
+	
+	Map<String,Object> getRequestFieldNameValueInMap(HttpServletRequest request,String prefix);
+	
 	boolean checkNull(Collection<?> request);
 	
 	boolean checkNull(Object request);
@@ -21,15 +28,19 @@ public interface BaseAPIService {
 	
 	String convertArraytoString(String[] data);
 	
+	Set<String> convertStringtoSet(String inputDatas);
+	
+	RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
+	
+	String[] getIndices(String names);
+	
 	boolean checkNull(Map<?,?> request);
 	
 	boolean checkNull(Integer parameter);
 	
-	Object[] convertSettoArray(Set<Object> set);
+	Object[] convertSettoArray(Set<?> set);
 	
-	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String commonKey);
-	
-	JSONArray InnerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
+	String convertCollectiontoString(Collection<String> datas);
 	
 	List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
 	
@@ -39,5 +50,9 @@ public interface BaseAPIService {
 	
 	JSONArray formatKeyValueJson(List<Map<String,Object>> dataMap,String key) throws org.json.JSONException;
 
-	String convertTimeMstoISO(Object milliseconds);
+	RequestParamsCoreDTO buildRequestParamsCoreDTO(String data);
+
+	Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO);
+	
+	<T> T deserialize(String json, Class<T> clazz);
 }

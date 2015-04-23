@@ -1,13 +1,14 @@
 package org.gooru.insights.constants;
 
-public interface CassandraConstants {
+public final class CassandraConstants {
 
-	public enum cassandraConfigs{
-		SEEDS("cassandra.hosts"),PORT("cassandra.port"),CLUSTER("cassandra.clusterName"),INSIGHTS_KEYSPACE("cassandra.keyspace.insights"),SEARCH_KEYSPACE("cassandra.keyspace.search");
+
+	public enum CassandraConfigs{
+		SEEDS("cassandra.hosts"),PORT("cassandra.port"),CLUSTER("cassandra.clusterName"),INSIGHTS_KEYSPACE("cassandra.keyspace.insights"),DATA_CENTRE("dataCentre");
 		
 		private String property;
 		
-		private cassandraConfigs(String name){
+		private CassandraConfigs(String name){
 		this.property = name;	
 		}
 		
@@ -16,12 +17,12 @@ public interface CassandraConstants {
 		}
 	}
 	
-	public enum keyspaces{
+	public enum Keyspaces{
 		INSIGHTS("insights"),SEARCH("search");
 		
 		private String keyspace;
 		
-		private keyspaces(String name){
+		private Keyspaces(String name){
 		this.keyspace = name;	
 		}
 		
@@ -30,24 +31,27 @@ public interface CassandraConstants {
 		}
 	}
 	
-	public enum cassRowKeys{
-		RAW_KEY("");
+	public enum CassandraRowKeys{
+		FILED_ARRAY_HANDLER("fieldArrayHandler");
 		
 		private String index;
-		cassRowKeys(String name){
-		this.index = name;
+		
+		private CassandraRowKeys(String name){
+			this.index = name;
 		}
-		public String cassRowKey(){
+
+		public String CassandraRowKey(){
 			return index;
 		}
 	}
 	
-	public enum columnFamilies{
-		CONNECTION_CONFIG_SETTING("connection_config_setting"),EVENT_FIELDS("event_fields");
+	public enum ColumnFamilies{
+		EVENT_FIELDS("event_fields"), CONFIG_SETTINGS("config_settings"), JOB_CONFIG_SETTINGS("job_config_settings"), 
+		QUERY_REPORTS("query_reports");
 		
 		private String columnFamilyName;
 		
-		private columnFamilies(String name){
+		private ColumnFamilies(String name){
 		this.columnFamilyName = name;	
 		}
 		

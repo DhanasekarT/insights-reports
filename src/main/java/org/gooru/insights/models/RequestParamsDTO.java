@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
-
 public class RequestParamsDTO implements Serializable {
 
 	private static final long serialVersionUID = -2840599796987757919L;
@@ -16,11 +14,17 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String dataSource;
 	
+	private String sourceIndex;
+	
 	private String granularity;
+	
+	private Boolean saveQuery;
 	
 	RequestParamsPaginationDTO pagination;
 	
 	RequestParamsFiltersDTO filters;
+	
+	List<RequestParamsRangeDTO> ranges;
 	
 	private List<Map<String,String>> aggregations;
 	
@@ -28,7 +32,20 @@ public class RequestParamsDTO implements Serializable {
 	
 	private String groupBy;
 
+	private String groupByDataSource;
+	
 	private List<RequestParamsFilterDetailDTO> filter;
+	
+	private String apiJoinKey;
+	
+
+	public String getApiJoinKey() {
+		return apiJoinKey;
+	}
+
+	public void setApiJoinKey(String apiJoinKey) {
+		this.apiJoinKey = apiJoinKey;
+	}
 
 	public String getFields() {
 		return fields;
@@ -56,6 +73,14 @@ public class RequestParamsDTO implements Serializable {
 
 	public RequestParamsPaginationDTO getPagination() {
 		return pagination;
+	}
+
+	public List<RequestParamsRangeDTO> getRanges() {
+		return ranges;
+	}
+
+	public void setRanges(List<RequestParamsRangeDTO> ranges) {
+		this.ranges = ranges;
 	}
 
 	public void setPagination(RequestParamsPaginationDTO paginate) {
@@ -109,7 +134,30 @@ public class RequestParamsDTO implements Serializable {
 	public void setGranularity(String granularity) {
 		this.granularity = granularity;
 	}
-	
-	
+
+	public void setSourceIndex(String sourceIndex) {
+		this.sourceIndex = sourceIndex;
+	}
+
+	public String getSourceIndex() {
+		return sourceIndex;
+	}
+
+	public Boolean isSaveQuery() {
+		return saveQuery;
+	}
+
+	public void setSaveQuery(Boolean saveQuery) {
+		this.saveQuery = saveQuery;
+	}
+
+	public String getGroupByDataSource() {
+		return groupByDataSource;
+	}
+
+	public void setGroupByDataSource(String groupByDataSource) {
+		this.groupByDataSource = groupByDataSource;
+	}
+
 	
 }

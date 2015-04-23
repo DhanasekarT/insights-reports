@@ -2,27 +2,48 @@ package org.gooru.insights.models;
 
 import java.io.Serializable;
 
-import org.json.JSONObject;
+public class RequestParamsFilterFieldsDTO implements Serializable {
 
-public class RequestParamsFilterFieldsDTO implements Serializable{
+	public RequestParamsFilterFieldsDTO() {
 
+	}
+
+	public RequestParamsFilterFieldsDTO(String operator, String fieldName, String value, String valueType, String type) {
+		this.setFieldName(fieldName);
+		this.setOperator(operator);
+		this.setValue(value);
+		this.setValueType(valueType);
+		this.setType(type);
+	}
 
 	private static final long serialVersionUID = -2840599796987757919L;
 
 	private String Operator;
-	
+
 	private String fieldName;
-	
+
 	private String value;
-	
+
 	private String valueType;
-	
+
 	private String type;
 
 	private String from;
-	
+
 	private String to;
+
+	private String format;
 	
+	private String dataSource;
+
+	public String getFormat() {
+		return format;
+	}
+
+	public void setFormat(String format) {
+		this.format = format;
+	}
+
 	public String getOperator() {
 		return Operator;
 	}
@@ -54,7 +75,7 @@ public class RequestParamsFilterFieldsDTO implements Serializable{
 	public void setValueType(String valueType) {
 		this.valueType = valueType;
 	}
-	
+
 	public String getType() {
 		return type;
 	}
@@ -74,10 +95,18 @@ public class RequestParamsFilterFieldsDTO implements Serializable{
 	public String getTo() {
 		return to;
 	}
-	
+
 	public void setTo(String to) {
 		this.to = to;
 	}
 
-	
+	public String getDataSource() {
+		return dataSource;
+	}
+
+	public void setDataSource(String dataSource) {
+		this.dataSource = dataSource;
+	}
+
+
 }
