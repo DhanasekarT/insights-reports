@@ -47,13 +47,16 @@ public class ItemServiceImpl implements ItemService {
 	private RedisService redisService;
 	
 	@Autowired
-	private BusinessLogicService businessLogicService;
+	private ESDataProcessor businessLogicService;
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
 	@Autowired
 	private BaseCassandraService baseCassandraService;
+	
+	@Autowired
+	private UserService userService;
 	
 	/**
 	 * This will return simple message as service available
@@ -88,7 +91,7 @@ public class ItemServiceImpl implements ItemService {
 				}
 				responseParamDTO = generateQuery(traceId,data,null, userMap);
 				if (getBaseAPIService().checkNull(previousAPIKey)) {
-					resultData = getBusinessLogicService().leftJoin(resultData, responseParamDTO.getContent(), previousAPIKey, api.getApiJoinKey());
+					resultData = getBaseAPIService().leftJoin(resultData, responseParamDTO.getContent(), previousAPIKey, api.getApiJoinKey());
 				}
 			}
 			if (getBaseAPIService().checkNull(requestParamsCoreDTO.getCoreKey())) {
@@ -190,7 +193,7 @@ public class ItemServiceImpl implements ItemService {
 		/**
 		 * Additional filters are added based on user authentication
 		 */
-		requestParamsDTO = getBaseAPIService().validateUserRole(traceId,requestParamsDTO, userMap);
+		requestParamsDTO = getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 		
 		String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		ResponseParamDTO<Map<String, Object>> responseParamDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
@@ -401,7 +404,7 @@ public class ItemServiceImpl implements ItemService {
 		return redisService;
 	}
 
-	public BusinessLogicService getBusinessLogicService() {
+	public ESDataProcessor getBusinessLogicService() {
 		return businessLogicService;
 	}
 
@@ -411,5 +414,9 @@ public class ItemServiceImpl implements ItemService {
 
 	public BaseCassandraService getBaseCassandraService() {
 		return baseCassandraService;
+	}
+
+	public UserService getUserService() {
+		return userService;
 	}
 }

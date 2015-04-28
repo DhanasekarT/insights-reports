@@ -6,8 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.StringUtils;
+import org.gooru.insights.builders.utils.ExcludeNullTransformer;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
@@ -20,11 +22,13 @@ import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import flexjson.JSONSerializer;
+
 @Component
-public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService {
+public class UserServiceImpl implements UserService {
 
 	@Autowired
-	private BusinessLogicService businessLogicService;
+	private ESDataProcessor businessLogicService;
 	
 	public Map<String, Object> getUserFilters(String gooruUId) {
 
@@ -211,7 +215,91 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		return getRoleBasedParty(traceId,partyPermissions, allowedParty);
 	}
 
-	public BusinessLogicService getBusinessLogicService() {
+	public RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
+		
+		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
+
+		Map<Integer,String> errorMap = new HashMap<Integer, String>();
+		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
+		InsightsLogger.info(traceId,APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
+		InsightsLogger.info(traceId,APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
+		
+		if(!StringUtils.isBlank(getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
+			return requestParamsDTO;
+		}
+
+		Map<String, Object> userFilters = getUserFilters(gooruUId);
+		Map<String, Object> userFiltersAndValues = getUserFiltersAndValues(requestParamsDTO.getFilter());
+		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
+		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
+
+		String partyAlldataPerm = getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
+		
+		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
+			addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
+		}
+		if(!StringUtils.isBlank(partyAlldataPerm) && !userFilterOrgValues.isEmpty()){			
+			for(String org : userFilterOrgValues){
+				if(!partyAlldataPerm.contains(org)){
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
+				}
+			}		
+			return requestParamsDTO;
+		}
+		
+		Map<String, Object> orgFilters = new HashMap<String, Object>();
+		
+		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
+			if(e.getValue().contains(APIConstants.AP_ALL_PARTY_ALL_DATA)){
+				return requestParamsDTO;
+			}else if(e.getValue().contains(APIConstants.AP_PARTY_ALL_DATA)){
+				orgFilters.put(e.getKey(), e.getValue());
+			}
+		}
+		if(userFilterOrgValues.isEmpty() && !orgFilters.isEmpty()){
+			return requestParamsDTO;
+		}
+		
+		if (!checkIfFieldValueMatch(userFilters, userFiltersAndValues, errorMap).isEmpty()) {
+			if(errorMap.containsKey(403)){
+				return userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions);
+			}else{
+				errorMap.clear();
+				return requestParamsDTO;
+			}
+		}
+
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
+				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
+//			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
+			return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
+		}
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
+			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
+		}
+
+		if (!userFilterOrgValues.isEmpty()) {
+			validateOrganization(requestParamsDTO, partyPermissions, errorMap, userFilterOrgValues);
+		} else {
+			String allowedParty = getAllowedParties(traceId,requestParamsDTO, partyPermissions);
+			if (!StringUtils.isBlank(allowedParty)) {
+				if(requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)){
+					addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}else{
+					addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}
+			} else {
+				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
+			}
+		}
+
+		JSONSerializer serializer = new JSONSerializer();
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
+		InsightsLogger.info(traceId,APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
+		return requestParamsDTO;
+	}
+	public ESDataProcessor getBusinessLogicService() {
 		return businessLogicService;
 	}
 

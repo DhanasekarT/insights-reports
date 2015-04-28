@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -21,13 +20,10 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
-import org.gooru.insights.builders.utils.ExcludeNullTransformer;
-import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -44,7 +40,6 @@ import com.google.gson.Gson;
 
 import flexjson.JSONDeserializer;
 import flexjson.JSONException;
-import flexjson.JSONSerializer;
 
 @Service
 public class BaseAPIServiceImpl implements BaseAPIService {
@@ -53,10 +48,10 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 	private BaseConnectionService baseConnectionService;
 
 	@Autowired
-	private ValidateUserPermissionService validateUserPermissionService;
+	private UserService userService;
 	
 	@Autowired
-	private BusinessLogicService businessLogicService;
+	private ESDataProcessor businessLogicService;
 	
 	public RequestParamsDTO buildRequestParameters(String data) {
 		try {
@@ -158,6 +153,62 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			jsonArray.put(entry);
 		}
 		return jsonArray;
+	}
+
+	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, Set<String> keys) {
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (Map<String, Object> parentEntry : parent) {
+			boolean occured = false;
+			Map<String, Object> appended = new HashMap<String, Object>();
+			for (Map<String, Object> childEntry : child) {
+				boolean validated = false;
+				for (String key : keys) {
+					if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
+						if (childEntry.get(key).toString().equals(parentEntry.get(key).toString())) {
+						} else {
+							validated = true;
+						}
+					} else {
+						validated = true;
+					}
+				}
+				if (!validated) {
+					occured = true;
+					appended.putAll(childEntry);
+					appended.putAll(parentEntry);
+					break;
+				}
+			}
+			if (!occured) {
+				appended.putAll(parentEntry);
+			}
+			resultList.add(appended);
+		}
+		return resultList;
+	}
+
+	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey) {
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (Map<String, Object> parentEntry : parent) {
+			boolean occured = false;
+			Map<String, Object> appended = new HashMap<String, Object>();
+			for (Map<String, Object> childEntry : child) {
+				if (childEntry.containsKey(childKey) && parentEntry.containsKey(parentKey)) {
+					if (childEntry.get(childKey).equals(parentEntry.get(parentKey))) {
+						occured = true;
+						appended.putAll(childEntry);
+						appended.putAll(parentEntry);
+						break;
+					}
+				}
+			}
+			if (!occured) {
+				appended.putAll(parentEntry);
+			}
+
+			resultList.add(appended);
+		}
+		return resultList;
 	}
 
 	public List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child) {
@@ -533,91 +584,6 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		return indices;
 	}
 
-	public RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
-		
-		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
-
-		Map<Integer,String> errorMap = new HashMap<Integer, String>();
-		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
-		InsightsLogger.info(traceId,APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
-		InsightsLogger.info(traceId,APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
-		
-		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
-			return requestParamsDTO;
-		}
-
-		Map<String, Object> userFilters = validateUserPermissionService.getUserFilters(gooruUId);
-		Map<String, Object> userFiltersAndValues = validateUserPermissionService.getUserFiltersAndValues(requestParamsDTO.getFilter());
-		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
-		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
-
-		String partyAlldataPerm = validateUserPermissionService.getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
-		
-		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
-			validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
-		}
-		if(!StringUtils.isBlank(partyAlldataPerm) && !userFilterOrgValues.isEmpty()){			
-			for(String org : userFilterOrgValues){
-				if(!partyAlldataPerm.contains(org)){
-					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
-				}
-			}		
-			return requestParamsDTO;
-		}
-		
-		Map<String, Object> orgFilters = new HashMap<String, Object>();
-		
-		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
-			if(e.getValue().contains(APIConstants.AP_ALL_PARTY_ALL_DATA)){
-				return requestParamsDTO;
-			}else if(e.getValue().contains(APIConstants.AP_PARTY_ALL_DATA)){
-				orgFilters.put(e.getKey(), e.getValue());
-			}
-		}
-		if(userFilterOrgValues.isEmpty() && !orgFilters.isEmpty()){
-			return requestParamsDTO;
-		}
-		
-		if (!validateUserPermissionService.checkIfFieldValueMatch(userFilters, userFiltersAndValues, errorMap).isEmpty()) {
-			if(errorMap.containsKey(403)){
-				return validateUserPermissionService.userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions);
-			}else{
-				errorMap.clear();
-				return requestParamsDTO;
-			}
-		}
-
-		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
-				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
-//			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
-			return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
-		}
-		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
-			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
-			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
-		}
-
-		if (!userFilterOrgValues.isEmpty()) {
-			validateUserPermissionService.validateOrganization(requestParamsDTO, partyPermissions, errorMap, userFilterOrgValues);
-		} else {
-			String allowedParty = validateUserPermissionService.getAllowedParties(traceId,requestParamsDTO, partyPermissions);
-			if (!StringUtils.isBlank(allowedParty)) {
-				if(requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)){
-					validateUserPermissionService.addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-				}else{
-					validateUserPermissionService.addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
-				}
-			} else {
-				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
-			}
-		}
-
-		JSONSerializer serializer = new JSONSerializer();
-		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
-		InsightsLogger.info(traceId,APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
-		return requestParamsDTO;
-	}
-
 	public Map<String, Object> getRequestFieldNameValueInMap(HttpServletRequest request, String prefix) {
 	     Map<String, Object> requestFieldNameValue = new HashMap<String, Object>();
          Enumeration paramNames = request.getParameterNames();
@@ -636,5 +602,9 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			stringBuffer.append(text[i]);
 		}
 		return stringBuffer.toString();
+	}
+
+	public UserService getUserService() {
+		return userService;
 	}
 }

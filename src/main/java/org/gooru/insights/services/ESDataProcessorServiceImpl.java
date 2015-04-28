@@ -29,69 +29,13 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 @Service
-public class BusinessLogicServiceImpl implements BusinessLogicService {
+public class ESDataProcessorServiceImpl implements ESDataProcessor {
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
 	@Autowired
 	private BaseAPIService baseAPIService;
-
-	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, Set<String> keys) {
-		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-		for (Map<String, Object> parentEntry : parent) {
-			boolean occured = false;
-			Map<String, Object> appended = new HashMap<String, Object>();
-			for (Map<String, Object> childEntry : child) {
-				boolean validated = false;
-				for (String key : keys) {
-					if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
-						if (childEntry.get(key).toString().equals(parentEntry.get(key).toString())) {
-						} else {
-							validated = true;
-						}
-					} else {
-						validated = true;
-					}
-				}
-				if (!validated) {
-					occured = true;
-					appended.putAll(childEntry);
-					appended.putAll(parentEntry);
-					break;
-				}
-			}
-			if (!occured) {
-				appended.putAll(parentEntry);
-			}
-			resultList.add(appended);
-		}
-		return resultList;
-	}
-
-	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey) {
-		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-		for (Map<String, Object> parentEntry : parent) {
-			boolean occured = false;
-			Map<String, Object> appended = new HashMap<String, Object>();
-			for (Map<String, Object> childEntry : child) {
-				if (childEntry.containsKey(childKey) && parentEntry.containsKey(parentKey)) {
-					if (childEntry.get(childKey).equals(parentEntry.get(parentKey))) {
-						occured = true;
-						appended.putAll(childEntry);
-						appended.putAll(parentEntry);
-						break;
-					}
-				}
-			}
-			if (!occured) {
-				appended.putAll(parentEntry);
-			}
-
-			resultList.add(appended);
-		}
-		return resultList;
-	}
 
 	public Map<String, Object> fetchFilters(String index, List<Map<String, Object>> dataList) {
 		Map<String, String> filterFields = new HashMap<String, String>();
