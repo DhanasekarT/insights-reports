@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.APIConstants.DataTypes;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -47,7 +48,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 			for (RequestParamsFilterDetailDTO fieldData : filters) {
 				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
 					Set<Object> values = new HashSet<Object>();
-					for (String value : fieldsDetails.getValue().split(",")) {
+					for (String value : fieldsDetails.getValue().split(APIConstants.COMMA)) {
 						values.add(value);
 						userFiltersValue.put(fieldsDetails.getFieldName(), values);
 
@@ -64,8 +65,8 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 				}
 			}
 		}
-		userFiltersValue.put("orgFilters", orgValue);
-		userFiltersValue.put("userFilters", userValue);
+		userFiltersValue.put(APIConstants.ORG_FILTERS, orgValue);
+		userFiltersValue.put(APIConstants.USER_FILTERS, userValue);
 
 		return userFiltersValue;
 	}
@@ -121,7 +122,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		for (String userFilterOrgValue : userFilterOrgValues) {
 			if (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) {
 				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_PII))) {
-					return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
+					return getBusinessLogicService().changeDataSourceUserToAnonymousUser(requestParamsDTO);
 //					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				}
 			} else if ((requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES))
@@ -146,10 +147,10 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.CONTENTORGUID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemContentFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.USERORGID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemUserFields);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
@@ -160,9 +161,9 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.CONTENTORGUID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemContentFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
 		return userFilter;
@@ -172,9 +173,9 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.USERORGID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemUserFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
 		return userFilter;
@@ -184,7 +185,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		StringBuilder allowedOrg = new StringBuilder();
 		for (Map.Entry<String, Set<String>> entry : partyPermissions.entrySet()) {
 			if (entry.getValue().contains(permission)) {
-				allowedOrg.append(allowedOrg.length() == 0 ? "" : ",");
+				allowedOrg.append(allowedOrg.length() == 0 ? APIConstants.EMPTY : APIConstants.COMMA);
 				allowedOrg.append(entry.getKey().toString());
 			}
 		}
@@ -208,6 +209,10 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 			allowedParty = APIConstants.AP_PARTY_OWN_CONTENT_USAGE;
 		}
 		return getRoleBasedParty(traceId,partyPermissions, allowedParty);
+	}
+
+	public BusinessLogicService getBusinessLogicService() {
+		return businessLogicService;
 	}
 
 }

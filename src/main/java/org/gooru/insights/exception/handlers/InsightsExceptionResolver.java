@@ -41,7 +41,7 @@ public class InsightsExceptionResolver extends SimpleMappingExceptionResolver {
 		ResponseParamDTO<Map<Object, Object>> responseDTO = new ResponseParamDTO<Map<Object, Object>>();
 		Map<Object, Object> errorMap = new HashMap<Object, Object>();
 		Integer statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		String traceId = request.getAttribute("traceId") != null ? request.getAttribute("traceId").toString() : DEFAULT_TRACEID;
+		String traceId = request.getAttribute(APIConstants.TRACE_ID) != null ? request.getAttribute(APIConstants.TRACE_ID).toString() : DEFAULT_TRACEID;
 		
 		if (ex instanceof BadRequestException) {
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;

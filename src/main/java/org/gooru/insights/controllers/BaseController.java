@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONException;
@@ -21,14 +22,11 @@ import flexjson.JSONSerializer;
 @Controller
 public class BaseController extends APIConstants{
 
-private static final String REQUEST_DATA_ERROR = "Include data parameter!!!";
+	private static final String JSON_BODY = "JSON Body";
 	
-	private static final String REQUEST_BODY_ERROR = "Include JSON Body data!!!";
+	private static final String DATA = "data";
 	
-	private static final String TOKEN_HEADER_PREFIX = "Gooru-Session-Token";
-	
-	private static final String TOKEN_PARAM_PREFIX = "sessionToken";
-	
+	private static final String GET = "GET";
 	
 	public <M> ModelAndView getModel(ResponseParamDTO<M> data) {
 
@@ -43,34 +41,32 @@ private static final String REQUEST_DATA_ERROR = "Include data parameter!!!";
 		for (Map.Entry<String, Object> entry : requestParam.entrySet()) {
 			jsonObject.put(entry.getKey(), entry.getValue());
 		}
-		jsonObject.put("url", request.getRequestURL().toString());
+		jsonObject.put(URL, request.getRequestURL().toString());
 		UUID uuid = UUID.randomUUID();
 		InsightsLogger.debug(uuid.toString(), jsonObject.toString());
-		request.setAttribute("traceId", uuid.toString());
+		request.setAttribute(TRACE_ID, uuid.toString());
 		return uuid.toString();
 	}
 
 	public String getSessionToken(HttpServletRequest request) {
 
-		if (request.getHeader(TOKEN_HEADER_PREFIX) != null) {
-			return request.getHeader(TOKEN_HEADER_PREFIX);
+		if (request.getHeader(GOORU_SESSION_TOKEN) != null) {
+			return request.getHeader(GOORU_SESSION_TOKEN);
 		} else {
-			return request.getParameter(TOKEN_PARAM_PREFIX);
+			return request.getParameter(SESSION_TOKEN);
 		}
 	}
 	
 	public String getRequestData(HttpServletRequest request,String requestBody){
-		if(request.getMethod().equalsIgnoreCase("GET")){
-			if(request.getParameter("data") == null){
-				throw new BadRequestException(REQUEST_DATA_ERROR);
+		if(request.getMethod().equalsIgnoreCase(GET)){
+			if(request.getParameter(DATA) == null){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, DATA));
 			}
-			return request.getParameter("data").toString();
-		}else {
-			if(requestBody == null){
-				throw new BadRequestException(REQUEST_BODY_ERROR);
-			}
-			return requestBody;
+			requestBody =  request.getParameter(DATA).toString();
+		}else if(requestBody == null){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, JSON_BODY));
 		}
+			return requestBody;
 	}
 	
 	public HttpServletResponse setAllowOrigin(HttpServletResponse response) {

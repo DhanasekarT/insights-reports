@@ -31,8 +31,6 @@ import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ClientResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -102,16 +100,17 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	@PostConstruct
 	private void initConnect() {
 
-		if (!baseAPIService.checkNull(insightsKeyspace)) {
+		if (insightsKeyspace == null) {
 			initCassandraConnection();
 		}
-		if (!baseAPIService.checkNull(devClient)) {
+		if (devClient == null) {
 			initDevESConnection();
 		}
-		if (!baseAPIService.checkNull(prodClient)) {
+		if (prodClient == null) {
 			initProdESConnection();
 		}
-		if (!baseAPIService.checkNull(indexMap)) {
+		if (indexMap == null) {
+			
 			putLogicalOperations();
 			putFormulas();
 			putEsOperations();
@@ -417,6 +416,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		formulaOperations.add("MIN");
 		formulaOperations.add("MAX");
 		formulaOperations.add("COUNT");
+		formulaOperations.add("DISTINCT");
 	}
 	
 	private void putDataTypes(){

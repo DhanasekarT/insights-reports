@@ -32,7 +32,7 @@ public interface BusinessLogicService {
 
 	List<Map<String,Object>> getRecords(String traceId,String indices,ResponseParamDTO<Map<String,Object>> responseParamDTO,String data, String dataKey)throws Exception;
 	
-	List<Map<String,Object>> getMultiGetRecords(String traceId,String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey);
+	List<Map<String,Object>> getMultiGetRecords(String traceId,String[] indices,Map<String,Map<String,String>> comparekey,String data,Map<Integer,String> errorRecord,String dataKey)throws Exception;
 
 	String esFields(String index, String fields);
 }

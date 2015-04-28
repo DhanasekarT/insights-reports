@@ -2,6 +2,11 @@ package org.gooru.insights.exception.handlers;
 
 public class NotFoundException extends RuntimeException {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4623950247986004914L;
+
 	public NotFoundException()
 	{
 		super();

@@ -1,7 +1,9 @@
 package org.gooru.insights.models;
 
+import java.io.Serializable;
 
-public class RequestParamsRangeDTO {
+
+public class RequestParamsRangeDTO implements Serializable {
 
 	private static final long serialVersionUID = -2840599796984637919L;
 	

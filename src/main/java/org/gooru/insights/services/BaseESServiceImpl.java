@@ -67,6 +67,7 @@ public class BaseESServiceImpl implements BaseESService {
 	public ResponseParamDTO<Map<String,Object>> generateQuery(String traceId,RequestParamsDTO requestParamsDTO,
 			String[] indices,
 			Map<String,Boolean> checkPoint) throws Exception{
+
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		/**
 		 * Do Core Get
@@ -217,8 +218,8 @@ public class BaseESServiceImpl implements BaseESService {
 			/**
 			 * Need to change taxonomy logic
 			 */
-			if(fields.contains("code_id") || fields.contains("label")){
-				fields = fields+APIConstants.COMMA+"depth";	
+			if(fields.contains(APIConstants._CODEID) || fields.contains(APIConstants.LABEL)){
+				fields =BaseAPIServiceImpl.buildString(new Object[]{fields,APIConstants.COMMA,APIConstants.DEPTH});	
 				}
 
 			filterFields = baseAPIService.convertStringtoSet(fields);
@@ -247,7 +248,7 @@ public class BaseESServiceImpl implements BaseESService {
 		try{
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
-			throw new ReportGenerationException(e.getMessage());
+			throw new ReportGenerationException(APIConstants.QUERY,e);
 		}
 		
 		resultList = businessLogicService.getRecords(traceId,indices,null,result, dataKey);
@@ -298,7 +299,7 @@ public class BaseESServiceImpl implements BaseESService {
 			Set<String> filterFields = new HashSet<String>();
 			if(validatedData.get(Hasdatas.HAS_FEILDS.check())){
 				if(!requestParamsDTO.getFields().equalsIgnoreCase(APIConstants.WILD_CARD)){
-			dataKey=EsSources.FIELDS.esSource();
+			dataKey = EsSources.FIELDS.esSource();
 			String fields = businessLogicService.esFields(indices,requestParamsDTO.getFields());
 			filterFields = baseAPIService.convertStringtoSet(fields);
 			}else{
@@ -324,10 +325,10 @@ public class BaseESServiceImpl implements BaseESService {
 				performPagination(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
 		try{
-			InsightsLogger.info(traceId, APIConstants.QUERY+searchRequestBuilder);
+			InsightsLogger.info(traceId, BaseAPIServiceImpl.buildString(new Object[]{APIConstants.QUERY, searchRequestBuilder}));
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
-			throw new ReportGenerationException(e.getMessage());
+			throw new ReportGenerationException(APIConstants.QUERY, e);
 		}
 		if(hasAggregate){
 			int limit = 10;

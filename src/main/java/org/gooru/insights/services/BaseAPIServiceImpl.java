@@ -22,6 +22,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.gooru.insights.builders.utils.ExcludeNullTransformer;
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
@@ -36,8 +37,6 @@ import org.gooru.insights.models.RequestParamsRangeDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -50,8 +49,6 @@ import flexjson.JSONSerializer;
 @Service
 public class BaseAPIServiceImpl implements BaseAPIService {
 	
-	private static final Logger logger = LoggerFactory.getLogger(BaseAPIServiceImpl.class); 
-
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
@@ -65,7 +62,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		try {
 			return data != null ? deserialize(data, RequestParamsDTO.class) : null;
 		} catch (Exception e) {
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E102));
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E102,new String[]{APIConstants.JSON_FORMAT}));
 		}
 	}
 
@@ -542,8 +539,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 
 		Map<Integer,String> errorMap = new HashMap<Integer, String>();
 		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
-		logger.info(APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
-		logger.info(APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
+		InsightsLogger.info(traceId,APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
+		InsightsLogger.info(traceId,APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
 		
 		if(!StringUtils.isBlank(validateUserPermissionService.getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
 			return requestParamsDTO;
@@ -617,7 +614,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 
 		JSONSerializer serializer = new JSONSerializer();
 		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
-		logger.info(APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
+		InsightsLogger.info(traceId,APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
 		return requestParamsDTO;
 	}
 
@@ -631,5 +628,13 @@ public class BaseAPIServiceImpl implements BaseAPIService {
                  }
          }
          return requestFieldNameValue;
+	}
+	
+	public static String buildString(Object[] text){
+		StringBuffer stringBuffer = new StringBuffer();
+		for(int i=0; i < text.length; i++){
+			stringBuffer.append(text[i]);
+		}
+		return stringBuffer.toString();
 	}
 }

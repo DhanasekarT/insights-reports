@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
-import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 
 public interface BaseAPIService {

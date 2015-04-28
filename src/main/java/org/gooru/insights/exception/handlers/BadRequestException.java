@@ -5,8 +5,7 @@ public class BadRequestException extends RuntimeException {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 2L;
-
+	private static final long serialVersionUID = 5671697195864736310L;
 
 	public BadRequestException()
 	{
