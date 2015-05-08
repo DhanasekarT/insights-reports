@@ -37,6 +37,7 @@ public class RoleEntityOperation implements Serializable {
 
 	@JsonBackReference
 	private UserRole userRole;
+	
 	private EntityOperation entityOperation;
 
 	public UserRole getUserRole() {

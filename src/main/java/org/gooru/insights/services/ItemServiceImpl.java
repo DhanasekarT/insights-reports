@@ -47,13 +47,16 @@ public class ItemServiceImpl implements ItemService {
 	private RedisService redisService;
 	
 	@Autowired
-	private BusinessLogicService businessLogicService;
+	private ESDataProcessor businessLogicService;
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 
 	@Autowired
 	private BaseCassandraService baseCassandraService;
+	
+	@Autowired
+	private UserService userService;
 	
 	/**
 	 * This will return simple message as service available
@@ -76,23 +79,23 @@ public class ItemServiceImpl implements ItemService {
 
 		Map<String,Object> userMap = getUserObjectData(traceId,sessionToken); 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
-		RequestParamsCoreDTO requestParamsCoreDTO = baseAPIService.buildRequestParamsCoreDTO(data);
+		RequestParamsCoreDTO requestParamsCoreDTO = getBaseAPIService().buildRequestParamsCoreDTO(data);
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
-		if (baseAPIService.checkNull(requestParamsCoreDTO.getRequestParamsDTO())) {
+		if (getBaseAPIService().checkNull(requestParamsCoreDTO.getRequestParamsDTO())) {
 			List<RequestParamsDTO> requestParamsDTOs = requestParamsCoreDTO.getRequestParamsDTO();
 
 			String previousAPIKey = null;
 			for (RequestParamsDTO api : requestParamsDTOs) {
-				if (!baseAPIService.checkNull(api)) {
+				if (!getBaseAPIService().checkNull(api)) {
 					continue;
 				}
 				responseParamDTO = generateQuery(traceId,data,null, userMap);
-				if (baseAPIService.checkNull(previousAPIKey)) {
-					resultData = businessLogicService.leftJoin(resultData, responseParamDTO.getContent(), previousAPIKey, api.getApiJoinKey());
+				if (getBaseAPIService().checkNull(previousAPIKey)) {
+					resultData = getBaseAPIService().leftJoin(resultData, responseParamDTO.getContent(), previousAPIKey, api.getApiJoinKey());
 				}
 			}
-			if (baseAPIService.checkNull(requestParamsCoreDTO.getCoreKey())) {
-				resultData = businessLogicService.formatAggregateKeyValueJson(resultData, requestParamsCoreDTO.getCoreKey());
+			if (getBaseAPIService().checkNull(requestParamsCoreDTO.getCoreKey())) {
+				resultData = getBusinessLogicService().formatAggregateKeyValueJson(resultData, requestParamsCoreDTO.getCoreKey());
 			}
 		}
 		responseParamDTO.setContent(resultData);
@@ -109,30 +112,30 @@ public class ItemServiceImpl implements ItemService {
 
 		Map<String, Object> userMap = getUserObjectData(traceId,sessionToken);
 		
-		Map<String,Object> filtersMap = baseAPIService.getRequestFieldNameValueInMap(request, "f");
-		Map<String,Object> paginationMap = baseAPIService.getRequestFieldNameValueInMap(request, "p");
+		Map<String,Object> filtersMap = getBaseAPIService().getRequestFieldNameValueInMap(request, APIConstants.F);
+		Map<String,Object> paginationMap = getBaseAPIService().getRequestFieldNameValueInMap(request, APIConstants.P);
 		
 		if(filtersMap.isEmpty()){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.FILTERS));
 		}
 		
-		Column<String> val = baseCassandraService.readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(),APIConstants.DI_REPORTS,reportType);
+		Column<String> val = getBaseCassandraService().readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(),APIConstants.DI_REPORTS,reportType);
 		
 		if(val == null){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E106));
 		}
 		
-		ColumnList<String> columns = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
+		ColumnList<String> columns = getBaseCassandraService().read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue());
 		
-		systemRequestParamsDTO = baseAPIService.buildRequestParameters(columns.getStringValue("query", null));
+		systemRequestParamsDTO = getBaseAPIService().buildRequestParameters(columns.getStringValue(APIConstants.QUERY, null));
 		for(RequestParamsFilterDetailDTO systemFieldData : systemRequestParamsDTO.getFilter()) {
 			for(RequestParamsFilterFieldsDTO systemfieldsDetails : systemFieldData.getFields()) {
 				if(filtersMap.containsKey(systemfieldsDetails.getFieldName())){
 					isMerged = true;
-					String[] values = filtersMap.get(systemfieldsDetails.getFieldName()).toString().split(",");
+					String[] values = filtersMap.get(systemfieldsDetails.getFieldName()).toString().split(APIConstants.COMMA);
 					systemfieldsDetails.setValue(filtersMap.get(systemfieldsDetails.getFieldName()).toString());
 					if(values.length > 1){
-						systemfieldsDetails.setOperator("in");
+						systemfieldsDetails.setOperator(APIConstants.IN);
 					}
 				}
 			}
@@ -142,25 +145,25 @@ public class ItemServiceImpl implements ItemService {
 		}
 
 		if(!paginationMap.isEmpty()){
-			if(paginationMap.containsKey("limit")){
-				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf(""+paginationMap.get("limit")));
+			if(paginationMap.containsKey(APIConstants.LIMIT)){
+				systemRequestParamsDTO.getPagination().setLimit(Integer.valueOf(APIConstants.EMPTY+paginationMap.get(APIConstants.LIMIT)));
 			}
-			if(paginationMap.containsKey("offset")){
-				systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf(""+paginationMap.get("offset")));
+			if(paginationMap.containsKey(APIConstants.OFFSET)){
+				systemRequestParamsDTO.getPagination().setOffset(Integer.valueOf(APIConstants.EMPTY+paginationMap.get(APIConstants.LIMIT)));
 			}
-			if(paginationMap.containsKey("sortOrder")){
+			if(paginationMap.containsKey(APIConstants.SORT_ORDER)){
 				for(RequestParamsSortDTO requestParamsSortDTO :   systemRequestParamsDTO.getPagination().getOrder()){
-					requestParamsSortDTO.setSortOrder(paginationMap.get("sortOrder").toString());
+					requestParamsSortDTO.setSortOrder(paginationMap.get(APIConstants.SORT_ORDER).toString());
 				}
 			}
 		}
 		InsightsLogger.info(traceId, APIConstants.OLD_QUERY+columns.getStringValue(APIConstants.QUERY, null));
 
-		serializer.transform(new ExcludeNullTransformer(), void.class).exclude("*.class");
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
 		
 		String datas = serializer.deepSerialize(systemRequestParamsDTO);
 		
-		InsightsLogger.info(traceId,APIConstants.NEW_QUERY+datas);
+		InsightsLogger.info(traceId, BaseAPIServiceImpl.buildString(new Object[]{APIConstants.NEW_QUERY, datas}));
 		
 		if(columns.getStringValue(APIConstants.QUERY, null) != null){			
 			return generateQuery(traceId,datas, null, userMap);
@@ -183,17 +186,17 @@ public class ItemServiceImpl implements ItemService {
 			userMap = getUserObjectData(traceId,sessionToken);
 		}
 
-		RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+		RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
 
-		Map<String, Boolean> checkPoint = baseAPIService.checkPoint(requestParamsDTO);
+		Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
 
 		/**
 		 * Additional filters are added based on user authentication
 		 */
-		requestParamsDTO = baseAPIService.validateUserRole(traceId,requestParamsDTO, userMap);
+		requestParamsDTO = getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 		
-		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
-		ResponseParamDTO<Map<String, Object>> responseParamDTO = esService.generateQuery(traceId,requestParamsDTO, indices, checkPoint);
+		String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+		ResponseParamDTO<Map<String, Object>> responseParamDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
 		/**
 		 * save data to redis
 		 */
@@ -207,8 +210,8 @@ public class ItemServiceImpl implements ItemService {
 		Map<String, String> dataMap = new HashMap<String, String>();
 		String message = APIConstants.EMPTY;
 		
-		if(baseAPIService.checkNull(id)){
-		if(redisService.clearQuery(id)){
+		if(getBaseAPIService().checkNull(id)){
+		if(getRedisService().clearQuery(id)){
 			message = MessageHandler.getMessage(APIConstants.STATUS, new String[]{APIConstants.QUERY,APIConstants.DELETED});
 		}else{
 			message = MessageHandler.getMessage(APIConstants.STATUS, new String[]{APIConstants.QUERY,APIConstants.NOT_FOUND});
@@ -232,10 +235,10 @@ public class ItemServiceImpl implements ItemService {
 		 if(dataMap.containsKey(APIConstants.GOORUUID) && dataMap.get(APIConstants.GOORUUID) != null){
 			 prefix = dataMap.get(APIConstants.GOORUUID).toString()+APIConstants.SEPARATOR;
 		 }
-		String result = redisService.getQuery(prefix,id);
+		String result = getRedisService().getQuery(prefix,id);
 		if(result != null){
 			
-			responseParamDTO = baseAPIService.deserialize(result, responseParamDTO.getClass());
+			responseParamDTO = getBaseAPIService().deserialize(result, responseParamDTO.getClass());
 		}
 		return responseParamDTO;
 	} 
@@ -253,20 +256,20 @@ public class ItemServiceImpl implements ItemService {
 		 ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		 List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 		try {
-			if (baseAPIService.checkNull(id)) {
+			if (getBaseAPIService().checkNull(id)) {
 				for (String requestId : id.split(APIConstants.COMMA)) {
 					do {
 						requestId = appendQuery(requestId, prefix, resultList);
-					} while (redisService.hasKey(prefix+requestId));
+					} while (getRedisService().hasKey(BaseAPIServiceImpl.buildString(new Object[]{prefix, requestId})));
 				}
 			} else {
-				Set<String> keyIds = redisService.getKeys();
+				Set<String> keyIds = getRedisService().getKeys();
 				Set<String> customizedKey = new HashSet<String>();
 				for (String keyId : keyIds) {
-					if (keyId.contains(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + APIConstants.CACHE_PREFIX_ID+prefix)) {
-					customizedKey.add(keyId.replaceAll(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR+prefix, ""));
+					if (keyId.contains(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, APIConstants.CACHE_PREFIX_ID, prefix}))) {
+					customizedKey.add(keyId.replaceAll(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, APIConstants.CACHE_PREFIX_ID, APIConstants.SEPARATOR, prefix}), APIConstants.EMPTY));
 					}else{
-					customizedKey.add(keyId.replaceAll(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR+prefix, ""));
+					customizedKey.add(keyId.replaceAll(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, prefix}), APIConstants.EMPTY));
 					}
 				}
 				for (String requestId : customizedKey) {
@@ -282,8 +285,8 @@ public class ItemServiceImpl implements ItemService {
 
 	private String appendQuery(String requestId, String prefix, List<Map<String, Object>> resultList) {
 		Map<String, Object> dataMap = new HashMap<String, Object>();
-		dataMap.put(requestId, redisService.getValue(prefix + requestId));
-		requestId = redisService.getValue(prefix + requestId);
+		dataMap.put(requestId, getRedisService().getValue(BaseAPIServiceImpl.buildString(new Object[]{prefix, requestId})));
+		requestId = getRedisService().getValue(BaseAPIServiceImpl.buildString(new Object[]{prefix, requestId}));
 		resultList.add(dataMap);
 		return requestId;
 	}
@@ -292,34 +295,34 @@ public class ItemServiceImpl implements ItemService {
 		
 		 ResponseParamDTO<Map<Integer,String>> responseParamDTO = new ResponseParamDTO<Map<Integer,String>>();
 		 Map<Integer,String> resultMap = new HashMap<Integer, String>();
-		if(action.equalsIgnoreCase("add")){
-			Column<String> val = baseCassandraService.readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
+		if(action.equalsIgnoreCase(APIConstants.ADD)){
+			Column<String> val = getBaseCassandraService().readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
 			
 			if(val == null || (val !=null && StringUtils.isBlank(val.getStringValue()))){
-					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+					RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
 				
 				UUID reportId = UUID.randomUUID();
 	
-				baseCassandraService.saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS, reportName, reportId.toString());
-				baseCassandraService.saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), reportId.toString(), APIConstants.QUERY, data);
+				getBaseCassandraService().saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS, reportName, reportId.toString());
+				getBaseCassandraService().saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), reportId.toString(), APIConstants.QUERY, data);
 
 				resultMap.put(200,ErrorConstants.SUCCESSFULLY_ADDED);
 			}else{
 				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E105));
 			}
 		}else if(action.equalsIgnoreCase(APIConstants.UPDATE)){
-			Column<String> val = baseCassandraService.readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
+			Column<String> val = getBaseCassandraService().readColumnValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), APIConstants.DI_REPORTS,reportName);
 			
 			if(val !=null && !StringUtils.isBlank(val.getStringValue())){
 				try {
-					RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
+					RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
 				} catch (Exception e) {
-					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E102));
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E102,new String[]{APIConstants.JSON_FORMAT}));
 					
 //					errorMap.put(400,E1014);
 //					return errorMap;
 				}	
-				baseCassandraService.saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue(), "query", data);
+				getBaseCassandraService().saveStringValue(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.QUERY_REPORTS.columnFamily(), val.getStringValue(), APIConstants.QUERY, data);
 				resultMap.put(200,ErrorConstants.SUCCESSFULLY_ADDED);
 			}else{
 				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E105));
@@ -336,17 +339,17 @@ public class ItemServiceImpl implements ItemService {
 	 * @return
 	 */
 	private Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
-		return baseConnectionService.getUserObject(sessionToken, errorMap);
+		return getBaseConnectionService().getUserObject(sessionToken, errorMap);
 	}
 
 	private Map<String, Object> getUserObjectData(String traceId,String sessionToken) {
-		return baseConnectionService.getUserObjectData(traceId,sessionToken);
+		return getBaseConnectionService().getUserObjectData(traceId,sessionToken);
 	}
 
 	public ResponseParamDTO<Map<String,String>> insertKey(String traceId,String data){
 		ResponseParamDTO<Map<String,String>> responseParamDTO = new ResponseParamDTO<Map<String,String>>();
 		Map<String,String> resultData = new HashMap<String, String>();
-		if(redisService.insertKey(data)){
+		if(getRedisService().insertKey(data)){
 			resultData.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.STATUS,new String[]{ APIConstants.QUERY,MessageHandler.getMessage(APIConstants.INSERTED)}));
 		}else{
 			resultData.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.STATUS,new String[]{ APIConstants.QUERY,MessageHandler.getMessage(APIConstants.FAILED)}));
@@ -358,7 +361,7 @@ public class ItemServiceImpl implements ItemService {
 	public ResponseParamDTO<Map<String,Object>> clearDataCache() {
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		Map<String,Object> dataMap = new HashMap<String, Object>();
-		baseConnectionService.clearDataCache();
+		getBaseConnectionService().clearDataCache();
 		dataMap.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.CACHE_CLEAR).replace(ErrorConstants.REPLACER, MessageHandler.getMessage(APIConstants.DATA)));	
 		responseParamDTO.setMessage(dataMap);
 		return responseParamDTO;
@@ -367,7 +370,7 @@ public class ItemServiceImpl implements ItemService {
 	public ResponseParamDTO<Map<String,Object>> clearConnectionCache() {
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		Map<String,Object> dataMap = new HashMap<String,Object>();
-		baseConnectionService.clearConnectionCache();
+		getBaseConnectionService().clearConnectionCache();
 		dataMap.put(MessageHandler.getMessage(APIConstants.STATUS_NAME), MessageHandler.getMessage(APIConstants.CACHE_CLEAR).replace(ErrorConstants.REPLACER, MessageHandler.getMessage(APIConstants.CONNECTION)));	
 		responseParamDTO.setMessage(dataMap);
 		return responseParamDTO;
@@ -377,7 +380,7 @@ public class ItemServiceImpl implements ItemService {
 		try {
 		if (requestParamsDTO.isSaveQuery() != null) {
 			if (requestParamsDTO.isSaveQuery()) {
-				String queryId = redisService.putCache(traceId,data,userMap, responseParamDTO);
+				String queryId = getRedisService().putCache(traceId,data,userMap, responseParamDTO);
 				Map<String,Object> dataMap = new HashMap<String, Object>();
 				dataMap.put(APIConstants.QUERY_ID, queryId);
 				return dataMap;
@@ -387,5 +390,33 @@ public class ItemServiceImpl implements ItemService {
 			throw new ReportGenerationException(ErrorConstants.REDIS_MESSAGE.replace(ErrorConstants.REPLACER, ErrorConstants.INSERT));
 		}
 		return new HashMap<String, Object>();
+	}
+
+	public BaseAPIService getBaseAPIService() {
+		return baseAPIService;
+	}
+
+	public BaseESService getEsService() {
+		return esService;
+	}
+
+	public RedisService getRedisService() {
+		return redisService;
+	}
+
+	public ESDataProcessor getBusinessLogicService() {
+		return businessLogicService;
+	}
+
+	public BaseConnectionService getBaseConnectionService() {
+		return baseConnectionService;
+	}
+
+	public BaseCassandraService getBaseCassandraService() {
+		return baseCassandraService;
+	}
+
+	public UserService getUserService() {
+		return userService;
 	}
 }

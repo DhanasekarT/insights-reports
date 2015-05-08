@@ -5,6 +5,8 @@ import java.util.ResourceBundle;
 
 import javax.annotation.PostConstruct;
 
+import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.services.BaseAPIServiceImpl;
 import org.gooru.insights.services.BaseConnectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,11 +14,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageHandler {
 	
-	private static String LOCALIZER = "localizer";
+	private static final String LOCALIZER = "localizer";
 	
-	private static String DEFAULT_MESSAGE = "message not found!";
+	private static final String DEFAULT_MESSAGE = "message not found!";
 
-	private static String DEFAULT_LOCALIZER_LOCATION = "localizer-properties/localeBundle_"+Locale.ENGLISH;
+	private static final String DEFAULT_LOCALIZER_LOCATION = "localizer-properties/localeBundle_"+Locale.ENGLISH;
 	
 	private static ResourceBundle resourceBundle = null;
 	
@@ -52,7 +54,7 @@ public class MessageHandler {
 		if(resourceBundle.containsKey(key)){
 			String value = resourceBundle.getString(key);
 			for(int i =0;i < replacer.length; i++){
-				value = value.replace("{"+i+"}", replacer[i]);
+				value = value.replace(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.OPEN_BRACE,i,APIConstants.CLOSE_BRACE}), replacer[i]);
 			}
 			return value;
 		}

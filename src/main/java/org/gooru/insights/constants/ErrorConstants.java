@@ -25,6 +25,7 @@ public class ErrorConstants {
 	
 	public static final String E109 = "E109";
 	
+	public static final String E110 = "E110";
 	/**
 	 * Error fields
 	 */
@@ -59,6 +60,10 @@ public class ErrorConstants {
 	public static final  String GET = "get";
 	
 	public static final String JSON = "json";
+	
+	public static final String REDIS_DATA = "redis Data";
+	
+	public static final String REDIS = "redis";
 	/**
 	 * Error Messages
 	 */
@@ -81,5 +86,9 @@ public class ErrorConstants {
 	public static final  String QUERY_ERROR = "Unable to execute the query:";
 	
 	public static final  String SUCCESSFULLY_ADDED = "Successfully added!";
+	
+	public static final  String IS_NULL = " {0} is Null!";
+	
+	public static final  String EXCEPTION_IN = "Exception In {0}!";
 	
 }

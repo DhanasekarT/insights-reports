@@ -33,8 +33,10 @@ public class UserRoleAssoc implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -3590396802387568306L;
+	
 	@JsonBackReference
 	private User user;
+	
 	private UserRole role;
 	
 	public User getUser() {
@@ -54,12 +56,14 @@ public class UserRoleAssoc implements Serializable{
 	
 	@Override
 	public int hashCode() {
+	
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((role == null) ? 0 : role.hashCode());
 		result = prime * result + ((user == null) ? 0 : user.hashCode());
 		return result;
 	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {

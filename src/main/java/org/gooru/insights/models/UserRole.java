@@ -36,19 +36,29 @@ public class UserRole implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -5564110791867719163L;
+	
 	private Short roleId;
+	
 	private String name;
+	
 	private String description;
+	
 	private Set<RoleEntityOperation> roleOperations;
 	
 	public static final Short ROLE_TEACHER = 1;
+	
 	public static final Short ROLE_STUDENT = 2;
+	
 	public static final Short ROLE_CONTENT_ADMIN = 3;
+	
 	public static final Short ROLE_ANONYMOUS = 4;
+	
 	public static final Short ROLE_AUTHENTICATED = 5;
+	
 	public static final Short ROLE_PUBLISHER = 6;
 	
 	public static enum UserRoleType{
+	
 		TEACHER("Teacher"),
 		STUDENT("Student"),
 		CONTENT_ADMIN("Content_Admin"),

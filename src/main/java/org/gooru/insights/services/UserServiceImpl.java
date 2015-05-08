@@ -6,11 +6,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.StringUtils;
+import org.gooru.insights.builders.utils.ExcludeNullTransformer;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.APIConstants.DataTypes;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.models.RequestParamsDTO;
@@ -19,11 +22,13 @@ import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import flexjson.JSONSerializer;
+
 @Component
-public class ValidateUserPermissionServiceImpl implements ValidateUserPermissionService {
+public class UserServiceImpl implements UserService {
 
 	@Autowired
-	private BusinessLogicService businessLogicService;
+	private ESDataProcessor businessLogicService;
 	
 	public Map<String, Object> getUserFilters(String gooruUId) {
 
@@ -47,7 +52,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 			for (RequestParamsFilterDetailDTO fieldData : filters) {
 				for (RequestParamsFilterFieldsDTO fieldsDetails : fieldData.getFields()) {
 					Set<Object> values = new HashSet<Object>();
-					for (String value : fieldsDetails.getValue().split(",")) {
+					for (String value : fieldsDetails.getValue().split(APIConstants.COMMA)) {
 						values.add(value);
 						userFiltersValue.put(fieldsDetails.getFieldName(), values);
 
@@ -64,8 +69,8 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 				}
 			}
 		}
-		userFiltersValue.put("orgFilters", orgValue);
-		userFiltersValue.put("userFilters", userValue);
+		userFiltersValue.put(APIConstants.ORG_FILTERS, orgValue);
+		userFiltersValue.put(APIConstants.USER_FILTERS, userValue);
 
 		return userFiltersValue;
 	}
@@ -121,7 +126,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		for (String userFilterOrgValue : userFilterOrgValues) {
 			if (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)) {
 				if (!(partyPermissions.containsKey(userFilterOrgValue) && partyPermissions.get(userFilterOrgValue).contains(APIConstants.AP_PARTY_PII))) {
-					return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
+					return getBusinessLogicService().changeDataSourceUserToAnonymousUser(requestParamsDTO);
 //					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
 				}
 			} else if ((requestParamsDTO.getDataSource().matches(APIConstants.CONTENTDATASOURCES) || requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES))
@@ -146,10 +151,10 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.CONTENTORGUID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemContentFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.USERORGID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemUserFields);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
@@ -160,9 +165,9 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 	
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO("in", APIConstants.CONTENTORGUID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemContentFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.CONTENTORGUID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemContentFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
 		return userFilter;
@@ -172,9 +177,9 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 
 		RequestParamsFilterDetailDTO systeFilterDetails = new RequestParamsFilterDetailDTO();
 		List<RequestParamsFilterFieldsDTO> userFilters = new ArrayList<RequestParamsFilterFieldsDTO>();
-		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO("in", APIConstants.USERORGID, userOrgUId, "String", "selector");
+		RequestParamsFilterFieldsDTO systemUserFields = new RequestParamsFilterFieldsDTO(APIConstants.IN, APIConstants.USERORGID, userOrgUId, DataTypes.STRING.dataType(), APIConstants.SELECTOR);
 		userFilters.add(systemUserFields);
-		systeFilterDetails.setLogicalOperatorPrefix("OR");
+		systeFilterDetails.setLogicalOperatorPrefix(APIConstants.OR);
 		systeFilterDetails.setFields(userFilters);
 		userFilter.add(systeFilterDetails);
 		return userFilter;
@@ -184,7 +189,7 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 		StringBuilder allowedOrg = new StringBuilder();
 		for (Map.Entry<String, Set<String>> entry : partyPermissions.entrySet()) {
 			if (entry.getValue().contains(permission)) {
-				allowedOrg.append(allowedOrg.length() == 0 ? "" : ",");
+				allowedOrg.append(allowedOrg.length() == 0 ? APIConstants.EMPTY : APIConstants.COMMA);
 				allowedOrg.append(entry.getKey().toString());
 			}
 		}
@@ -208,6 +213,94 @@ public class ValidateUserPermissionServiceImpl implements ValidateUserPermission
 			allowedParty = APIConstants.AP_PARTY_OWN_CONTENT_USAGE;
 		}
 		return getRoleBasedParty(traceId,partyPermissions, allowedParty);
+	}
+
+	public RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO, Map<String, Object> userMap) {
+		
+		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
+
+		Map<Integer,String> errorMap = new HashMap<Integer, String>();
+		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
+		InsightsLogger.info(traceId,APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
+		InsightsLogger.info(traceId,APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
+		
+		if(!StringUtils.isBlank(getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_ALL_PARTY_ALL_DATA))){
+			return requestParamsDTO;
+		}
+
+		Map<String, Object> userFilters = getUserFilters(gooruUId);
+		Map<String, Object> userFiltersAndValues = getUserFiltersAndValues(requestParamsDTO.getFilter());
+		Set<String> userFilterOrgValues = (Set<String>) userFiltersAndValues.get("orgFilters");
+		Set<String> userFilterUserValues = (Set<String>) userFiltersAndValues.get("userFilters");
+
+		String partyAlldataPerm = getRoleBasedParty(traceId,partyPermissions,APIConstants.AP_PARTY_ALL_DATA);
+		
+		if(!StringUtils.isBlank(partyAlldataPerm) && userFilterOrgValues.isEmpty()){			
+			addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), partyAlldataPerm);
+		}
+		if(!StringUtils.isBlank(partyAlldataPerm) && !userFilterOrgValues.isEmpty()){			
+			for(String org : userFilterOrgValues){
+				if(!partyAlldataPerm.contains(org)){
+					throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
+				}
+			}		
+			return requestParamsDTO;
+		}
+		
+		Map<String, Object> orgFilters = new HashMap<String, Object>();
+		
+		for(Entry<String, Set<String>> e : partyPermissions.entrySet()){
+			if(e.getValue().contains(APIConstants.AP_ALL_PARTY_ALL_DATA)){
+				return requestParamsDTO;
+			}else if(e.getValue().contains(APIConstants.AP_PARTY_ALL_DATA)){
+				orgFilters.put(e.getKey(), e.getValue());
+			}
+		}
+		if(userFilterOrgValues.isEmpty() && !orgFilters.isEmpty()){
+			return requestParamsDTO;
+		}
+		
+		if (!checkIfFieldValueMatch(userFilters, userFiltersAndValues, errorMap).isEmpty()) {
+			if(errorMap.containsKey(403)){
+				return userPreValidation(requestParamsDTO, userFilterUserValues, partyPermissions);
+			}else{
+				errorMap.clear();
+				return requestParamsDTO;
+			}
+		}
+
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)|| (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) 
+				&& !StringUtils.isBlank(requestParamsDTO.getGroupBy()) && requestParamsDTO.getGroupBy().matches(APIConstants.USERFILTERPARAM)))) {
+//			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_PII));
+			return businessLogicService.changeDataSourceUserToAnonymousUser(requestParamsDTO);
+		}
+		if (partyPermissions.isEmpty() && (requestParamsDTO.getDataSource().matches(APIConstants.ACTIVITYDATASOURCES) && StringUtils.isBlank(requestParamsDTO.getGroupBy()))) {
+			errorMap.put(403,MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E104, ErrorConstants.E_RAW));
+		}
+
+		if (!userFilterOrgValues.isEmpty()) {
+			validateOrganization(requestParamsDTO, partyPermissions, errorMap, userFilterOrgValues);
+		} else {
+			String allowedParty = getAllowedParties(traceId,requestParamsDTO, partyPermissions);
+			if (!StringUtils.isBlank(allowedParty)) {
+				if(requestParamsDTO.getDataSource().matches(APIConstants.USERDATASOURCES)){
+					addSystemUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}else{
+					addSystemContentUserOrgFilter(requestParamsDTO.getFilter(), allowedParty);
+				}
+			} else {
+				throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
+			}
+		}
+
+		JSONSerializer serializer = new JSONSerializer();
+		serializer.transform(new ExcludeNullTransformer(), void.class).exclude(APIConstants.EXCLUDE_CLASSES);
+		InsightsLogger.info(traceId,APIConstants.NEW_QUERY+serializer.deepSerialize(requestParamsDTO));
+		return requestParamsDTO;
+	}
+	public ESDataProcessor getBusinessLogicService() {
+		return businessLogicService;
 	}
 
 }

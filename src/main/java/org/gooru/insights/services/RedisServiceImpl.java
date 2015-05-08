@@ -51,7 +51,7 @@ public class RedisServiceImpl implements RedisService {
 					String queryId = getValue(requestId);
 					removeKey(requestId);
 					if (hasKey(queryId)) {
-						removeKey(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + queryId);
+						removeKey(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX_ID, APIConstants.SEPARATOR, queryId}));
 						status = removeKey(queryId);
 					}
 				}
@@ -104,12 +104,12 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	public void putLongValue(String key, Long value) {
-		longOperation().set(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key, value);
+		longOperation().set(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}), value);
 	}
 
 	public String putStringValue(String key, String value) {
-		if (!stringOperation().setIfAbsent(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key, value)) {
-			return stringOperation().get(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key);
+		if (!stringOperation().setIfAbsent(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}), value)) {
+			return stringOperation().get(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}));
 		}
 		return null;
 	}
@@ -122,7 +122,7 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	public boolean hasKey(String key) {
-		if (redisStringTemplate.hasKey(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key)) {
+		if (redisStringTemplate.hasKey(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}))) {
 			return true;
 		} else {
 			return false;
@@ -130,7 +130,7 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	public String getValue(String key) {
-		return stringOperation().get(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key);
+		return stringOperation().get(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}));
 	}
 
 	public String getDirectValue(String key) {
@@ -139,7 +139,7 @@ public class RedisServiceImpl implements RedisService {
 
 	public boolean removeKey(String key) {
 		try {
-			redisStringTemplate.delete(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key);
+			redisStringTemplate.delete(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}));
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -151,14 +151,14 @@ public class RedisServiceImpl implements RedisService {
 		UUID queryId = UUID.randomUUID();
 		String KEY_PREFIX = APIConstants.EMPTY;
 		if (userMap.containsKey(APIConstants.GOORUUID) && userMap.get(APIConstants.GOORUUID) != null) {
-			KEY_PREFIX += userMap.get(APIConstants.GOORUUID) + APIConstants.SEPARATOR;
+			KEY_PREFIX = BaseAPIServiceImpl.buildString(new Object[]{KEY_PREFIX, userMap.get(APIConstants.GOORUUID), APIConstants.SEPARATOR});
 		}
-		if (hasKey(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim())) {
-			return getValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim());
+		if (hasKey(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX_ID, APIConstants.SEPARATOR, KEY_PREFIX, query.trim()}))) {
+			return getValue(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX_ID, APIConstants.SEPARATOR, KEY_PREFIX, query.trim()}));
 		}
 		putStringValue(KEY_PREFIX + queryId.toString(), query.trim());
 		putStringValue(KEY_PREFIX + query.trim(), new JSONSerializer().exclude(APIConstants.EXCLUDE_CLASSES).deepSerialize(responseParamDTO));
-		putStringValue(APIConstants.CACHE_PREFIX_ID + APIConstants.SEPARATOR + KEY_PREFIX + query.trim(), queryId.toString());
+		putStringValue(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX_ID, APIConstants.SEPARATOR, KEY_PREFIX, query.trim()}), queryId.toString());
 		InsightsLogger.info(traceId, APIConstants.NEW_QUERY + queryId);
 		return queryId.toString();
 
@@ -166,7 +166,7 @@ public class RedisServiceImpl implements RedisService {
 
 	public boolean removeKeys() {
 		try {
-			Set<String> keys = redisStringTemplate.keys(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + APIConstants.WILD_CARD);
+			Set<String> keys = redisStringTemplate.keys(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, APIConstants.WILD_CARD}));
 			Iterator<String> itr = keys.iterator();
 			while (itr.hasNext()) {
 				redisStringTemplate.delete(itr.next());
@@ -178,12 +178,12 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	public Set<String> getKeys() {
-		return redisStringTemplate.keys(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + APIConstants.WILD_CARD);
+		return redisStringTemplate.keys(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, APIConstants.WILD_CARD}));
 	}
 
 	public boolean removeKeys(String[] key) {
 		try {
-			redisStringTemplate.delete(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key);
+			redisStringTemplate.delete(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}));
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -191,11 +191,11 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	private void putLongValue(String key, Long value, Long ttl, String timeFormat) {
-		longOperation().set(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key, value, ttl, checkTime(timeFormat));
+		longOperation().set(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}), value, ttl, checkTime(timeFormat));
 	}
 
 	private void putStringValue(String key, String value, Long ttl, String timeFormat) {
-		stringOperation().set(APIConstants.CACHE_PREFIX + APIConstants.SEPARATOR + key, value, ttl, checkTime(timeFormat));
+		stringOperation().set(BaseAPIServiceImpl.buildString(new Object[]{APIConstants.CACHE_PREFIX, APIConstants.SEPARATOR, key}), value, ttl, checkTime(timeFormat));
 	}
 
 	private TimeUnit checkTime(String timeFormat) {
