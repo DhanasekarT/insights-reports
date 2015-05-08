@@ -357,7 +357,7 @@ public class APIConstants {
 		BUCKETS("buckets"), TOTAL_ROWS("totalRows"), KEY("key"), 
 		DOC_COUNT("doc_count"), KEY_AS_STRING("key_as_string"), SOURCE("_source"), 
 		HITS("hits"), TOTAL("total"), FIELDS("fields"),FROM("from"),TO("to"),FROM_AS_STRING("from_as_string"),TO_AS_STRING("to_as_string"), 
-		FILTERS("filters");
+		FILTERS("filters"), VALUES("values"), VALUE("value");
 
 		private String field;
 
@@ -389,7 +389,8 @@ public class APIConstants {
 	public static enum AggregateFields {
 
 		SUM("sum"), AVG("avg"), MAX("max"),
-		MIN("min"),COUNT("count"),DISTINCT("distinct");
+		MIN("min"),COUNT("count"),DISTINCT("distinct"),
+		PERCENTILES("percentiles"), PERCENTS("percents");
 		
 		private String field; 
 		

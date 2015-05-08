@@ -417,6 +417,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		formulaOperations.add("MAX");
 		formulaOperations.add("COUNT");
 		formulaOperations.add("DISTINCT");
+		formulaOperations.add("PERCENTILES");
 	}
 	
 	private void putDataTypes(){
