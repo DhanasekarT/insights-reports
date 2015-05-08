@@ -26,6 +26,9 @@ public class ErrorConstants {
 	public static final String E109 = "E109";
 	
 	public static final String E110 = "E110";
+	
+	public static final String E111 = "E111";
+
 	/**
 	 * Error fields
 	 */

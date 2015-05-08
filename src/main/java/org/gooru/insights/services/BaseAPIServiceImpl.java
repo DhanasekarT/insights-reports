@@ -25,6 +25,7 @@ import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.exception.handlers.BadRequestException;
+import org.gooru.insights.exception.handlers.ReportGenerationException;
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
@@ -393,7 +394,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 * Aggregation mandatory fields need to be present and it's field name should be in database acceptable field
 		 */
 		if(checkNull(requestParamsDTO.getAggregations())){
-			for(Map<String,String> aggregate : requestParamsDTO.getAggregations()){
+			for(Map<String, String> aggregate : requestParamsDTO.getAggregations()){
 				if(!aggregate.containsKey(APIConstants.FormulaFields.REQUEST_VALUES.getField()) || !aggregate.containsKey(APIConstants.FormulaFields.NAME.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.NAME.getField())) || !aggregate.containsKey(APIConstants.FormulaFields.FORMULA.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.FORMULA.getField())) || !aggregate.containsKey(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())) || !checkNull(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
 				}else{
@@ -402,6 +403,18 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 					}
 					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase())){
 						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(APIConstants.FormulaFields.FORMULA.getField())}));
+					}
+					if(aggregate.containsKey(APIConstants.AggregateFields.PERCENTS.getField()) && StringUtils.isNotBlank(aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()).toString())) {
+						String[] percentsArray = aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(",");
+						for (int index = 0; index < percentsArray.length; index++) {
+							if (StringUtils.isNotBlank(percentsArray[index])) {
+								try {
+									Double.parseDouble(percentsArray[index]);
+								} catch(NumberFormatException nfe) {
+									throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E111,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()),"double"}));
+								}
+							}
+						}
 					}
 					fieldData.add(aggregate.get(APIConstants.FormulaFields.NAME.getField()));
 				}
