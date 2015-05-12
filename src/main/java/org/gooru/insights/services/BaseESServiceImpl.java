@@ -776,7 +776,7 @@ public class BaseESServiceImpl implements BaseESService {
 			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
 				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
 				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
-					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(",");
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
 					double[] percents = new double[percentsArray.length];
 					for(int index = 0; index < percentsArray.length; index ++) {
 						percents[index] = Double.parseDouble(percentsArray[index]);
@@ -786,7 +786,7 @@ public class BaseESServiceImpl implements BaseESService {
 				mainFilter.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
 		} 
 	}
 
@@ -808,7 +808,7 @@ public class BaseESServiceImpl implements BaseESService {
 			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
 				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
 				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
-					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(",");
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
 					double[] percents = new double[percentsArray.length];
 					for(int index = 0; index < percentsArray.length; index ++) {
 						percents[index] = Double.parseDouble(percentsArray[index]);
@@ -818,7 +818,7 @@ public class BaseESServiceImpl implements BaseESService {
 				mainFilter.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET), e);
 		} 
 	}
 	
@@ -839,7 +839,7 @@ public class BaseESServiceImpl implements BaseESService {
 			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
 				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
 				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
-					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(",");
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
 					double[] percents = new double[percentsArray.length];
 					for(int index = 0; index < percentsArray.length; index ++) {
 						percents[index] = Double.parseDouble(percentsArray[index]);
@@ -849,9 +849,9 @@ public class BaseESServiceImpl implements BaseESService {
 				dateHistogramBuilder.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.GRANULARITY_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.GRANULARITY_BUCKET), e);
 		} 
-		}
+	}
 
 	private BoolFilterBuilder customFilter(String index, Map<String, Object> filterData, Set<String> userFilter,BoolFilterBuilder boolFilter) {
 
