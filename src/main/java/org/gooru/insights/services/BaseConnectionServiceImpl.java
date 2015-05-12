@@ -87,6 +87,10 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	private static Set<String> dataTypes;
 	
+	private static Map<String, String> exportFieldCache;
+	
+	private static Map<String, String> exportReportCache;
+	
 	@Autowired
 	private BaseAPIService baseAPIService;
 	
@@ -122,6 +126,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			fieldsConfig();
 			fieldArrayHandler();
 			apiFields();
+			exportConfig();
 		}
 	}
 	
@@ -310,6 +315,21 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		}
 	}
 	
+	private void exportConfig() {
+		
+		exportFieldCache = new HashMap<String, String>();
+		exportReportCache = new HashMap<String, String>();
+		
+		ColumnList<String> columnList = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), "export_fields");
+		for(Column<String> column : columnList) {
+			exportFieldCache.put(column.getName(), column.getStringValue());
+		}
+		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), "report_export_config");
+		for(Column<String> column : reportExportConfig) {
+			exportReportCache.put(column.getName(), column.getStringValue());
+		}
+	}
+	
 	public void clearDataCache(){
 		indexMap = new HashMap<String,String>();
 		dependentFieldsCache = new HashMap<String,Map<String,Map<String, String>>>();
@@ -326,6 +346,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		fieldsConfig();
 		fieldArrayHandler();
 		apiFields();
+		exportConfig();
 	}
 	
 	public void clearConnectionCache(){
@@ -513,6 +534,14 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	public Map<String, Map<String, String>> getApiFields(){
 		return apiFields;
+	}
+	
+	public Map<String, String> getExportFields() {
+		return exportFieldCache;
+	}
+	
+	public Map<String, String> getExportReportCache() {
+		return exportReportCache;
 	}
 }
 

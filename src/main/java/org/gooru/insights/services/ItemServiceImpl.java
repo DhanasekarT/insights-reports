@@ -1,5 +1,9 @@
 package org.gooru.insights.services;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,14 +13,18 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.util.IOUtils;
+import org.elasticsearch.cluster.metadata.RepositoriesMetaData;
 import org.gooru.insights.builders.utils.ExcludeNullTransformer;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
@@ -24,8 +32,11 @@ import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -54,6 +65,36 @@ public class ItemServiceImpl implements ItemService {
 
 	@Autowired
 	private BaseCassandraService baseCassandraService;
+	
+	@Autowired
+	private CSVFileWriterService csvFileWriterService;
+	
+	@Autowired
+	MailService mailService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	private static final String repoPath = "/home/e100068/gooru/data";
+	private static final String fileDir = "/insights-reports/";
+	
+	public BaseConnectionService getBaseConnectionService() {
+		return baseConnectionService;
+	}
+	
+	public BaseAPIService getBaseAPIService() {
+		return baseAPIService;
+	}
+	
+	public MailService getMailService() {
+		return mailService;
+	}
+	
+	public BaseESService getBaseESService() {
+		return esService;
+	}
+	
+	public CSVFileWriterService getCSVFileWriterService() {
+		return csvFileWriterService;
+	}
 	
 	/**
 	 * This will return simple message as service available
@@ -180,7 +221,7 @@ public class ItemServiceImpl implements ItemService {
 		 * errorMap);
 		 */
 		if (userMap == null) {
-			userMap = getUserObjectData(traceId,sessionToken);
+//			userMap = getUserObjectData(traceId,sessionToken);
 		}
 
 		RequestParamsDTO requestParamsDTO = baseAPIService.buildRequestParameters(data);
@@ -190,7 +231,7 @@ public class ItemServiceImpl implements ItemService {
 		/**
 		 * Additional filters are added based on user authentication
 		 */
-		requestParamsDTO = baseAPIService.validateUserRole(traceId,requestParamsDTO, userMap);
+//		requestParamsDTO = baseAPIService.validateUserRole(traceId,requestParamsDTO, userMap);
 		
 		String[] indices = baseAPIService.getIndices(requestParamsDTO.getDataSource().toLowerCase());
 		ResponseParamDTO<Map<String, Object>> responseParamDTO = esService.generateQuery(traceId,requestParamsDTO, indices, checkPoint);
@@ -388,4 +429,110 @@ public class ItemServiceImpl implements ItemService {
 		}
 		return new HashMap<String, Object>();
 	}
+	
+	public void generateReport(String traceId, String data, String sessionToken, Map<String, Object> userMap, String absoluteFilePath) {
+
+		String delimiter = getBaseConnectionService().getExportReportCache().get(APIConstants.DELIMITER);
+		int defaultLimit = Integer.valueOf(getBaseConnectionService().getExportReportCache().get(APIConstants.DEFAULT_LIMIT));
+		int offSet = 0;
+		int totalRows = 0;
+		boolean isNewFile = true;
+		try {
+			
+			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
+			RequestParamsPaginationDTO paginationDTO = requestParamsDTO.getPagination();
+			ResponseParamDTO<Map<String, Object>> responseDTO = null;
+			
+			offSet = paginationDTO.getOffset();
+			paginationDTO.setLimit(defaultLimit);
+			requestParamsDTO.setPagination(paginationDTO);
+			
+			if (userMap == null) {
+				userMap = getUserObjectData(traceId,sessionToken);
+			}
+
+			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+			requestParamsDTO = getBaseAPIService().validateUserRole(traceId,requestParamsDTO, userMap);
+			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+			
+			totalRows = Integer.valueOf(getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS).toString());
+			checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
+			
+			do {
+				responseDTO = getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
+				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
+				getCSVFileWriterService().generateCSVReport(responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				offSet += defaultLimit;
+				paginationDTO.setOffset(offSet);
+				requestParamsDTO.setPagination(paginationDTO);
+				checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
+				isNewFile = false;
+			} while(offSet < totalRows);
+			
+		} catch (Exception e) {
+			logger.error("Error while writting file. {}", e);
+		}
+	}
+	
+	@Override
+	public ResponseParamDTO<Map<String, Object>> exportReport(HttpServletResponse response, String traceId, String data, String sessionToken, Map<String, Object> userMap) {
+
+		int maxLimit = Integer.valueOf(getBaseConnectionService().getExportReportCache().get(APIConstants.MAX_LIMIT));
+		int totalRows = 0;
+		String absoluteFilePath = null;
+		String fileName = UUID.randomUUID().toString();
+		final String fileUrlEndPoint = getBaseConnectionService().getExportReportCache().get(APIConstants.MAX_LIMIT);
+		ResponseParamDTO<Map<String, Object>> responseDTO = null;
+		
+		try {
+			
+			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
+			
+			if (userMap == null) {
+				userMap = getUserObjectData(traceId,sessionToken);
+			}
+
+			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+			requestParamsDTO = getBaseAPIService().validateUserRole(traceId,requestParamsDTO, userMap);
+			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+
+			totalRows = Integer.valueOf(getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS).toString());
+			absoluteFilePath = repoPath.concat(fileDir).concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			
+			Map<String, Object> status = new HashMap<String, Object>();
+			final String resultLink = fileUrlEndPoint.concat(fileDir).concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			responseDTO = new ResponseParamDTO<Map<String,Object>>();
+			
+			if(totalRows > maxLimit) {
+				final String traceID = traceId;
+				final String query = data;
+				final String session = sessionToken;
+				final Map<String, Object> user = userMap;
+				final String filePath = absoluteFilePath;
+
+				final Thread reportThread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						generateReport(traceID, query, session, user, filePath);
+						getMailService().sendMail(user.get(APIConstants.EMAIL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
+					}
+				});
+				reportThread.setDaemon(true);
+				reportThread.start();
+				status.put(APIConstants.STATUS_NAME.toLowerCase(), MessageHandler.getMessage(APIConstants.FILE_MAILED));
+				
+			} else {
+				generateReport(traceId, data, sessionToken, userMap, absoluteFilePath);
+				status.put(APIConstants.FILE_PATH, absoluteFilePath);
+			}
+			responseDTO.setMessage(status);
+
+		} catch (Exception e) {
+			logger.error("Error while writting file. {}", e);
+		}
+		
+		return responseDTO;
+	}
+
 }

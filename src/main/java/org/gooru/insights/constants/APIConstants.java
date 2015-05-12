@@ -227,6 +227,24 @@ public class APIConstants {
 	public static final String QUERY_ID = "queryId";
 	
 	public static final String ASC = "ASC";
+	
+	public static final String END_POINT = "end_point";
+	
+	public static final String DELIMITER = "delimiter";
+	
+	public static final String DEFAULT_LIMIT = "default_limit";
+	
+	public static final String CSV_EXTENSION = "csv";
+	
+	public static final String FILE_DOWNLOAD = "FILE_DOWNLOAD";
+	
+	public static final String FILE_MAILED = "FILE_MAILED";
+	
+	public static final String FILE_PATH = "FILE_PATH";
+	
+	public static final String TOTAL_ROWS = "totalRows";
+	
+	public static final String MAX_LIMIT = "max_limit";
 
 	/**
 	 * Logical Enumaration 

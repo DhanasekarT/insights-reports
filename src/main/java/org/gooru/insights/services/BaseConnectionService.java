@@ -53,4 +53,8 @@ public interface BaseConnectionService {
 	Properties getFileProperties();
 	
 	Map<String, Map<String, String>> getApiFields();
+
+	Map<String, String> getExportReportCache();
+
+	Map<String, String> getExportFields();
 }

@@ -3,6 +3,7 @@ package org.gooru.insights.services;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.gooru.insights.models.ResponseParamDTO;
 
@@ -29,4 +30,6 @@ public interface ItemService {
 	ResponseParamDTO<Map<String,Object>> clearDataCache();
 
 	ResponseParamDTO<Map<String,Object>> clearConnectionCache();
+
+	ResponseParamDTO<Map<String, Object>> exportReport(HttpServletResponse response, String traceId, String data, String sessionToken, Map<String, Object> userMap);
 }
