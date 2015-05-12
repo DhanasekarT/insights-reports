@@ -30,6 +30,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuild
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.range.RangeBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.aggregations.metrics.percentiles.PercentilesBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
@@ -761,7 +762,7 @@ public class BaseESServiceImpl implements BaseESService {
 
 		try {
 			if(APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)){
-			mainFilter.subAggregation(AggregationBuilders.sum(aggregateName).field(fieldName));
+				mainFilter.subAggregation(AggregationBuilders.sum(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.AVG.getField().equalsIgnoreCase(aggregateType)){
 				mainFilter.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.MAX.getField().equalsIgnoreCase(aggregateType)){
@@ -772,9 +773,20 @@ public class BaseESServiceImpl implements BaseESService {
 				mainFilter.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.DISTINCT.getField().equalsIgnoreCase(aggregateType)){
 				mainFilter.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
+				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
+				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
+					double[] percents = new double[percentsArray.length];
+					for(int index = 0; index < percentsArray.length; index ++) {
+						percents[index] = Double.parseDouble(percentsArray[index]);
+					}
+					percentilesBuilder.percentiles(percents);
+				}
+				mainFilter.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
 		} 
 	}
 
@@ -782,7 +794,7 @@ public class BaseESServiceImpl implements BaseESService {
 
 		try {
 			if(APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)){
-			mainFilter.subAggregation(AggregationBuilders.sum(aggregateName).field(fieldName));
+				mainFilter.subAggregation(AggregationBuilders.sum(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.AVG.getField().equalsIgnoreCase(aggregateType)){
 				mainFilter.subAggregation(AggregationBuilders.avg(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.MAX.getField().equalsIgnoreCase(aggregateType)){
@@ -793,9 +805,20 @@ public class BaseESServiceImpl implements BaseESService {
 				mainFilter.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.DISTINCT.getField().equalsIgnoreCase(aggregateType)){
 				mainFilter.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
+				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
+				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
+					double[] percents = new double[percentsArray.length];
+					for(int index = 0; index < percentsArray.length; index ++) {
+						percents[index] = Double.parseDouble(percentsArray[index]);
+					}
+					percentilesBuilder.percentiles(percents);
+				}
+				mainFilter.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.RANGE_BUCKET), e);
 		} 
 	}
 	
@@ -813,11 +836,22 @@ public class BaseESServiceImpl implements BaseESService {
 				dateHistogramBuilder.subAggregation(AggregationBuilders.count(aggregateName).field(fieldName));
 			}else if(APIConstants.AggregateFields.DISTINCT.getField().equalsIgnoreCase(aggregateType)){
 				dateHistogramBuilder.subAggregation(AggregationBuilders.cardinality(aggregateName).field(fieldName));
+			}else if(APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)){
+				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
+				if(jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
+					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
+					double[] percents = new double[percentsArray.length];
+					for(int index = 0; index < percentsArray.length; index ++) {
+						percents[index] = Double.parseDouble(percentsArray[index]);
+					}
+					percentilesBuilder.percentiles(percents);
+				}
+				dateHistogramBuilder.subAggregation(percentilesBuilder);
 			}
 		} catch (Exception e) {
-			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.GRANULARITY_BUCKET)+e);
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.GRANULARITY_BUCKET), e);
 		} 
-		}
+	}
 
 	private BoolFilterBuilder customFilter(String index, Map<String, Object> filterData, Set<String> userFilter,BoolFilterBuilder boolFilter) {
 

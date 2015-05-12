@@ -508,7 +508,13 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 		Map<String, Object> resultMap = new LinkedHashMap<String, Object>();
 		for (Map.Entry<String, String> entry : metrics.entrySet()) {
 			if (newJson.has(entry.getValue())) {
-				resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+				JSONObject aggregatedObject = new JSONObject(newJson.get(entry.getValue()).toString());
+				if (aggregatedObject.has(APIConstants.FormulaFields.VALUES.getField())) {
+					Map<String, Object> valuesAsMap = new Gson().fromJson(aggregatedObject.get(APIConstants.FormulaFields.VALUES.getField()).toString(), Map.class);
+					resultMap.put(entry.getKey(), valuesAsMap);
+				} else {
+					resultMap.put(entry.getKey(), aggregatedObject.get(APIConstants.FormulaFields.VALUE.getField()));
+				}
 				resultMap.put(groupBy[counter], newJson.get(APIConstants.FormulaFields.KEY.getField()));
 				newJson.remove(entry.getValue());
 			}
