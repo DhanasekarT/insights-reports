@@ -57,4 +57,8 @@ public interface BaseConnectionService {
 	Map<String, String> getExportReportCache();
 
 	Map<String, String> getExportFields();
+
+	String getRealRepoPath();
+
+	String getAppRepoPath();
 }

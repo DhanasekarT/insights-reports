@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -455,16 +456,15 @@ public class ItemServiceImpl implements ItemService {
 			requestParamsDTO = getBaseAPIService().validateUserRole(traceId,requestParamsDTO, userMap);
 			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
 			
-			totalRows = Integer.valueOf(getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS).toString());
-			checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
-			
 			do {
 				responseDTO = getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
+				getCSVFileWriterService().generateCSVReport(new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
 				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
-				getCSVFileWriterService().generateCSVReport(responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				/*Incrementing offset values */
 				offSet += defaultLimit;
 				paginationDTO.setOffset(offSet);
 				requestParamsDTO.setPagination(paginationDTO);
+				
 				checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
 				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
 				isNewFile = false;
@@ -482,7 +482,6 @@ public class ItemServiceImpl implements ItemService {
 		int totalRows = 0;
 		String absoluteFilePath = null;
 		String fileName = UUID.randomUUID().toString();
-		final String fileUrlEndPoint = getBaseConnectionService().getExportReportCache().get(APIConstants.MAX_LIMIT);
 		ResponseParamDTO<Map<String, Object>> responseDTO = null;
 		
 		try {
@@ -498,10 +497,10 @@ public class ItemServiceImpl implements ItemService {
 			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
 
 			totalRows = Integer.valueOf(getBaseESService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS).toString());
-			absoluteFilePath = repoPath.concat(fileDir).concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
 			
 			Map<String, Object> status = new HashMap<String, Object>();
-			final String resultLink = fileUrlEndPoint.concat(fileDir).concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
 			responseDTO = new ResponseParamDTO<Map<String,Object>>();
 			
 			if(totalRows > maxLimit) {
@@ -514,8 +513,13 @@ public class ItemServiceImpl implements ItemService {
 				final Thread reportThread = new Thread(new Runnable() {
 					@Override
 					public void run() {
-						generateReport(traceID, query, session, user, filePath);
-						getMailService().sendMail(user.get(APIConstants.EMAIL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
+						try {
+							generateReport(traceID, query, session, user, filePath);
+							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
+						}
+						catch(Exception e) {
+							logger.error("Exception in export report[Thread Loop]: {}", e);
+						}
 					}
 				});
 				reportThread.setDaemon(true);
@@ -528,10 +532,12 @@ public class ItemServiceImpl implements ItemService {
 			}
 			responseDTO.setMessage(status);
 
-		} catch (Exception e) {
-			logger.error("Error while writting file. {}", e);
+		} catch (BadRequestException badRequestException) {
+			throw badRequestException;
+		} catch (Exception exception) {
+			logger.error("Error while writting file. {}", exception);
 		}
-		
+
 		return responseDTO;
 	}
 

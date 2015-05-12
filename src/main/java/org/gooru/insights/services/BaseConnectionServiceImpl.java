@@ -320,11 +320,11 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		exportFieldCache = new HashMap<String, String>();
 		exportReportCache = new HashMap<String, String>();
 		
-		ColumnList<String> columnList = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), "export_fields");
+		ColumnList<String> columnList = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey());
 		for(Column<String> column : columnList) {
 			exportFieldCache.put(column.getName(), column.getStringValue());
 		}
-		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), "report_export_config");
+		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		for(Column<String> column : reportExportConfig) {
 			exportReportCache.put(column.getName(), column.getStringValue());
 		}
@@ -374,7 +374,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				JSONObject jsonObj = jsonRepresentation.getJsonObject();
 				userMap.put("firstName",jsonObj.getString("firstName"));
 				userMap.put("lastName",jsonObj.getString("lastName"));
-				userMap.put("emailId",jsonObj.getString("emailId"));
+				userMap.put("externalId",jsonObj.getString("externalId"));
 				userMap.put("gooruUId",jsonObj.getString("gooruUId"));
 				userMap.put("userRoleSetString",jsonObj.getString("userRoleSetString"));
 			}catch(Exception e){
@@ -401,7 +401,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			jsonObject = new JSONObject(jsonObject.getString(APIConstants.USER));
 			userMap.put(APIConstants.FIRST_NAME, jsonObject.getString(APIConstants.FIRST_NAME));
 			userMap.put(APIConstants.LAST_NAME, jsonObject.getString(APIConstants.LAST_NAME));
-			userMap.put(APIConstants.EMAIL_ID, jsonObject.getString(APIConstants.EMAIL_ID));
+			userMap.put(APIConstants.EXTERNAL_ID, jsonObject.getString(APIConstants.EXTERNAL_ID));
 			userMap.put(APIConstants.GOORUUID, jsonObject.getString(APIConstants.PARTY_UID));
 			userMap.put(APIConstants.USER_ROLE_SETSTRING, jsonObject.getString(APIConstants.USER_ROLE_SETSTRING));
 
@@ -542,6 +542,14 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	public Map<String, String> getExportReportCache() {
 		return exportReportCache;
+	}
+	
+	public String getRealRepoPath() {
+		return fileProperties.getProperty("repo.real.path");
+	}
+	
+	public String getAppRepoPath() {
+		return fileProperties.getProperty("repo.app.path");
 	}
 }
 

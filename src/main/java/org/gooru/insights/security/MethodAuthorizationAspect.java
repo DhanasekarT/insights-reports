@@ -137,7 +137,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 							User user = new User();
 							user.setFirstName(jsonObj.getString("firstName"));
 							user.setLastName(jsonObj.getString("lastName"));
-							user.setEmailId(jsonObj.getString("emailId"));
+							user.setEmailId(jsonObj.getString("externalId"));
 							user.setGooruUId(jsonObj.getString("gooruUId"));
 							if(hasGooruAdminAuthority(authorizeOperations, jsonObj)){
 								session.setAttribute("token", sessionToken);
@@ -187,7 +187,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 				User user = new User();
 				user.setFirstName(jsonObject.getString("firstName"));
 				user.setLastName(jsonObject.getString("lastName"));
-				user.setEmailId(jsonObject.getString("emailId"));
+				user.setEmailId(jsonObject.getString("externalId"));
 				user.setGooruUId(jsonObject.getString("partyUid"));
 				if(hasGooruAdminAuthority(authorizeOperations, jsonObject)){
 					session.setAttribute("sessionToken", sessionToken);
@@ -243,7 +243,7 @@ public class MethodAuthorizationAspect extends OperationAuthorizer {
 					User user = new User();
 					user.setFirstName(jsonObj.getString("firstName"));
 					user.setLastName(jsonObj.getString("lastName"));
-					user.setEmailId(jsonObj.getString("emailId"));
+					user.setEmailId(jsonObj.getString("externalId"));
 					user.setGooruUId(jsonObj.getString("gooruUId"));
 					if (hasGooruAdminAuthority(authorizeOperations, jsonObj)) {
 						session.setAttribute("token", sessionToken);

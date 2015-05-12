@@ -140,6 +140,8 @@ public class APIConstants {
 	
 	public final static String EMAIL_ID = "emailId";
 	
+	public final static String EXTERNAL_ID = "externalId";
+	
 	public final static String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","HOUR","MINUTE","SECOND","H","M","S","D","W","M","Y","year","month","quator","week","day","hour","minute","second"};
 	
 	public final static String QUERY = "query";
@@ -245,6 +247,8 @@ public class APIConstants {
 	public static final String TOTAL_ROWS = "totalRows";
 	
 	public static final String MAX_LIMIT = "max_limit";
+	
+	public static final String NOT_APPLICABLE = "N/A";
 
 	/**
 	 * Logical Enumaration 

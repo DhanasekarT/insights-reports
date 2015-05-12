@@ -75,6 +75,8 @@
 				<prop key="cassandra.keyspace.insights">${cassandra.keyspace.insights}</prop>
 				<prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
 				<prop key="localizer">${localizer}</prop>
+				<prop key="repo.real.path">${repo.real.path}</prop>
+				<prop key="repo.app.path">${repo.app.path}</prop>
 			</props>
 		</property>
 	</bean>
