@@ -401,7 +401,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			jsonObject = new JSONObject(jsonObject.getString(APIConstants.USER));
 			userMap.put(APIConstants.FIRST_NAME, jsonObject.getString(APIConstants.FIRST_NAME));
 			userMap.put(APIConstants.LAST_NAME, jsonObject.getString(APIConstants.LAST_NAME));
-			userMap.put(APIConstants.EXTERNAL_ID, jsonObject.getString(APIConstants.EXTERNAL_ID));
+			userMap.put(APIConstants.EXTERNAL_ID, jsonObject.getJSONArray(APIConstants.IDENTITIES).getJSONObject(0).getString(APIConstants.EXTERNAL_ID));
 			userMap.put(APIConstants.GOORUUID, jsonObject.getString(APIConstants.PARTY_UID));
 			userMap.put(APIConstants.USER_ROLE_SETSTRING, jsonObject.getString(APIConstants.USER_ROLE_SETSTRING));
 

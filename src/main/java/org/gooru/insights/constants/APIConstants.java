@@ -142,6 +142,8 @@ public class APIConstants {
 	
 	public final static String EXTERNAL_ID = "externalId";
 	
+	public final static String IDENTITIES = "identities";
+	
 	public final static String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","HOUR","MINUTE","SECOND","H","M","S","D","W","M","Y","year","month","quator","week","day","hour","minute","second"};
 	
 	public final static String QUERY = "query";
