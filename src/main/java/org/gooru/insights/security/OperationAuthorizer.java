@@ -2,7 +2,7 @@
  * OperationAuthorizer.java
  * insights-read-api
  * Created by Gooru on 2014
- * Copyright (c) 2014 Gooru. All rights reserved.
+ * Copyright (c) 2015 Gooru. All rights reserved.
  * http://www.goorulearning.org/
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -27,12 +27,14 @@ import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.models.RoleEntityOperation;
 import org.gooru.insights.models.User;
 import org.gooru.insights.models.UserRoleAssoc;
+import org.gooru.insights.services.BaseAPIServiceImpl;
 import org.springframework.stereotype.Component;
 
 @Component
 public class OperationAuthorizer {
 
 	boolean hasRole(Short userRoleId, User user) {
+		
 		if (user != null && user.getUserRoleSet() != null) {
 			for (UserRoleAssoc userRoleAssoc : user.getUserRoleSet()) {
 				if (userRoleAssoc.getRole().getRoleId().equals(userRoleId)) {
@@ -44,6 +46,7 @@ public class OperationAuthorizer {
 	}
 
 	public boolean hasAuthorization(String operation, User user) {
+		
 		if (user != null && operation != null && user.getUserRoleSet() != null) {
 			for (UserRoleAssoc userRoleAssoc : user.getUserRoleSet()) {
 				if (userRoleAssoc.getRole().getRoleOperations() == null) {
@@ -51,10 +54,8 @@ public class OperationAuthorizer {
 				}
 				for (RoleEntityOperation entityOperation : userRoleAssoc
 						.getRole().getRoleOperations()) {
-					if ((entityOperation.getEntityOperation().getEntityName()
-							+ InsightsOperationConstants.ENTITY_ACTION_SEPARATOR + entityOperation
-							.getEntityOperation().getOperationName())
-							.equals(operation)) {
+					if ((BaseAPIServiceImpl.buildString(new String[]{entityOperation.getEntityOperation().getEntityName(),InsightsOperationConstants.ENTITY_ACTION_SEPARATOR,entityOperation
+							.getEntityOperation().getOperationName()}).equals(operation))) {
 						return true;
 					}
 				}

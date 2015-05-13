@@ -1,7 +1,6 @@
 package org.gooru.insights.models;
 
 import java.io.Serializable;
-import java.util.List;
 
 public class RequestParamsFiltersDTO implements Serializable{
 

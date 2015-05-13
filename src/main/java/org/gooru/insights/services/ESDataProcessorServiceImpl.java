@@ -29,7 +29,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 @Service
-public class BusinessLogicServiceImpl implements BusinessLogicService {
+public class ESDataProcessorServiceImpl implements ESDataProcessor {
 
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -37,67 +37,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	@Autowired
 	private BaseAPIService baseAPIService;
 
-	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, Set<String> keys) {
-		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-		for (Map<String, Object> parentEntry : parent) {
-			boolean occured = false;
-			Map<String, Object> appended = new HashMap<String, Object>();
-			for (Map<String, Object> childEntry : child) {
-				boolean validated = false;
-				for (String key : keys) {
-					if (childEntry.containsKey(key) && parentEntry.containsKey(key)) {
-						if (childEntry.get(key).toString().equals(parentEntry.get(key).toString())) {
-						} else {
-							validated = true;
-						}
-					} else {
-						validated = true;
-					}
-				}
-				if (!validated) {
-					occured = true;
-					appended.putAll(childEntry);
-					appended.putAll(parentEntry);
-					break;
-				}
-			}
-			if (!occured) {
-				appended.putAll(parentEntry);
-			}
-			resultList.add(appended);
-		}
-		return resultList;
-	}
-
-	public List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey) {
-		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-		for (Map<String, Object> parentEntry : parent) {
-			boolean occured = false;
-			Map<String, Object> appended = new HashMap<String, Object>();
-			for (Map<String, Object> childEntry : child) {
-				if (childEntry.containsKey(childKey) && parentEntry.containsKey(parentKey)) {
-					if (childEntry.get(childKey).equals(parentEntry.get(parentKey))) {
-						occured = true;
-						appended.putAll(childEntry);
-						appended.putAll(parentEntry);
-						break;
-					}
-				}
-			}
-			if (!occured) {
-				appended.putAll(parentEntry);
-			}
-
-			resultList.add(appended);
-		}
-		return resultList;
-	}
-
 	public Map<String, Object> fetchFilters(String index, List<Map<String, Object>> dataList) {
 		Map<String, String> filterFields = new HashMap<String, String>();
 		Map<String, Object> filters = new HashMap<String, Object>();
-		if (baseConnectionService.getFieldsJoinCache().containsKey(index)) {
-			filterFields = baseConnectionService.getFieldsJoinCache().get(index);
+		if (getBaseConnectionService().getFieldsJoinCache().containsKey(index)) {
+			filterFields = getBaseConnectionService().getFieldsJoinCache().get(index);
 		}
 		for (Map<String, Object> dataMap : dataList) {
 			Set<String> keySets = filterFields.keySet();
@@ -165,11 +109,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	public List<Map<String, Object>> customPagination(RequestParamsPaginationDTO requestParamsPaginationDTO, List<Map<String, Object>> data, Map<String, Boolean> validatedData) {
 		int dataSize = data.size();
 		List<Map<String, Object>> customizedData = new ArrayList<Map<String, Object>>();
-		if (baseAPIService.checkNull(requestParamsPaginationDTO)) {
+		if (getBaseAPIService().checkNull(requestParamsPaginationDTO)) {
 			if (validatedData.get(APIConstants.Hasdatas.HAS_SORTBY.check())) {
 				List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
 				for (RequestParamsSortDTO sortData : orderDatas) {
-					baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
+					getBaseAPIService().sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
 				}
 			}
 			int offset = validatedData.get(APIConstants.Hasdatas.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() == 0 ? 0 : requestParamsPaginationDTO.getOffset() - 1 : 0;
@@ -193,7 +137,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	public List<Map<String, Object>> aggregatePaginate(RequestParamsPaginationDTO requestParamsPaginationDTO, List<Map<String, Object>> data, Map<String, Boolean> validatedData) {
 		int dataSize = data.size();
 		List<Map<String, Object>> customizedData = new ArrayList<Map<String, Object>>();
-		if (baseAPIService.checkNull(requestParamsPaginationDTO)) {
+		if (getBaseAPIService().checkNull(requestParamsPaginationDTO)) {
 			int offset = validatedData.get(APIConstants.Hasdatas.HAS_Offset.check()) ? requestParamsPaginationDTO.getOffset() : 0;
 			int limit = validatedData.get(APIConstants.Hasdatas.HAS_LIMIT.check()) ? requestParamsPaginationDTO.getLimit() : 10;
 
@@ -213,11 +157,11 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	}
 
 	public List<Map<String, Object>> customSort(RequestParamsPaginationDTO requestParamsPaginationDTO, List<Map<String, Object>> data, Map<String, Boolean> validatedData) {
-		if (baseAPIService.checkNull(requestParamsPaginationDTO)) {
+		if (getBaseAPIService().checkNull(requestParamsPaginationDTO)) {
 			if (validatedData.get(APIConstants.Hasdatas.HAS_SORTBY.check())) {
 				List<RequestParamsSortDTO> orderDatas = requestParamsPaginationDTO.getOrder();
 				for (RequestParamsSortDTO sortData : orderDatas) {
-					baseAPIService.sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
+					getBaseAPIService().sortBy(data, sortData.getSortBy(), sortData.getSortOrder());
 				}
 			}
 		}
@@ -246,6 +190,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	}
 
 	public List<Map<String, Object>> getRecords(String traceId,String index, ResponseParamDTO<Map<String, Object>> responseParamDTO, String data, String dataKey) throws Exception {
+		
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
@@ -261,38 +206,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			}
 			jsonArray = new JSONArray(json.get(APIConstants.FormulaFields.HITS.getField()).toString());
 			if (!APIConstants.FormulaFields.FIELDS.getField().equalsIgnoreCase(dataKey)) {
-				for (int i = 0; i < jsonArray.length(); i++) {
-					json = new JSONObject(jsonArray.get(i).toString());
-					JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
-					Iterator<String> keys = fieldJson.keys();
-					Map<String, Object> resultMap = new HashMap<String, Object>();
-					while (keys.hasNext()) {
-						String key = keys.next();
-						if (baseConnectionService.getDependentFieldsCache().containsKey(index)) {
-							/**
-							 * Perform Group concat operation
-							 */
-							includeGroupConcat(index, key, fieldJson, fieldJson, resultMap);
-						} else {
-							try {
-								JSONArray dataArray = new JSONArray(fieldJson.get(key).toString());
-								if (dataArray.length() == 1) {
-									resultMap.put(apiFields(index, key), dataArray.get(0));
-								} else {
-									Object[] arrayData = new Object[dataArray.length()];
-									for (int j = 0; j < dataArray.length(); j++) {
-										arrayData[j] = dataArray.get(j);
-									}
-									resultMap.put(apiFields(index, key), arrayData);
-								}
-							} catch (Exception e) {
-
-								resultMap.put(apiFields(index, key), fieldJson.get(key));
-							}
-						}
-					}
-					resultList.add(resultMap);
-				}
+				fetchSource(index, dataKey, jsonArray);
 			} else {
 				for (int i = 0; i < jsonArray.length(); i++) {
 					Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -301,58 +215,10 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 					Iterator<String> keys = json.keys();
 					while (keys.hasNext()) {
 						String key = keys.next();
-						if (baseConnectionService.getDependentFieldsCache().containsKey(index)) {
-							Map<String, Map<String, String>> dependentKey = baseConnectionService.getDependentFieldsCache().get(index);
-
-							if (dependentKey.containsKey(key)) {
-								Map<String, String> dependentColumn = dependentKey.get(key);
-								Set<String> columnKeys = dependentColumn.keySet();
-								for (String columnKey : columnKeys) {
-									if (!columnKey.equalsIgnoreCase(APIConstants.FIELD_NAME) && !columnKey.equalsIgnoreCase(APIConstants.DEPENDENT_NAME)) {
-										if (columnKey.equalsIgnoreCase(new JSONArray(json.getString(dependentColumn.get(APIConstants.DEPENDENT_NAME))).getString(0))) {
-											try {
-												JSONArray dataArray = new JSONArray(json.get(key).toString());
-												if (dataArray.length() == 1) {
-													resultMap.put(dependentColumn.get(columnKey), dataArray.get(0));
-												} else {
-													Object[] arrayData = new Object[dataArray.length()];
-													for (int j = 0; j < dataArray.length(); j++) {
-														arrayData[j] = dataArray.get(j);
-													}
-													resultMap.put(dependentColumn.get(columnKey), arrayData);
-												}
-											} catch (Exception e) {
-
-												resultMap.put(dependentColumn.get(columnKey), json.get(key));
-											}
-										}
-									}
-								}
-
-							}
+						if (getBaseConnectionService().getDependentFieldsCache().containsKey(index)) {
+							taxonomyBasedStuff(index, key, json, resultMap);
 						} else {
-							try {
-								JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
-								if (fieldJsonArray.length() == 1) {
-									resultMap.put(apiFields(index, key), fieldJsonArray.get(0));
-								} else {
-									Set<Object> arrayData = new HashSet<Object>();
-									for (int j = 0; j < fieldJsonArray.length(); j++) {
-										arrayData.add(fieldJsonArray.get(j));
-									}
-									if (arrayData.size() == 1) {
-										for (Object dataObject : arrayData) {
-											resultMap.put(apiFields(index, key), dataObject);
-
-										}
-									} else {
-
-										resultMap.put(apiFields(index, key), arrayData);
-									}
-								}
-							} catch (Exception e) {
-								resultMap.put(apiFields(index, key), json.get(key));
-							}
+							fetchFieldsData(index, key, json, resultMap);
 						}
 					}
 					resultList.add(resultMap);
@@ -365,8 +231,102 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return resultList;
 	}
 
+	private List<Map<String, Object>> fetchSource(String index, String dataKey, JSONArray jsonArray) throws Exception {
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject json = new JSONObject(jsonArray.get(i).toString());
+			JSONObject fieldJson = new JSONObject(json.get(dataKey).toString());
+			Iterator<String> keys = fieldJson.keys();
+			Map<String, Object> resultMap = new HashMap<String, Object>();
+			while (keys.hasNext()) {
+				String key = keys.next();
+				if (getBaseConnectionService().getDependentFieldsCache().containsKey(index)) {
+					/**
+					 * Perform Group concat operation
+					 */
+					includeGroupConcat(index, key, fieldJson, fieldJson, resultMap);
+				} else {
+					try {
+						JSONArray dataArray = new JSONArray(fieldJson.get(key).toString());
+						if (dataArray.length() == 1) {
+							resultMap.put(apiFields(index, key), dataArray.get(0));
+						} else {
+							Object[] arrayData = new Object[dataArray.length()];
+							for (int j = 0; j < dataArray.length(); j++) {
+								arrayData[j] = dataArray.get(j);
+							}
+							resultMap.put(apiFields(index, key), arrayData);
+						}
+					} catch (Exception e) {
+						resultMap.put(apiFields(index, key), fieldJson.get(key));
+					}
+				}
+			}
+			resultList.add(resultMap);
+		}
+		return resultList;
+	}
+	
+	private void taxonomyBasedStuff(String index, String key, JSONObject json, Map<String, Object> resultMap) throws JSONException {
+		
+		Map<String, Map<String, String>> dependentKey = getBaseConnectionService().getDependentFieldsCache().get(index);
+
+		if (dependentKey.containsKey(key)) {
+			Map<String, String> dependentColumn = dependentKey.get(key);
+			Set<String> columnKeys = dependentColumn.keySet();
+			for (String columnKey : columnKeys) {
+				if (!columnKey.equalsIgnoreCase(APIConstants.FIELD_NAME) && !columnKey.equalsIgnoreCase(APIConstants.DEPENDENT_NAME)) {
+					if (columnKey.equalsIgnoreCase(new JSONArray(json.getString(dependentColumn.get(APIConstants.DEPENDENT_NAME))).getString(0))) {
+						try {
+							JSONArray dataArray = new JSONArray(json.get(key).toString());
+							if (dataArray.length() == 1) {
+								resultMap.put(dependentColumn.get(columnKey), dataArray.get(0));
+							} else {
+								Object[] arrayData = new Object[dataArray.length()];
+								for (int j = 0; j < dataArray.length(); j++) {
+									arrayData[j] = dataArray.get(j);
+								}
+								resultMap.put(dependentColumn.get(columnKey), arrayData);
+							}
+						} catch (Exception e) {
+
+							resultMap.put(dependentColumn.get(columnKey), json.get(key));
+						}
+					}
+				}
+			}
+
+		}
+	}
+	
+	private void fetchFieldsData(String index, String key, JSONObject json, Map<String, Object> resultMap) throws JSONException {
+		
+		try {
+			JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
+			if (fieldJsonArray.length() == 1) {
+				resultMap.put(apiFields(index, key), fieldJsonArray.get(0));
+			} else {
+				Set<Object> arrayData = new HashSet<Object>();
+				for (int j = 0; j < fieldJsonArray.length(); j++) {
+					arrayData.add(fieldJsonArray.get(j));
+				}
+				if (arrayData.size() == 1) {
+					for (Object dataObject : arrayData) {
+						resultMap.put(apiFields(index, key), dataObject);
+
+					}
+				} else {
+
+					resultMap.put(apiFields(index, key), arrayData);
+				}
+			}
+		} catch (Exception e) {
+			resultMap.put(apiFields(index, key), json.get(key));
+		}
+	}
+	
 	private void includeGroupConcat(String index, String key, JSONObject fieldJson, JSONObject json, Map<String, Object> resultMap) throws Exception {
-		Map<String, Map<String, String>> dependentKey = baseConnectionService.getDependentFieldsCache().get(index);
+		Map<String, Map<String, String>> dependentKey = getBaseConnectionService().getDependentFieldsCache().get(index);
 		if (dependentKey.containsKey(key)) {
 			Map<String, String> dependentColumn = dependentKey.get(key);
 			Set<String> columnKeys = dependentColumn.keySet();
@@ -394,7 +354,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		}
 	}
 
-	public List<Map<String, Object>> getMultiGetRecords(String traceId,String[] indices, Map<String, Map<String, String>> comparekey, String data, Map<Integer, String> errorRecord, String dataKey) {
+	public List<Map<String, Object>> getMultiGetRecords(String traceId,String[] indices, Map<String, Map<String, String>> comparekey, String data, Map<Integer, String> errorRecord, String dataKey) throws Exception {
 		JSONObject json;
 		JSONArray jsonArray = new JSONArray();
 		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
@@ -426,37 +386,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 					resultList.add(resultMap);
 				}
 			} else {
-				for (int i = 0; i < jsonArray.length(); i++) {
-					Map<String, Object> resultMap = new HashMap<String, Object>();
-					json = new JSONObject(jsonArray.get(i).toString());
-					json = new JSONObject(json.get(dataKey).toString());
-					Iterator<String> keys = json.keys();
-					while (keys.hasNext()) {
-						String key = keys.next();
-						JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
-							if (comparekey.containsKey(key)) {
-								Map<String, String> comparable = new HashMap<String, String>();
-								comparable = comparekey.get(key);
-								for (Map.Entry<String, String> compare : comparable.entrySet()) {
-									
-									if (compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString())){
-										if (fieldJsonArray.length() == 1) {
-										resultMap.put(compare.getValue(), fieldJsonArray.getString(0));
-										}else{
-											resultMap.put(compare.getValue(), fieldJsonArray);
-										}
-									}
-								}
-							} else {
-								if (fieldJsonArray.length() == 1) {
-								resultMap.put(apiFields(indices[0], key), fieldJsonArray.get(0));
-								}else{
-								resultMap.put(apiFields(indices[0], key), fieldJsonArray);
-								}
-							}
-					}
-					resultList.add(resultMap);
-				}
+				multiGetFieldsFetch(dataKey, indices, comparekey, jsonArray);
 			}
 			return resultList;
 		} catch (JSONException e) {
@@ -465,6 +395,43 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		return resultList;
 	}
 
+	private List<Map<String, Object>> multiGetFieldsFetch(String dataKey,String[] indices, Map<String, Map<String, String>> comparekey, JSONArray jsonArray) throws Exception{
+		
+		List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+		for (int i = 0; i < jsonArray.length(); i++) {
+			Map<String, Object> resultMap = new HashMap<String, Object>();
+			JSONObject json = new JSONObject(jsonArray.get(i).toString());
+			json = new JSONObject(json.get(dataKey).toString());
+			Iterator<String> keys = json.keys();
+			while (keys.hasNext()) {
+				String key = keys.next();
+				JSONArray fieldJsonArray = new JSONArray(json.get(key).toString());
+					if (comparekey.containsKey(key)) {
+						Map<String, String> comparable = new HashMap<String, String>();
+						comparable = comparekey.get(key);
+						for (Map.Entry<String, String> compare : comparable.entrySet()) {
+							
+							if (compare.getKey().equalsIgnoreCase(fieldJsonArray.get(0).toString())){
+								if (fieldJsonArray.length() == 1) {
+								resultMap.put(compare.getValue(), fieldJsonArray.getString(0));
+								}else{
+									resultMap.put(compare.getValue(), fieldJsonArray);
+								}
+							}
+						}
+					} else {
+						if (fieldJsonArray.length() == 1) {
+						resultMap.put(apiFields(indices[0], key), fieldJsonArray.get(0));
+						}else{
+						resultMap.put(apiFields(indices[0], key), fieldJsonArray);
+						}
+					}
+			}
+			resultList.add(resultMap);
+		}
+		return resultList;
+	}
+	
 	public RequestParamsDTO changeDataSourceUserToAnonymousUser(RequestParamsDTO requestParamsDTO) {
 		String dataSources = APIConstants.EMPTY;
 		for (String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)) {
@@ -522,7 +489,6 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 							iterateInternalObject(newJson, subJsonArray, groupBy, counter, key,validatedData);
 						}
 					}
-
 					if (hasSubAggregate) {
 						json = new JSONObject();
 						requestJSON.put(APIConstants.FormulaFields.BUCKETS.getField(), subJsonArray);
@@ -542,7 +508,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 		Map<String, Object> resultMap = new LinkedHashMap<String, Object>();
 		for (Map.Entry<String, String> entry : metrics.entrySet()) {
 			if (newJson.has(entry.getValue())) {
-				resultMap.put(entry.getKey(), new JSONObject(newJson.get(entry.getValue()).toString()).get("value"));
+				JSONObject aggregatedObject = new JSONObject(newJson.get(entry.getValue()).toString());
+				if (aggregatedObject.has(APIConstants.FormulaFields.VALUES.getField())) {
+					Map<String, Object> valuesAsMap = new Gson().fromJson(aggregatedObject.get(APIConstants.FormulaFields.VALUES.getField()).toString(), Map.class);
+					resultMap.put(entry.getKey(), valuesAsMap);
+				} else {
+					resultMap.put(entry.getKey(), aggregatedObject.get(APIConstants.FormulaFields.VALUE.getField()));
+				}
 				resultMap.put(groupBy[counter], newJson.get(APIConstants.FormulaFields.KEY.getField()));
 				newJson.remove(entry.getValue());
 			}
@@ -610,7 +582,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	 * @return converted comma separated Els fields
 	 */
 	public String esFields(String index, String fields) {
-		Map<String, String> mappingfields = baseConnectionService.getFields().get(index);
+		Map<String, String> mappingfields = getBaseConnectionService().getFields().get(index);
 		StringBuffer esFields = new StringBuffer();
 		for (String field : fields.split(APIConstants.COMMA)) {
 			if (esFields.length() > 0) {
@@ -626,7 +598,7 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 	}
 
 	public String apiFields(String index, String fields) {
-		Map<String, String> apiFields = baseConnectionService.getApiFields().get(index);
+		Map<String, String> apiFields = getBaseConnectionService().getApiFields().get(index);
 		StringBuffer esFields = new StringBuffer();
 		for (String field : fields.split(APIConstants.COMMA)) {
 			if (esFields.length() > 0) {
@@ -639,5 +611,13 @@ public class BusinessLogicServiceImpl implements BusinessLogicService {
 			}
 		}
 		return esFields.toString();
+	}
+
+	public BaseConnectionService getBaseConnectionService() {
+		return baseConnectionService;
+	}
+
+	public BaseAPIService getBaseAPIService() {
+		return baseAPIService;
 	}
 }

@@ -7,7 +7,7 @@ import java.util.Set;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 
- interface ValidateUserPermissionService {
+ interface UserService {
 
 	 Map<String, Object> getUserFilters(String gooruUId);
 	
@@ -27,5 +27,7 @@ import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 	
 	 String getAllowedParties(String traceId,RequestParamsDTO requestParamsDTO,Map<String, Set<String>> partyPermissions);
 	 
-	 public String getRoleBasedParty(String traceId,Map<String, Set<String>> partyPermissions, String permission);
-}
+	 String getRoleBasedParty(String traceId,Map<String, Set<String>> partyPermissions, String permission);
+
+	 RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
+ }

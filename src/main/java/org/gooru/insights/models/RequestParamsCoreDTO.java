@@ -7,11 +7,11 @@ public class RequestParamsCoreDTO implements Serializable{
 
 	private static final long serialVersionUID = -2840599796987757919L;
 	
-	List<RequestParamsDTO> api;
+	private List<RequestParamsDTO> api;
 	
-	String apiFunctionality;
+	private String apiFunctionality;
 	
-	String coreKey;
+	private String coreKey;
 
 	public String getCoreKey() {
 		return coreKey;

@@ -1,5 +1,6 @@
 package org.gooru.insights.models;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -8,7 +9,7 @@ import javax.persistence.Entity;
 import org.apache.commons.lang.StringUtils;
 
 @Entity(name="user")
-public class User {
+public class User implements Serializable{
 
 	/**
 	 * 

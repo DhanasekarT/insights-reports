@@ -15,7 +15,6 @@ import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,7 +52,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception
 	 */
 	@RequestMapping(method = { RequestMethod.GET, RequestMethod.POST })
-	//@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = false) String data,
 			HttpServletResponse response) throws Exception {
 
@@ -72,7 +71,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/{action}/report", method = RequestMethod.POST)
-	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView manageReports(HttpServletRequest request, @PathVariable(value = "action") String action, @RequestParam(value = "reportName", required = true) String reportName,
 			@RequestBody String data, HttpServletResponse response) throws Exception {
 
@@ -89,7 +88,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/report/{reportType}", method = { RequestMethod.GET, RequestMethod.POST })
-	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView getPartyReports(HttpServletRequest request, @PathVariable(value = "reportType") String reportType,
 			HttpServletResponse response) throws Exception {
 
@@ -104,7 +103,7 @@ public class ItemController extends BaseController{
 	 * @return Model view object
 	 * @throws Exception 
 	 */
-	@RequestMapping(value="/clear/id",method =RequestMethod.GET)
+	@RequestMapping(value="/clear/id",method =RequestMethod.DELETE)
 	public ModelAndView clearRedisCache(HttpServletRequest request,@RequestParam(value="queryId",required = true) String queryId,HttpServletResponse response) throws Exception{
 	
 		return getModel(itemService.clearQuery(getTraceId(request),queryId));
@@ -120,7 +119,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception 
 	 */
 	@RequestMapping(value="/{id}",method =RequestMethod.GET)
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView getRedisCache(HttpServletRequest request,@PathVariable("id") String queryId,HttpServletResponse response) throws Exception{
 		
 		return getModel(itemService.getQuery(getTraceId(request),queryId,getSessionToken(request)));
@@ -136,7 +135,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception 
 	 */
 	@RequestMapping(value="/list",method =RequestMethod.GET)
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView getRedisCacheList(HttpServletRequest request,@RequestParam(value="queryId",required = false) String queryId,HttpServletResponse response) throws Exception{
 		 
 		return getModel(getItemService().getCacheData(getTraceId(request),queryId,getSessionToken(request)));
@@ -151,7 +150,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception 
 	 */
 	@RequestMapping(value="/keys",method =RequestMethod.PUT)
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView putRedisData(HttpServletRequest request,@RequestBody String data ,HttpServletResponse response) throws Exception{
 		
 		return getModel(getItemService().insertKey(getTraceId(request),data));
@@ -161,8 +160,8 @@ public class ItemController extends BaseController{
 	 * This will clear the cached data
 	 * @return Model view object
 	 */
-	@RequestMapping(value="/clear/data",method =RequestMethod.GET)
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@RequestMapping(value="/clear/data",method =RequestMethod.DELETE)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView clearDataCache(){
 		
 		return getModel(getItemService().clearDataCache());
@@ -178,7 +177,7 @@ public class ItemController extends BaseController{
 	 * @throws Exception
 	 */
 	@RequestMapping(value="/combine",method ={RequestMethod.GET,RequestMethod.POST})
-	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations =  InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView getItems(HttpServletRequest request,@RequestParam(value="data",required = false) String data,HttpServletResponse response) throws Exception{
 		
 		return getModel(getItemService().processApi(getTraceId(request),data,getSessionToken(request)));
@@ -188,7 +187,7 @@ public class ItemController extends BaseController{
 	 * This will clear the data connection of cassandra and ELS
 	 * @return Model view object
 	 */
-	@RequestMapping(value="/clear/connection",method =RequestMethod.GET)
+	@RequestMapping(value="/clear/connection",method =RequestMethod.DELETE)
 	public ModelAndView clearConnectionCache(){
 		return getModel(getItemService().clearConnectionCache());
 	}
@@ -198,7 +197,7 @@ public class ItemController extends BaseController{
 	}
 	
 	@RequestMapping(value="/export/report", method = RequestMethod.GET)
-	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIHGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			HttpServletResponse response) throws Exception {
 		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(response, getTraceId(request),data, getSessionToken(request), null);

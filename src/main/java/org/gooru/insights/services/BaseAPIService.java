@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
-import org.gooru.insights.models.ResponseParamDTO;
 import org.json.JSONArray;
 
 public interface BaseAPIService {
@@ -30,8 +29,6 @@ public interface BaseAPIService {
 	
 	Set<String> convertStringtoSet(String inputDatas);
 	
-	RequestParamsDTO validateUserRole(String traceId,RequestParamsDTO requestParamsDTO,Map<String,Object> userMap);
-	
 	String[] getIndices(String names);
 	
 	boolean checkNull(Map<?,?> request);
@@ -43,6 +40,10 @@ public interface BaseAPIService {
 	String convertCollectiontoString(Collection<String> datas);
 	
 	List<Map<String, Object>> innerJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child);
+	
+	List<Map<String,Object>> leftJoin(List<Map<String,Object>> parent,List<Map<String,Object>> child,Set<String> keys);
+
+	List<Map<String, Object>> leftJoin(List<Map<String, Object>> parent, List<Map<String, Object>> child, String parentKey, String childKey);
 	
 	List<Map<String, Object>> sortBy(List<Map<String, Object>> requestData, String sortBy, String sortOrder);
 	

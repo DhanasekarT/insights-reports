@@ -5,140 +5,177 @@ public class APIConstants {
 	/**
 	 * Symbols
 	 */
-	public final static String COMMA = ",";
+	public static final String COMMA = ",";
 	
-	public final static String COLON = ":";
+	public static final String COLON = ":";
 	
-	public final static String DOT = ".";
+	public static final String DOT = ".";
 	
-	public final static String EMPTY= "";
+	public static final String EMPTY= "";
 	
-	public final static String PIPE = "|";
+	public static final String PIPE = "|";
 
-	public final static String EMPTY_JSON_ARRAY = "[{}]";
+	public static final String EMPTY_JSON_ARRAY = "[{}]";
 	
-	public final static String SEPARATOR = "~";
+	public static final String SEPARATOR = "~";
 	
-	public final static String WILD_CARD = "*";
+	public static final String WILD_CARD = "*";
+	
+	public static final String OPEN_BRACE = "{";
+	
+	public static final String CLOSE_BRACE = "}";
+	
+	public static final String F = "f";
+	
+	public static final String P = "p";
 	
 	/**
 	 * view Attributes
 	 */
-	public final static String VIEW_NAME = "VIEW_NAME";
+	public static final String VIEW_NAME = "VIEW_NAME";
 	
-	public final static String RESPONSE_NAME = "RESPONSE_NAME";
+	public static final String RESPONSE_NAME = "RESPONSE_NAME";
 	
 	/**
 	 * Date formats
 	 */
-	public final static String DEFAULT_FORMAT = "yyyy-MM-dd kk:mm:ss";
+	public static final String DEFAULT_FORMAT = "yyyy-MM-dd kk:mm:ss";
 
 	/**
 	 * Environment constants
 	 */
-	public final static String DEV = "dev";
+	public static final String DEV = "dev";
 	
-	public final static String PROD = "prod";
+	public static final String PROD = "prod";
 	
 	/**
 	 * cache constants
 	 */
-	public final static String CACHE_PREFIX = "insights";
+	public static final String CACHE_PREFIX = "insights";
 	
-	public final static String CACHE_PREFIX_ID = "key";
+	public static final String CACHE_PREFIX_ID = "key";
 	
-	public final static String GOORU_PREFIX = "authenticate_";
+	public static final String GOORU_PREFIX = "authenticate_";
 	
 	/**
 	 * Authorization constants
 	 */
-	public final static String AP_SELF_ACTIVITY = "AP_SELF_ACTIVITY";
+	public static final String AP_SELF_ACTIVITY = "AP_SELF_ACTIVITY";
 	
-	public final static String AP_SELF_PII = "AP_SELF_PII";
+	public static final String AP_SELF_PII = "AP_SELF_PII";
 	
-	public final static String AP_PARTY_PUBLIC = "AP_PARTY_PUBLIC";
+	public static final String AP_PARTY_PUBLIC = "AP_PARTY_PUBLIC";
 	
-	public final static String AP_PARTY_PII = "AP_PARTY_PII";
+	public static final String AP_PARTY_PII = "AP_PARTY_PII";
 	
-	public final static String AP_ALL_PARTY_ALL_DATA = "AP_ALL_PARTY_ALL_DATA";
+	public static final String AP_ALL_PARTY_ALL_DATA = "AP_ALL_PARTY_ALL_DATA";
 	
-	public final static String AP_PARTY_ALL_DATA = "AP_PARTY_ALL_DATA";
+	public static final String AP_PARTY_ALL_DATA = "AP_PARTY_ALL_DATA";
 	
-	public final static String AP_SYSTEM_PUBLIC = "AP_SYSTEM_PUBLIC";
+	public static final String AP_SYSTEM_PUBLIC = "AP_SYSTEM_PUBLIC";
 	
-	public final static String AP_OWN_CONTENT_USAGE = "AP_OWN_CONTENT_USAGE";
+	public static final String AP_OWN_CONTENT_USAGE = "AP_OWN_CONTENT_USAGE";
 	
-	public final static String AP_PARTY_OWN_CONTENT_USAGE = "AP_PARTY_OWN_CONTENT_USAGE";
+	public static final String AP_PARTY_OWN_CONTENT_USAGE = "AP_PARTY_OWN_CONTENT_USAGE";
 	
-	public final static String AP_PARTY_ACTIVITY = "AP_PARTY_ACTIVITY";
+	public static final String AP_PARTY_ACTIVITY = "AP_PARTY_ACTIVITY";
 	
-	public final static String AP_APP_SESSION_PARTY_ACTIVITY = "AP_APP_SESSION_PARTY_ACTIVITY";
+	public static final String AP_APP_SESSION_PARTY_ACTIVITY = "AP_APP_SESSION_PARTY_ACTIVITY";
 	
-	public final static String AP_APP_SESSION_PARTY_CONTENT_USAGE = "AP_APP_SESSION_PARTY_CONTENT_USAGE";
+	public static final String AP_APP_SESSION_PARTY_CONTENT_USAGE = "AP_APP_SESSION_PARTY_CONTENT_USAGE";
 	
-	public final static String AP_PARTY_ACTIVITY_RAW = "AP_PARTY_ACTIVITY_RAW";
+	public static final String AP_PARTY_ACTIVITY_RAW = "AP_PARTY_ACTIVITY_RAW";
 	
-	public final static String DI_REPORTS = "di_reports";
+	public static final String DI_REPORTS = "di_reports";
 	
-	public final static String ANONYMOUS_USERDATA_SOURCE = "anonymoususerdata";
+	public static final String ANONYMOUS_USERDATA_SOURCE = "anonymoususerdata";
 	
 	/**
 	 * parameter constants
 	 */
+	public static final String ORG_FILTERS = "orgFilters";
 	
-	public final static String GRANULARITY_NAME = "granularity";
+	public static final String USER_FILTERS = "userFilters";
 	
-	public final static String DATA_SOURCE = "dataSource";
+	public static final String LIMIT = "limit";
 	
-	public final static String GROUP_BY_DATA_SOURCE = "groupByDataSource";
+	public static final String OFFSET = "offset";
 	
-	public final static String FIELDS = "fields";
+	public static final String SORT_ORDER = "sortOrder";
 	
-	public final static String FILTER_FIELDS = "filterFields";
+	public static final String _CODEID = "code_id";
 	
-	public final static String FILTER_DATA_SOURCE = "filterDataSource";
-	
-	public final static String GROUP_BY = "groupBy";
-	
-	public final static String SELECTOR = "selector";
-	
-	public final static String AGGREGATE_ATTRIBUTE = "aggregateAttribute";
-	
-	public final static String RANGE_ATTRIBUTE = "rangeAttribute";
-	
-	public final static String MULTIPLE_GROUPBY = "multipleGroupby";
-	
-	public final static String LOGICAL_OPERATOR = "logicalOperator";
-	
-	public final static String FILTERS = "filterAtributes";
-	
-	public final static String SORT_BY = "sortBy";
+	public static final String IN = "in";
 
-	public final static String DESC = "DESC";
-	
-	public final static String PERMISSIONS = "permissions";
-	
-	public final static String FIELD_NAME = "field_name";
-	
-	public final static String DEPENDENT_NAME = "dependent_name";
-	
-	public final static String USER_TOKEN = "userToken";
-	
-	public final static String PARTY_UID = "partyUid";
-	
-	public final static String USER_ROLE_SETSTRING = "userRoleSetString";
-	
-	public final static String USER_CREDENTIAL = "userCredential";
-	
-	public final static String USER = "user";
-	
-	public final static String PARTY_PERMISSIONS = "partyPermissions";
+	public static final String OR = "OR";
 
-	public final static String FIRST_NAME = "firstName";
+	public static final String LABEL = "label";
+
+	public static final String DEPTH = "depth";
 	
-	public final static String LAST_NAME = "lastName";
+	public static final String CONSTANT_VALUE = "constant_value";
 	
-	public final static String EMAIL_ID = "emailId";
+	public static final String GOORU_SESSION_TOKEN = "Gooru-Session-Token";
+	
+	public static final String SESSION_TOKEN = "sessionToken";
+	
+	public static final String URL = "url";
+	
+	public static final String TRACE_ID = "traceId";
+	
+	public static final String GRANULARITY_NAME = "granularity";
+	
+	public static final String DATA_SOURCE = "dataSource";
+	
+	public static final String GROUP_BY_DATA_SOURCE = "groupByDataSource";
+	
+	public static final String FIELDS = "fields";
+	
+	public static final String FILTER_FIELDS = "filterFields";
+	
+	public static final String FILTER_DATA_SOURCE = "filterDataSource";
+	
+	public static final String GROUP_BY = "groupBy";
+	
+	public static final String SELECTOR = "selector";
+	
+	public static final String AGGREGATE_ATTRIBUTE = "aggregateAttribute";
+	
+	public static final String RANGE_ATTRIBUTE = "rangeAttribute";
+	
+	public static final String MULTIPLE_GROUPBY = "multipleGroupby";
+	
+	public static final String LOGICAL_OPERATOR = "logicalOperator";
+	
+	public static final String FILTERS = "filterAtributes";
+	
+	public static final String SORT_BY = "sortBy";
+
+	public static final String DESC = "DESC";
+	
+	public static final String PERMISSIONS = "permissions";
+	
+	public static final String FIELD_NAME = "field_name";
+	
+	public static final String DEPENDENT_NAME = "dependent_name";
+	
+	public static final String USER_TOKEN = "userToken";
+	
+	public static final String PARTY_UID = "partyUid";
+	
+	public static final String USER_ROLE_SETSTRING = "userRoleSetString";
+	
+	public static final String USER_CREDENTIAL = "userCredential";
+	
+	public static final String USER = "user";
+	
+	public static final String PARTY_PERMISSIONS = "partyPermissions";
+
+	public static final String FIRST_NAME = "firstName";
+	
+	public static final String LAST_NAME = "lastName";
+	
+	public static final String EMAIL_ID = "emailId";
 	
 	public final static String EXTERNAL_ID = "externalId";
 	
@@ -146,87 +183,98 @@ public class APIConstants {
 	
 	public final static String GRANULARITY[] = {"YEAR","MONTH","QUATOR","WEEK","DAY","HOUR","MINUTE","SECOND","H","M","S","D","W","M","Y","year","month","quator","week","day","hour","minute","second"};
 	
-	public final static String QUERY = "query";
+	public static final String QUERY = "query";
 	
-	public final static String QUERYS = "query's";
+	public static final String QUERYS = "query's";
 	
-	public final static String CONTENTORGUID = "contentOrganizationUId";
+	public static final String CONTENTORGUID = "contentOrganizationUId";
 	
-	public final static String USERORGID = "userOrganizationUId";
+	public static final String USERORGID = "userOrganizationUId";
 	
-	public final static String GOORUUID = "gooruUId";
+	public static final String GOORUUID = "gooruUId";
 	 
-	public final static String USERUID = "userUid";
+	public static final String USERUID = "userUid";
 	
-	public final static String CREATORUID = "creatorUid";
+	public static final String CREATORUID = "creatorUid";
 	
-	public final static String CONTENT_ORG_UID = "content_organization_uid";
+	public static final String CONTENT_ORG_UID = "content_organization_uid";
 	
-	public final static String USER_ORG_UID = "user_organization_uid";
+	public static final String USER_ORG_UID = "user_organization_uid";
 
-	public final static String GOORU_UID = "gooru_uid";
+	public static final String GOORU_UID = "gooru_uid";
 	
-	public final static String CREATOR_UID = "creator_uid";
+	public static final String CREATOR_UID = "creator_uid";
 	
-	public final static String ACTIVITY = "rawData";
+	public static final String ACTIVITY = "rawData";
 	
-	public final static String CONTENT = "content";
+	public static final String CONTENT = "content";
 	
-	public final static String USER_DATA = "userdata";
+	public static final String USER_DATA = "userdata";
 	
-	public final static String DEFAULTORGUID = "4261739e-ccae-11e1-adfb-5404a609bd14";
+	public static final String DEFAULTORGUID = "4261739e-ccae-11e1-adfb-5404a609bd14";
 
-	public final static String ACTIVITYDATASOURCES =  ".*rawData.*|.*rawdata.*|.*activity.*|.*Activity.*";
+	public static final String ACTIVITYDATASOURCES =  ".*rawData.*|.*rawdata.*|.*activity.*|.*Activity.*";
 	
-	public final static String CONTENTDATASOURCES =  ".*content.*|.*resource.*";
+	public static final String CONTENTDATASOURCES =  ".*content.*|.*resource.*";
 	
-	public final static String RESTRICTEDPERMISSION =  ".*AP_PARTY_ACTIVITY_RAW.*|.*AP_PARTY_PII.*|.*AP_ALL_PARTY_ALL_DATA.*|.*AP_PARTY_ALL_DATA.*";
+	public static final String RESTRICTEDPERMISSION =  ".*AP_PARTY_ACTIVITY_RAW.*|.*AP_PARTY_PII.*|.*AP_ALL_PARTY_ALL_DATA.*|.*AP_PARTY_ALL_DATA.*";
 
-	public final static String USERDATASOURCES =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
+	public static final String USERDATASOURCES =  ".*userData.*|.*userdata.*|.*user.*|.*User.*";
 	
-	public final static String USERFILTERPARAM =  ".*user_uid.*|.*userUid.*|.*gooru_uid.*|.*gooruUId.*|.*creatorUid.*|.*creator_uid.*";
+	public static final String USERFILTERPARAM =  ".*user_uid.*|.*userUid.*|.*gooru_uid.*|.*gooruUId.*|.*creatorUid.*|.*creator_uid.*";
 	
-	public final static String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
+	public static final String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
 	
 	/**
 	 * Serializer Excludes
 	 */
-	public final static String EXCLUDE_CLASSES = "*.class";
+	public static final String EXCLUDE_CLASSES = "*.class";
 	
 	/**
 	 * Message constants
 	 */
-	public final static String TOMCAT_STATUS = "Tomcat started";
 	
-	public final static String STATUS_NAME = "STATUS_NAME";
+	public static final String JSON_FORMAT = "JSON Format";
+			
+	public static final String GOORU_URI = "/v2/user/token/";
 	
-	public final static String PARTY_PERMISSION_MESSAGE = "party permissions:";
+	public static final String PROCEED = "proceed";
 	
-	public final static String OLD_QUERY = "old query:";
+	public static final String API_REQUEST = "doing API request";
 	
-	public final static String NEW_QUERY = "new query:";
+	public static final String TOMCAT_STATUS = "Tomcat started";
+	
+	public static final String STATUS_NAME = "STATUS_NAME";
+	
+	public static final String PARTY_PERMISSION_MESSAGE = "party permissions:";
+	
+	public static final String OLD_QUERY = "old query:";
+	
+	public static final String NEW_QUERY = "new query:";
 
-	public final static String DELETED = "DELETED";
+	public static final String DELETED = "DELETED";
 	
-	public final static String UPDATE = "UPDATE";
+	public static final String UPDATE = "UPDATE";
 	
-	public final static String INSERTED = "INSERTED";
+	public static final String ADD = "ADD";
+	
+	public static final String INSERTED = "INSERTED";
 
-	public final static String NOT_FOUND = "NOT_FOUND";
+	public static final String NOT_FOUND = "NOT_FOUND";
 	
-	public final static String FAILED = "FAILED";
+	public static final String FAILED = "FAILED";
 	
-	public final static String STATUS = "STATUS";
+	public static final String STATUS = "STATUS";
 	
-	public final static String CACHE_CLEAR = "CACHE_CLEAR";
+	public static final String CACHE_CLEAR = "CACHE_CLEAR";
 	
-	public final static String DATA = "DATA";
+	public static final String DATA = "DATA";
 	
-	public final static String CONNECTION = "CONNECTION";
+	public static final String CONNECTION = "CONNECTION";
 	
-	public final static String ALLOWED_ORG = "allowedOrg";
+	public static final String ALLOWED_ORG = "allowedOrg";
 	
-	public final static String ROLES = "roles";
+	public static final String ROLES = "roles";
 	
 	public static final String QUERY_ID = "queryId";
 	
@@ -251,6 +299,8 @@ public class APIConstants {
 	public static final String MAX_LIMIT = "max_limit";
 	
 	public static final String NOT_APPLICABLE = "N/A";
+
+	public static final String TOKEN = "token";
 
 	/**
 	 * Logical Enumaration 
@@ -331,7 +381,7 @@ public class APIConstants {
 		BUCKETS("buckets"), TOTAL_ROWS("totalRows"), KEY("key"), 
 		DOC_COUNT("doc_count"), KEY_AS_STRING("key_as_string"), SOURCE("_source"), 
 		HITS("hits"), TOTAL("total"), FIELDS("fields"),FROM("from"),TO("to"),FROM_AS_STRING("from_as_string"),TO_AS_STRING("to_as_string"), 
-		FILTERS("filters");
+		FILTERS("filters"), VALUES("values"), VALUE("value");
 
 		private String field;
 
@@ -363,7 +413,8 @@ public class APIConstants {
 	public static enum AggregateFields {
 
 		SUM("sum"), AVG("avg"), MAX("max"),
-		MIN("min"),COUNT("count"),DISTINCT("distinct");
+		MIN("min"),COUNT("count"),DISTINCT("distinct"),
+		PERCENTILES("percentiles"), PERCENTS("percents");
 		
 		private String field; 
 		
