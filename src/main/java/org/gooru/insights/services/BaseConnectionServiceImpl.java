@@ -115,8 +115,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		if (prodClient == null) {
 			initProdESConnection();
 		}
-		columnListCache = new HashMap<String, ColumnList<String>>();
 		if (indexMap == null) {
+			columnListCache = new HashMap<String, ColumnList<String>>();
 			putLogicalOperations();
 			putFormulas();
 			putEsOperations();
