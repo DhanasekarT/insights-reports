@@ -32,7 +32,7 @@ public final class CassandraConstants {
 	}
 	
 	public enum CassandraRowKeys{
-		FILED_ARRAY_HANDLER("fieldArrayHandler");
+		FILED_ARRAY_HANDLER("fieldArrayHandler"), EXPORT_REPORT_CONFIG("report_export_config"), EXPORT_FIELDS("export_fields");
 		
 		private String index;
 		

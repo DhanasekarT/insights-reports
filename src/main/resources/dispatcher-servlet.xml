@@ -75,6 +75,10 @@
 				<prop key="cassandra.keyspace.insights">${cassandra.keyspace.insights}</prop>
 				<prop key="cassandra.keyspace.search">${cassandra.keyspace.search}</prop>
 				<prop key="localizer">${localizer}</prop>
+				<prop key="repo.real.path">${repo.real.path}</prop>
+				<prop key="repo.app.path">${repo.app.path}</prop>
+				<prop key="default.replyTo.email">${default.replyTo.email}</prop>
+				<prop key="default.to.email">${default.to.email}</prop>
 			</props>
 		</property>
 	</bean>

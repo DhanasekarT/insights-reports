@@ -85,6 +85,12 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	private static Set<String> dataTypes;
 	
+	private static Map<String, String> exportFieldCache;
+	
+	private static Map<String, Object> exportReportCache;
+	
+	private static Map<String, ColumnList<String>> columnListCache;
+	
 	@Autowired
 	private BaseAPIService baseAPIService;
 	
@@ -110,7 +116,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			initProdESConnection();
 		}
 		if (indexMap == null) {
-			
+			columnListCache = new HashMap<String, ColumnList<String>>();
 			putLogicalOperations();
 			putFormulas();
 			putEsOperations();
@@ -121,6 +127,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			fieldsConfig();
 			fieldArrayHandler();
 			apiFields();
+			exportConfig();
 		}
 	}
 	
@@ -244,14 +251,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
 			defaultFields.put(row.getKey(),row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
 			}
-			for(Column<String> column : row.getColumns()){
-				fieldsMap.put(column.getName(),column.getStringValue());
-			}
+			putColumnListDataToMap(row.getColumns(), fieldsMap);
 			OperationResult<ColumnList<String>> result = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),row.getKey()+"~datatype",new ArrayList<String>());
-			
-			for(Column<String> column : result.getResult()){
-				fieldsDataTypeMap.put(column.getName(),column.getStringValue());
-			}
+			putColumnListDataToMap(result.getResult(), fieldsDataTypeMap);
 			fieldsCustomDataTypeCache.put(row.getKey(), fieldsDataTypeMap);
 			fieldsCache.put(row.getKey(),fieldsMap);
 			fieldsConfigCache.put(row.getKey(), configMap);
@@ -275,9 +277,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				Rows<String,String> dependentrows = operationalResult.getResult();
 				for(Row<String,String> dependentRow : dependentrows){
 					Map<String,String> dependentMap = new HashMap<String, String>();
-					for(Column<String> column : dependentRow.getColumns()){
-						dependentMap.put(column.getName(),column.getStringValue());
-					}
+					putColumnListDataToMap(dependentRow.getColumns(), dependentMap);
 					String[] key = dependentRow.getKey().split(APIConstants.SEPARATOR);
 					dataSet.put(key[1], dependentMap);
 				}
@@ -304,8 +304,24 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		ColumnList<String> operationalResult = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.FILED_ARRAY_HANDLER.CassandraRowKey());
 		Collection<String> columnList = operationalResult.getColumnNames();
 		arrayHandler = baseAPIService.convertCollectiontoString(columnList);
-		for(Column<String> column : operationalResult){
-			fieldArrayHandler.put(column.getName(),column.getStringValue());
+		putColumnListDataToMap(operationalResult, fieldArrayHandler);
+	}
+	
+	private void exportConfig() {
+		ColumnList<String> exportFields = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey());
+		columnListCache.put(CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey(), exportFields);
+
+		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		columnListCache.put(CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey(), reportExportConfig);
+	}
+	
+	private void putColumnListDataToMap(ColumnList<String> columnList, Map<String, String> map) {
+		if(map != null) {
+			for(Column<String> column : columnList) {
+				map.put(column.getName(), column.getStringValue());
+			}
+		} else {
+			throw new NullPointerException();
 		}
 	}
 	
@@ -325,6 +341,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		fieldsConfig();
 		fieldArrayHandler();
 		apiFields();
+		exportConfig();
 	}
 	
 	public void clearConnectionCache(){
@@ -352,7 +369,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				JSONObject jsonObj = jsonRepresentation.getJsonObject();
 				userMap.put("firstName",jsonObj.getString("firstName"));
 				userMap.put("lastName",jsonObj.getString("lastName"));
-				userMap.put("emailId",jsonObj.getString("emailId"));
+				userMap.put("externalId",jsonObj.getString("externalId"));
 				userMap.put("gooruUId",jsonObj.getString("gooruUId"));
 				userMap.put("userRoleSetString",jsonObj.getString("userRoleSetString"));
 			}catch(Exception e){
@@ -379,7 +396,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			jsonObject = new JSONObject(jsonObject.getString(APIConstants.USER));
 			userMap.put(APIConstants.FIRST_NAME, jsonObject.getString(APIConstants.FIRST_NAME));
 			userMap.put(APIConstants.LAST_NAME, jsonObject.getString(APIConstants.LAST_NAME));
-			userMap.put(APIConstants.EMAIL_ID, jsonObject.getString(APIConstants.EMAIL_ID));
+			userMap.put(APIConstants.EXTERNAL_ID, jsonObject.getJSONArray(APIConstants.IDENTITIES).getJSONObject(0).getString(APIConstants.EXTERNAL_ID));
 			userMap.put(APIConstants.GOORUUID, jsonObject.getString(APIConstants.PARTY_UID));
 			userMap.put(APIConstants.USER_ROLE_SETSTRING, jsonObject.getString(APIConstants.USER_ROLE_SETSTRING));
 
@@ -514,6 +531,27 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	public Map<String, Map<String, String>> getApiFields(){
 		return apiFields;
+	}
+	
+	public String getRealRepoPath() {
+		return fileProperties.getProperty(APIConstants.REPO_REAL_PATH);
+	}
+	
+	public String getAppRepoPath() {
+		return fileProperties.getProperty(APIConstants.REPO_APP_PATH);
+	}
+	
+	public String getDefaultReplyToEmail() {
+		return fileProperties.getProperty(APIConstants.DEFAULT_REPLYTO_MAIL);
+	}
+	
+	public String getDefaultToEmail() {
+		return fileProperties.getProperty(APIConstants.DEFAULT_TO_MAIL);
+	}
+	
+	@Override
+	public ColumnList<String> getColumnListFromCache(String rowKey) {
+		return columnListCache.get(rowKey);
 	}
 }
 

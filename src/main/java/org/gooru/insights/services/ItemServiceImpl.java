@@ -1,6 +1,11 @@
 package org.gooru.insights.services;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,14 +14,19 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.util.IOUtils;
+import org.elasticsearch.cluster.metadata.RepositoriesMetaData;
 import org.gooru.insights.builders.utils.ExcludeNullTransformer;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
+import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.constants.ErrorConstants;
+import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
@@ -24,8 +34,11 @@ import org.gooru.insights.models.RequestParamsCoreDTO;
 import org.gooru.insights.models.RequestParamsDTO;
 import org.gooru.insights.models.RequestParamsFilterDetailDTO;
 import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
+import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,8 +69,16 @@ public class ItemServiceImpl implements ItemService {
 	private BaseCassandraService baseCassandraService;
 	
 	@Autowired
+	private CSVFileWriterService csvFileWriterService;
+	
+	@Autowired
+	private MailService mailService;
+	
+	@Autowired
 	private UserService userService;
 	
+	private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+
 	/**
 	 * This will return simple message as service available
 	 */
@@ -391,6 +412,123 @@ public class ItemServiceImpl implements ItemService {
 		}
 		return new HashMap<String, Object>();
 	}
+	
+	public void generateReport(String traceId, String data, String sessionToken, Map<String, Object> userMap, String absoluteFilePath) {
+
+		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, "|");
+		int defaultLimit = reportConfig.getIntegerValue(APIConstants.DEFAULT_LIMIT, APIConstants.DEFAULT_ROW_LIMIT);
+		int rowLimit = 0;
+		int limit = 0;
+		int offSet = 0;
+		int totalRows = 0;
+		boolean isNewFile = true;
+		try {
+			
+			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
+			RequestParamsPaginationDTO paginationDTO = requestParamsDTO.getPagination();
+			ResponseParamDTO<Map<String, Object>> responseDTO = null;
+			
+			offSet = paginationDTO.getOffset();
+			rowLimit = paginationDTO.getLimit();
+			totalRows = offSet + rowLimit;
+			limit = rowLimit;
+			
+			if(rowLimit > defaultLimit) {
+				paginationDTO.setLimit(defaultLimit);
+				requestParamsDTO.setPagination(paginationDTO);
+				limit = defaultLimit;
+			}
+			
+			if (userMap == null) {
+				userMap = getUserObjectData(traceId,sessionToken);
+			}
+
+			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+			requestParamsDTO = getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
+			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+			
+			do {
+				responseDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
+				getCSVFileWriterService().generateCSVReport(new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+//				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
+				/*Incrementing offset values */
+				offSet += limit;
+				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
+				paginationDTO.setOffset(offSet);
+				requestParamsDTO.setPagination(paginationDTO);
+				checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+				isNewFile = false;
+			} while(offSet < totalRows);
+			
+		} catch (Exception e) {
+			logger.error("Error while writting file. {}", e);
+		}
+	}
+	
+	@Override
+	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken, Map<String, Object> userMap) {
+
+		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
+		int totalRows = 0;
+		String fileName = UUID.randomUUID().toString();
+		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+		ResponseParamDTO<Map<String, Object>> responseDTO = null;
+		
+		try {
+			
+			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
+			
+			if (userMap == null) {
+				userMap = getUserObjectData(traceId,sessionToken);
+			}
+
+			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
+			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
+			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+
+//			totalRows = ((Number)getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS)).intValue();
+			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
+			
+			Map<String, Object> status = new HashMap<String, Object>();
+			final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			responseDTO = new ResponseParamDTO<Map<String,Object>>();
+			
+			if(totalRows > maxLimit) {
+				final Map<String, Object> user = userMap;
+				final Thread reportThread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							generateReport(traceId, data, sessionToken, user, absoluteFilePath);
+							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
+						}
+						catch(Exception e) {
+							logger.error("Exception in export report[Thread Loop]: {}", e);
+						}
+					}
+				});
+				reportThread.setDaemon(true);
+				reportThread.start();
+				status.put(APIConstants.STATUS_NAME.toLowerCase(), MessageHandler.getMessage(APIConstants.FILE_MAILED));
+				
+			} else {
+				generateReport(traceId, data, sessionToken, userMap, absoluteFilePath);
+				status.put(APIConstants.FILE_PATH, absoluteFilePath);
+			}
+			responseDTO.setMessage(status);
+
+		} catch (BadRequestException badRequestException) {
+			throw badRequestException;
+		} catch (AccessDeniedException accessDeniedException) {
+			throw accessDeniedException;
+		} catch (Exception exception) {
+			logger.error("Error while writting file. {}", exception);
+		}
+
+		return responseDTO;
+	}
 
 	public BaseAPIService getBaseAPIService() {
 		return baseAPIService;
@@ -418,5 +556,13 @@ public class ItemServiceImpl implements ItemService {
 
 	public UserService getUserService() {
 		return userService;
+	}
+	
+	public MailService getMailService() {
+		return mailService;
+	}
+	
+	public CSVFileWriterService getCSVFileWriterService() {
+		return csvFileWriterService;
 	}
 }

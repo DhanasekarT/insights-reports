@@ -1,9 +1,18 @@
 package org.gooru.insights.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.util.IOUtils;
+import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.InsightsOperationConstants;
+import org.gooru.insights.models.ResponseParamDTO;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,5 +194,26 @@ public class ItemController extends BaseController{
 
 	public ItemService getItemService() {
 		return itemService;
+	}
+	
+	@RequestMapping(value="/export/report", method = RequestMethod.GET)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
+	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+			HttpServletResponse response) throws Exception {
+		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(getTraceId(request),data, getSessionToken(request), null);
+		if(responseDTO.getMessage().containsKey(APIConstants.FILE_PATH)) {
+			generateCSVOutput(response, new File(responseDTO.getMessage().get(APIConstants.FILE_PATH).toString()));
+			return null;
+		}
+		return getModel(responseDTO);
+	}
+	
+	public void generateCSVOutput(HttpServletResponse response, File excelFile) throws IOException {
+		InputStream sheet = new FileInputStream(excelFile);
+		response.setHeader("Content-Disposition", "inline; filename=" + excelFile.getName());
+		response.setContentType("application/csv");
+		IOUtils.copy(sheet, response.getOutputStream());
+		response.getOutputStream().flush();
+		response.getOutputStream().close();
 	}
 }
