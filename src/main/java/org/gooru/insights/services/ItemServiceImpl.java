@@ -204,7 +204,7 @@ public class ItemServiceImpl implements ItemService {
 		 * errorMap);
 		 */
 		if (userMap == null) {
-//			userMap = getUserObjectData(traceId,sessionToken);
+			userMap = getUserObjectData(traceId,sessionToken);
 		}
 
 		RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
