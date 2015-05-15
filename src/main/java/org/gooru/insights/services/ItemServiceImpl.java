@@ -488,7 +488,8 @@ public class ItemServiceImpl implements ItemService {
 			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
 
-			totalRows = ((Number)getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS)).intValue();
+//			totalRows = ((Number)getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS)).intValue();
+			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 			
 			Map<String, Object> status = new HashMap<String, Object>();
 			final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
