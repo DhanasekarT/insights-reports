@@ -225,6 +225,14 @@ public class APIConstants {
 	
 	public static final String ORGFILTERPARAM =  ".*contentOrganizationUId.*|.*userOrganizationUId.*|.*content_organization_uid.*|.*user_organization_uid.*|.*organizationUId.*|.*contentOrganizationUid.*|.*userOrganizationUid.*";
 	
+	public static final String REPO_REAL_PATH = "repo.real.path";
+	
+	public static final String REPO_APP_PATH = "repo.app.path";
+	
+	public static final String DEFAULT_REPLYTO_MAIL = "default.replyTo.email";
+	
+	public static final String DEFAULT_TO_MAIL = "default.to.email";
+	
 	/**
 	 * Serializer Excludes
 	 */
@@ -296,12 +304,20 @@ public class APIConstants {
 	
 	public static final String TOTAL_ROWS = "totalRows";
 	
-	public static final String MAX_LIMIT = "max_limit";
+	public static final String MAXIMUM_ROW_LIMIT = "maximum_row_limit";
 	
 	public static final String NOT_APPLICABLE = "N/A";
 
 	public static final String TOKEN = "token";
 
+	/**
+	 * Numbers
+	 */
+	
+	public static final int ZERO = 0;
+	
+	public static final int DEFAULT_ROW_LIMIT = 100;
+	
 	/**
 	 * Logical Enumaration 
 	 */

@@ -200,7 +200,7 @@ public class ItemController extends BaseController{
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
 			HttpServletResponse response) throws Exception {
-		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(response, getTraceId(request),data, getSessionToken(request), null);
+		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(getTraceId(request),data, getSessionToken(request), null);
 		if(responseDTO.getMessage().containsKey(APIConstants.FILE_PATH)) {
 			generateCSVOutput(response, new File(responseDTO.getMessage().get(APIConstants.FILE_PATH).toString()));
 			return null;

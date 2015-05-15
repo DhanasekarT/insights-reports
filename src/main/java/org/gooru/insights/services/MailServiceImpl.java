@@ -20,22 +20,34 @@ public class MailServiceImpl implements MailService {
 	private SimpleMailMessage preConfiguredMessage;
 	
 	@Autowired
-	private JavaMailSender defaultMailSender;
+	private BaseConnectionService baseConnectionService;
 
+	
+	public BaseConnectionService getBaseConnectionService() {
+		return baseConnectionService;
+	}
+	
+	public SimpleMailMessage getSimpleMailMessage() {
+		return preConfiguredMessage;
+	}
+	
+	public JavaMailSender getJavaMailSender() {
+		return mailSender;
+	}
 	/**
 	 * This method will send compose and send the message
 	 * */
-	public void sendMail(String to, String subject, String body, String file) {
+	public void sendMail(String to, String subject, String body, String fileLink) {
 		
-		MimeMessage message = mailSender.createMimeMessage();
+		MimeMessage message = getJavaMailSender().createMimeMessage();
 		try{
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 			helper.setTo(to);
 			helper.setSubject(subject);
 			helper.setText("Hi,"+body);
-			helper.setReplyTo("arokiadaniel.a@goorulearning.org");
-			helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
-			mailSender.send(message);
+			helper.setReplyTo(getBaseConnectionService().getDefaultReplyToEmail());
+			helper.setText(body,body+"<html><a href=\""+fileLink+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
+			getJavaMailSender().send(message);
 		}catch (MessagingException e) {
 			throw new MailParseException(e);
 	     }
@@ -47,15 +59,14 @@ public class MailServiceImpl implements MailService {
 	 * */
 	public void sendMail(String to, String subject, String body) {
 		
-		MimeMessage message = mailSender.createMimeMessage();
+		MimeMessage message = getJavaMailSender().createMimeMessage();
 		try{
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 			helper.setTo(to);
 			helper.setSubject(subject);
 			helper.setText("Hi,"+body);
-			helper.setReplyTo("arokiadaniel.a@goorulearning.org");
-			//helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html><BR> This is download link will expire in 24 hours. <BR><BR>Best Regards,<BR>Insights Team.");
-			mailSender.send(message);
+			helper.setReplyTo(getBaseConnectionService().getDefaultReplyToEmail());
+			getJavaMailSender().send(message);
 		}catch (MessagingException e) {
 			throw new MailParseException(e);
 	     }
@@ -75,28 +86,15 @@ public class MailServiceImpl implements MailService {
 	 * */
 	public void sendPreConfiguredMail(String message) {
 		
-		SimpleMailMessage mailMessage = new SimpleMailMessage(
-				preConfiguredMessage);
+		SimpleMailMessage mailMessage = new SimpleMailMessage(getSimpleMailMessage());
 		mailMessage.setText(message);
-		mailSender.send(mailMessage);
+		getJavaMailSender().send(mailMessage);
 
 	}
 	
 	/** this method will send to default mail id which is insights@goorulearning.org*/
-	public void sendDefaultMail(String subject,String body,String file){
-		
-		MimeMessage message = defaultMailSender.createMimeMessage();
-		try{
-			MimeMessageHelper helper = new MimeMessageHelper(message, true);
-			helper.setSubject(subject);
-			helper.setTo("insights@goorulearning.org");
-			helper.setReplyTo("venkat@goorulearning.org");
-			helper.setText(body,body+"<html><a href=\""+file+"\">here. </a></html> ");
-			defaultMailSender.send(message);
-		}catch (MessagingException e) {
-			throw new MailParseException(e);
-	     }
-		
+	public void sendDefaultMail(String subject,String body,String fileLink){
+		sendMail(getBaseConnectionService().getDefaultToEmail(), subject, body, fileLink);
 	}
 
 }

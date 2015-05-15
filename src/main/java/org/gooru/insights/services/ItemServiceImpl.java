@@ -24,6 +24,7 @@ import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
+import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
@@ -414,8 +415,11 @@ public class ItemServiceImpl implements ItemService {
 	
 	public void generateReport(String traceId, String data, String sessionToken, Map<String, Object> userMap, String absoluteFilePath) {
 
-		String delimiter = getBaseConnectionService().getExportReportCache().get(APIConstants.DELIMITER);
-		int defaultLimit = Integer.valueOf(getBaseConnectionService().getExportReportCache().get(APIConstants.DEFAULT_LIMIT));
+		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, "|");
+		int defaultLimit = reportConfig.getIntegerValue(APIConstants.DEFAULT_LIMIT, APIConstants.DEFAULT_ROW_LIMIT);
+		int rowLimit = 0;
+		int limit = 0;
 		int offSet = 0;
 		int totalRows = 0;
 		boolean isNewFile = true;
@@ -426,8 +430,15 @@ public class ItemServiceImpl implements ItemService {
 			ResponseParamDTO<Map<String, Object>> responseDTO = null;
 			
 			offSet = paginationDTO.getOffset();
-			paginationDTO.setLimit(defaultLimit);
-			requestParamsDTO.setPagination(paginationDTO);
+			rowLimit = paginationDTO.getLimit();
+			totalRows = offSet + rowLimit;
+			limit = rowLimit;
+			
+			if(rowLimit > defaultLimit) {
+				paginationDTO.setLimit(defaultLimit);
+				requestParamsDTO.setPagination(paginationDTO);
+				limit = defaultLimit;
+			}
 			
 			if (userMap == null) {
 				userMap = getUserObjectData(traceId,sessionToken);
@@ -440,14 +451,13 @@ public class ItemServiceImpl implements ItemService {
 			do {
 				responseDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
 				getCSVFileWriterService().generateCSVReport(new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
-				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
+//				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
 				/*Incrementing offset values */
-				offSet += defaultLimit;
+				offSet += limit;
+				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
 				paginationDTO.setOffset(offSet);
 				requestParamsDTO.setPagination(paginationDTO);
-				
 				checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
-				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
 				isNewFile = false;
 			} while(offSet < totalRows);
 			
@@ -457,12 +467,13 @@ public class ItemServiceImpl implements ItemService {
 	}
 	
 	@Override
-	public ResponseParamDTO<Map<String, Object>> exportReport(HttpServletResponse response, String traceId, String data, String sessionToken, Map<String, Object> userMap) {
+	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken, Map<String, Object> userMap) {
 
-		int maxLimit = Integer.valueOf(getBaseConnectionService().getExportReportCache().get(APIConstants.MAX_LIMIT));
+		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
 		int totalRows = 0;
-		String absoluteFilePath = null;
 		String fileName = UUID.randomUUID().toString();
+		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
 		ResponseParamDTO<Map<String, Object>> responseDTO = null;
 		
 		try {
@@ -474,28 +485,22 @@ public class ItemServiceImpl implements ItemService {
 			}
 
 			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
-			requestParamsDTO = getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
+			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
 
-			totalRows = Integer.valueOf(getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS).toString());
-			absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+			totalRows = ((Number)getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS)).intValue();
 			
 			Map<String, Object> status = new HashMap<String, Object>();
 			final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
 			responseDTO = new ResponseParamDTO<Map<String,Object>>();
 			
 			if(totalRows > maxLimit) {
-				final String traceID = traceId;
-				final String query = data;
-				final String session = sessionToken;
 				final Map<String, Object> user = userMap;
-				final String filePath = absoluteFilePath;
-
 				final Thread reportThread = new Thread(new Runnable() {
 					@Override
 					public void run() {
 						try {
-							generateReport(traceID, query, session, user, filePath);
+							generateReport(traceId, data, sessionToken, user, absoluteFilePath);
 							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
 						}
 						catch(Exception e) {
@@ -515,6 +520,8 @@ public class ItemServiceImpl implements ItemService {
 
 		} catch (BadRequestException badRequestException) {
 			throw badRequestException;
+		} catch (AccessDeniedException accessDeniedException) {
+			throw accessDeniedException;
 		} catch (Exception exception) {
 			logger.error("Error while writting file. {}", exception);
 		}

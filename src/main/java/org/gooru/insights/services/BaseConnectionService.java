@@ -7,6 +7,7 @@ import java.util.Set;
 import org.elasticsearch.client.Client;
 
 import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.model.ColumnList;
 
 public interface BaseConnectionService {
 
@@ -54,11 +55,13 @@ public interface BaseConnectionService {
 	
 	Map<String, Map<String, String>> getApiFields();
 
-	Map<String, String> getExportReportCache();
-
-	Map<String, String> getExportFields();
-
 	String getRealRepoPath();
 
 	String getAppRepoPath();
+	
+	String getDefaultReplyToEmail();
+	
+	String getDefaultToEmail();
+
+	ColumnList<String> getColumnListFromCache(String rowKey);
 }

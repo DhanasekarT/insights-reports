@@ -87,7 +87,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	private static Map<String, String> exportFieldCache;
 	
-	private static Map<String, String> exportReportCache;
+	private static Map<String, Object> exportReportCache;
+	
+	private static Map<String, ColumnList<String>> columnListCache;
 	
 	@Autowired
 	private BaseAPIService baseAPIService;
@@ -113,8 +115,8 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		if (prodClient == null) {
 			initProdESConnection();
 		}
+		columnListCache = new HashMap<String, ColumnList<String>>();
 		if (indexMap == null) {
-			
 			putLogicalOperations();
 			putFormulas();
 			putEsOperations();
@@ -249,14 +251,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 			configMap.put(row.getColumns().getColumnByName("common_fields").getStringValue(), row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
 			defaultFields.put(row.getKey(),row.getColumns().getColumnByName("fetch_fields") != null ? row.getColumns().getColumnByName("fetch_fields").getStringValue() : null);
 			}
-			for(Column<String> column : row.getColumns()){
-				fieldsMap.put(column.getName(),column.getStringValue());
-			}
+			putColumnListDataToMap(row.getColumns(), fieldsMap);
 			OperationResult<ColumnList<String>> result = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(),row.getKey()+"~datatype",new ArrayList<String>());
-			
-			for(Column<String> column : result.getResult()){
-				fieldsDataTypeMap.put(column.getName(),column.getStringValue());
-			}
+			putColumnListDataToMap(result.getResult(), fieldsDataTypeMap);
 			fieldsCustomDataTypeCache.put(row.getKey(), fieldsDataTypeMap);
 			fieldsCache.put(row.getKey(),fieldsMap);
 			fieldsConfigCache.put(row.getKey(), configMap);
@@ -280,9 +277,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				Rows<String,String> dependentrows = operationalResult.getResult();
 				for(Row<String,String> dependentRow : dependentrows){
 					Map<String,String> dependentMap = new HashMap<String, String>();
-					for(Column<String> column : dependentRow.getColumns()){
-						dependentMap.put(column.getName(),column.getStringValue());
-					}
+					putColumnListDataToMap(dependentRow.getColumns(), dependentMap);
 					String[] key = dependentRow.getKey().split(APIConstants.SEPARATOR);
 					dataSet.put(key[1], dependentMap);
 				}
@@ -309,23 +304,24 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		ColumnList<String> operationalResult = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.FILED_ARRAY_HANDLER.CassandraRowKey());
 		Collection<String> columnList = operationalResult.getColumnNames();
 		arrayHandler = baseAPIService.convertCollectiontoString(columnList);
-		for(Column<String> column : operationalResult){
-			fieldArrayHandler.put(column.getName(),column.getStringValue());
-		}
+		putColumnListDataToMap(operationalResult, fieldArrayHandler);
 	}
 	
 	private void exportConfig() {
-		
-		exportFieldCache = new HashMap<String, String>();
-		exportReportCache = new HashMap<String, String>();
-		
-		ColumnList<String> columnList = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey());
-		for(Column<String> column : columnList) {
-			exportFieldCache.put(column.getName(), column.getStringValue());
-		}
-		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
-		for(Column<String> column : reportExportConfig) {
-			exportReportCache.put(column.getName(), column.getStringValue());
+		ColumnList<String> exportFields = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey());
+		columnListCache.put(CassandraConstants.CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey(), exportFields);
+
+		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
+		columnListCache.put(CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey(), reportExportConfig);
+	}
+	
+	private void putColumnListDataToMap(ColumnList<String> columnList, Map<String, String> map) {
+		if(map != null) {
+			for(Column<String> column : columnList) {
+				map.put(column.getName(), column.getStringValue());
+			}
+		} else {
+			throw new NullPointerException();
 		}
 	}
 	
@@ -537,20 +533,25 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		return apiFields;
 	}
 	
-	public Map<String, String> getExportFields() {
-		return exportFieldCache;
-	}
-	
-	public Map<String, String> getExportReportCache() {
-		return exportReportCache;
-	}
-	
 	public String getRealRepoPath() {
-		return fileProperties.getProperty("repo.real.path");
+		return fileProperties.getProperty(APIConstants.REPO_REAL_PATH);
 	}
 	
 	public String getAppRepoPath() {
-		return fileProperties.getProperty("repo.app.path");
+		return fileProperties.getProperty(APIConstants.REPO_APP_PATH);
+	}
+	
+	public String getDefaultReplyToEmail() {
+		return fileProperties.getProperty(APIConstants.DEFAULT_REPLYTO_MAIL);
+	}
+	
+	public String getDefaultToEmail() {
+		return fileProperties.getProperty(APIConstants.DEFAULT_TO_MAIL);
+	}
+	
+	@Override
+	public ColumnList<String> getColumnListFromCache(String rowKey) {
+		return columnListCache.get(rowKey);
 	}
 }
 
