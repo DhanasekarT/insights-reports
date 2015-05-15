@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.apache.poi.util.StringUtil;
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.exception.handlers.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,9 +49,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 				String header = null;
 				while(itr.hasNext()) {
 					header = itr.next();
-					if(getBaseConnectionService().getExportReportCache().containsKey(header)) {
-						header = getBaseConnectionService().getExportReportCache().get(header);
-					}
+					header = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey()).getStringValue(header, header);
 					stream.print(header);
 					if(itr.hasNext()) {
 						stream.print(delimiter);
