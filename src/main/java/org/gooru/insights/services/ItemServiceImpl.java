@@ -479,6 +479,10 @@ public class ItemServiceImpl implements ItemService {
 			
 			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
 			
+			if (userMap == null) {
+				userMap = getUserObjectData(traceId,sessionToken);
+			}
+
 			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
 			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
