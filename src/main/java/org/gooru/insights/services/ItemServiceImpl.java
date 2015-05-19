@@ -416,7 +416,7 @@ public class ItemServiceImpl implements ItemService {
 	public void generateReport(String traceId, String data, String sessionToken, Map<String, Object> userMap, String absoluteFilePath) {
 
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
-		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, "|");
+		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, APIConstants.PIPE);
 		int defaultLimit = reportConfig.getIntegerValue(APIConstants.DEFAULT_LIMIT, APIConstants.DEFAULT_ROW_LIMIT);
 		int rowLimit = 0;
 		int limit = 0;
@@ -451,7 +451,6 @@ public class ItemServiceImpl implements ItemService {
 			do {
 				responseDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
 				getCSVFileWriterService().generateCSVReport(new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
-//				totalRows = Integer.valueOf(responseDTO.getPaginate().get(APIConstants.TOTAL_ROWS).toString());
 				/*Incrementing offset values */
 				offSet += limit;
 				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
@@ -486,9 +485,6 @@ public class ItemServiceImpl implements ItemService {
 
 			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
 			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
-			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
-
-//			totalRows = ((Number)getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint).getPaginate().get(APIConstants.TOTAL_ROWS)).intValue();
 			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 			
 			Map<String, Object> status = new HashMap<String, Object>();

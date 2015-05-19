@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,23 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			logger.error("Error while writing data into csv file", e);
 		} finally {
 			stream.close();
+		}
+	}
+	
+	@Override
+	public void removeExpiredFile() {
+		File dir = new File(getBaseConnectionService().getRealRepoPath());
+		Date date = new Date();
+		
+		for(File file : dir.listFiles()) {
+			if(file.isFile()) {
+				long diffInMilliSec = date.getTime() - file.lastModified();
+				long diffInHours = (diffInMilliSec / (60 * 60 * 1000));
+				if(diffInHours > 24){
+					file.delete();
+					logger.error("==>>FileName : {} is deleted.==>> Modified time: ", file.getName(), file.lastModified());
+				}
+			}
 		}
 	}
 }

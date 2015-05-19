@@ -71,4 +71,32 @@
 			</props>
 		</property>
 	</bean>
+	
+	<!-- schduler for removing files -->
+	<bean id="schedulerJob" class="org.gooru.insights.scheduler.SchedulerJob" />
+	
+	<bean id="removeExpiredFileJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+         <property name="targetObject" ref="schedulerJob" />
+         <property name="targetMethod" value="removeExpiredFiles" />
+    </bean>
+       
+    <bean id="removeExpiredFileJobTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+         <property name="jobDetail" ref="removeExpiredFileJobDetail" />
+         <property name="repeatInterval" value="10000" />
+         <property name="startDelay" value="1000" />
+    </bean>
+       
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+       <property name="jobDetails">
+          <list>
+             <ref bean="removeExpiredFileJobDetail" />
+          </list>
+       </property>
+       <property name="triggers">
+          <list>
+             <ref bean="removeExpiredFileJobTrigger" />
+          </list>
+       </property>
+   </bean>
+       
 </beans>

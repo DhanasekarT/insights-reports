@@ -9,4 +9,6 @@ public interface CSVFileWriterService {
 
 	void generateCSVReport(Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException;
 
+	void removeExpiredFile();
+
 }
