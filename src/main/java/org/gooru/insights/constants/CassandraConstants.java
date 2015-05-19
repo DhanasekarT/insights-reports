@@ -32,7 +32,7 @@ public final class CassandraConstants {
 	}
 	
 	public enum CassandraRowKeys{
-		FILED_ARRAY_HANDLER("fieldArrayHandler"), EXPORT_REPORT_CONFIG("report_export_config"), EXPORT_FIELDS("export_fields");
+		FILED_ARRAY_HANDLER("fieldArrayHandler"), EXPORT_REPORT_CONFIG("report_export_config"), EXPORT_FIELDS("export_fields"), LIVE_DASHBOARD("live_dashboard");
 		
 		private String index;
 		
@@ -47,7 +47,7 @@ public final class CassandraConstants {
 	
 	public enum ColumnFamilies{
 		EVENT_FIELDS("event_fields"), CONFIG_SETTINGS("config_settings"), JOB_CONFIG_SETTINGS("job_config_settings"), 
-		QUERY_REPORTS("query_reports");
+		QUERY_REPORTS("query_reports"), LIVE_DASHBOARD("live_dashboard");
 		
 		private String columnFamilyName;
 		

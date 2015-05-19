@@ -15,6 +15,7 @@ import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -214,5 +215,11 @@ public class ItemController extends BaseController{
 		IOUtils.copy(sheet, response.getOutputStream());
 		response.getOutputStream().flush();
 		response.getOutputStream().close();
+	}
+	
+	@RequestMapping(value = "/stats/data", method = RequestMethod.GET)
+//	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
+	public ModelAndView getStatisticsData(HttpServletRequest request, @RequestParam(value = "gooruOId", required = true) String gooruOId, @RequestParam(value = "gooruUId", required = false) String gooruUId, @RequestParam(value = "fields", required = true) String fields, HttpServletResponse response) throws Exception {
+		return getModel(getItemService().getLiveDashboardData(getTraceId(request), gooruOId, gooruUId, fields));
 	}
 }

@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.gooru.insights.models.ResponseParamDTO;
+import org.json.JSONObject;
 
 public interface ItemService {
 
@@ -32,4 +33,6 @@ public interface ItemService {
 	ResponseParamDTO<Map<String,Object>> clearConnectionCache();
 
 	ResponseParamDTO<Map<String, Object>> exportReport(String traceId, String data, String sessionToken, Map<String, Object> userMap);
+
+	ResponseParamDTO<Map<String, Object>> getLiveDashboardData(String traceId, String gooruOId, String gooruUId, String fields);
 }
