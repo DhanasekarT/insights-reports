@@ -309,6 +309,8 @@ public class APIConstants {
 	public static final String NOT_APPLICABLE = "N/A";
 
 	public static final String TOKEN = "token";
+	
+	public static final String ALL = "all";
 
 	/**
 	 * Numbers

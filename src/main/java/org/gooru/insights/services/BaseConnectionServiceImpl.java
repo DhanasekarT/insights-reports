@@ -313,6 +313,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 
 		ColumnList<String> reportExportConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		columnListCache.put(CassandraConstants.CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey(), reportExportConfig);
+		
+		ColumnList<String> liveDashBoardFieldsConfig = baseCassandraService.read(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.CONFIG_SETTINGS.columnFamily(), CassandraConstants.CassandraRowKeys.LIVE_DASHBOARD.CassandraRowKey());
+		columnListCache.put(CassandraConstants.CassandraRowKeys.LIVE_DASHBOARD.CassandraRowKey(), liveDashBoardFieldsConfig);
 	}
 	
 	private void putColumnListDataToMap(ColumnList<String> columnList, Map<String, String> map) {

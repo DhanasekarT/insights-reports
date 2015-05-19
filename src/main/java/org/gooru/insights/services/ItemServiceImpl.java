@@ -25,6 +25,8 @@ import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
+import org.gooru.insights.constants.CassandraConstants.ColumnFamilies;
+import org.gooru.insights.constants.CassandraConstants.Keyspaces;
 import org.gooru.insights.constants.ErrorConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
@@ -37,6 +39,8 @@ import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -560,5 +564,35 @@ public class ItemServiceImpl implements ItemService {
 	
 	public CSVFileWriterService getCSVFileWriterService() {
 		return csvFileWriterService;
+	}
+	
+	public String generateLiveDashBoardKey(String... keys) {
+		String liveDashKey = APIConstants.ALL;
+		for(String key : keys) {
+			if(!StringUtils.isEmpty(key)){
+				liveDashKey = liveDashKey.concat(APIConstants.SEPARATOR).concat(key);
+			}
+		}
+		return liveDashKey;
+	}
+
+	public ResponseParamDTO<Map<String, Object>> getLiveDashboardData(String traceId, String gooruOId, String gooruUId, String fields) {
+		ResponseParamDTO<Map<String, Object>> responseDTO = new ResponseParamDTO<Map<String,Object>>();
+		List<Map<String, Object>> resultList = new ArrayList<Map<String,Object>>();
+		Map<String, Object> result = new HashMap<String, Object>();
+		try {
+			ColumnList<String> liveDashBoardFieldsConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.LIVE_DASHBOARD.CassandraRowKey());
+			ColumnList<String> liveDashBoardcolumns = getBaseCassandraService().read(Keyspaces.INSIGHTS.keyspace(), ColumnFamilies.LIVE_DASHBOARD.columnFamily(), generateLiveDashBoardKey(gooruOId, gooruUId));
+			String fieldKey = null;
+			for(String field : fields.split(APIConstants.COMMA)) {
+				fieldKey = liveDashBoardFieldsConfig.getStringValue(field, field);
+				result.put(field, liveDashBoardcolumns.getLongValue(fieldKey, 0L));
+			}
+			resultList.add(result);
+			responseDTO.setContent(resultList);
+		} catch (Exception e) {
+			throw new ReportGenerationException(traceId, e);
+		}
+		return responseDTO;
 	}
 }

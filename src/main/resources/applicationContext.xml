@@ -79,12 +79,11 @@
          <property name="targetObject" ref="schedulerJob" />
          <property name="targetMethod" value="removeExpiredFiles" />
     </bean>
-       
-    <bean id="removeExpiredFileJobTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
-         <property name="jobDetail" ref="removeExpiredFileJobDetail" />
-         <property name="repeatInterval" value="10000" />
-         <property name="startDelay" value="1000" />
-    </bean>
+    
+    <bean id="removeExpiredFileJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="removeExpiredFileJobDetail" />
+		<property name="cronExpression" value="0 0 1 * * ?" />
+	</bean>
        
     <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
        <property name="jobDetails">
