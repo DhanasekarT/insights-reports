@@ -311,6 +311,8 @@ public class APIConstants {
 	public static final String TOKEN = "token";
 	
 	public static final String ALL = "all";
+	
+	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent";
 
 	/**
 	 * Numbers

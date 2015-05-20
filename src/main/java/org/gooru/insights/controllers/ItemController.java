@@ -214,6 +214,7 @@ public class ItemController extends BaseController{
 		response.setContentType("application/csv");
 		IOUtils.copy(sheet, response.getOutputStream());
 		response.getOutputStream().flush();
+		excelFile.delete();
 		response.getOutputStream().close();
 	}
 	
