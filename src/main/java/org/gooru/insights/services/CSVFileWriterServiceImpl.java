@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.util.StringUtil;
+import org.gooru.insights.builders.utils.DateTime;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.exception.handlers.NotFoundException;
@@ -64,6 +65,9 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			for (Map<String, Object> row : rowList) {
 				for(String header : headerKeys) {
 					String key = row.get(header) == null ? APIConstants.NOT_APPLICABLE: row.get(header).toString();
+					if(header.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
+						key = DateTime.convertMillisecondsToDate(Long.valueOf(key));
+					}
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter.concat(key)));
 				}
 				stream.print(rowLine);

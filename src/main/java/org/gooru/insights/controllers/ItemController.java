@@ -214,11 +214,12 @@ public class ItemController extends BaseController{
 		response.setContentType("application/csv");
 		IOUtils.copy(sheet, response.getOutputStream());
 		response.getOutputStream().flush();
+		excelFile.delete();
 		response.getOutputStream().close();
 	}
 	
 	@RequestMapping(value = "/stats/data", method = RequestMethod.GET)
-//	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
+	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
 	public ModelAndView getStatisticsData(HttpServletRequest request, @RequestParam(value = "gooruOId", required = true) String gooruOId, @RequestParam(value = "gooruUId", required = false) String gooruUId, @RequestParam(value = "fields", required = true) String fields, HttpServletResponse response) throws Exception {
 		return getModel(getItemService().getLiveDashboardData(getTraceId(request), gooruOId, gooruUId, fields));
 	}
