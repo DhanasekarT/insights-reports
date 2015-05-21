@@ -521,7 +521,7 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 				} else {
 					resultMap.put(entry.getKey(), aggregatedObject.get(APIConstants.FormulaFields.VALUE.getField()));
 				}
-				if(groupBy != null && groupBy.length > 0) {
+				if(groupBy != null) {
 					resultMap.put(groupBy[counter], newJson.get(APIConstants.FormulaFields.KEY.getField()));
 				}
 				newJson.remove(entry.getValue());

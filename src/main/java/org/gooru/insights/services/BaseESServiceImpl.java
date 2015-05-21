@@ -411,10 +411,8 @@ public class BaseESServiceImpl implements BaseESService {
 			String[] groupBy = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
 			FilterAggregationBuilder filterAggregationBuilder = null;
 			
-			if (getBaseAPIService().checkNull(requestParamsDTO.getFilter())) {
-				if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
-					filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(), validatedData, filterData, userFilter);
-				}
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+				filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(), validatedData, filterData, userFilter);
 			}
 			
 			for (int i = groupBy.length - 1; i >= 0; i--) {
@@ -434,11 +432,9 @@ public class BaseESServiceImpl implements BaseESService {
 				}
 			}
 				
-			if(filterAggregationBuilder  != null) {
-				if (termBuilder != null) {
-					termBuilder.size(0);
-					filterAggregationBuilder.subAggregation(termBuilder);
-				}
+			if (filterAggregationBuilder != null) {
+				termBuilder.size(0);
+				filterAggregationBuilder.subAggregation(termBuilder);
 				searchRequestBuilder.addAggregation(filterAggregationBuilder);
 			} else {
 				termBuilder.size(0);
@@ -814,7 +810,7 @@ public class BaseESServiceImpl implements BaseESService {
 	}
 	
 	/**
-	 * 
+	 * Here Metrics aggregation can be added to dateHistogramBuilder, termBuilder,rangeAggregationBuilder,filterAggregationBuilder and searchRequestBuilder 
 	 * @param index
 	 * @param requestParamsDTO
 	 * @param filterAggregationBuilder
@@ -823,7 +819,6 @@ public class BaseESServiceImpl implements BaseESService {
 	 * @param rangeAggregationBuilder
 	 * @param dateHistogramBuilder
 	 * @param metricsName
-	 * Here Metrics aggregation can be added to dateHistogramBuilder, termBuilder,rangeAggregationBuilder,filterAggregationBuilder and searchRequestBuilder 
 	 */
 	private void includeMetricsAggregation(String index, RequestParamsDTO requestParamsDTO, FilterAggregationBuilder filterAggregationBuilder,SearchRequestBuilder searchRequestBuilder, TermsBuilder termBuilder, RangeBuilder rangeAggregationBuilder, DateHistogramBuilder dateHistogramBuilder, Map<String, String> metricsName) {
 
@@ -907,15 +902,13 @@ public class BaseESServiceImpl implements BaseESService {
 	}
 
 	/**
-	 * 
+	 * This method gives the metricsAggregationbuilder of the given aggregateType
 	 * @param metricsAggregationbuilder
 	 * @param jsonObject
 	 * @param aggregateType
 	 * @param aggregateName
 	 * @param fieldName
 	 * @return
-	 * 
-	 * This method gives the metricsAggregationbuilder of the given aggregateType
 	 */
 	private MetricsAggregationBuilder<?> buildMetrics(MetricsAggregationBuilder<?> metricsAggregationbuilder, JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
