@@ -1,9 +1,5 @@
 package org.gooru.insights.services;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,21 +10,18 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.poi.util.IOUtils;
-import org.elasticsearch.cluster.metadata.RepositoriesMetaData;
 import org.gooru.insights.builders.utils.ExcludeNullTransformer;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.builders.utils.MessageHandler;
 import org.gooru.insights.constants.APIConstants;
+import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.CassandraConstants;
 import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.constants.CassandraConstants.ColumnFamilies;
 import org.gooru.insights.constants.CassandraConstants.Keyspaces;
 import org.gooru.insights.constants.ErrorConstants;
-import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.exception.handlers.AccessDeniedException;
 import org.gooru.insights.exception.handlers.BadRequestException;
 import org.gooru.insights.exception.handlers.ReportGenerationException;
@@ -39,8 +32,6 @@ import org.gooru.insights.models.RequestParamsFilterFieldsDTO;
 import org.gooru.insights.models.RequestParamsPaginationDTO;
 import org.gooru.insights.models.RequestParamsSortDTO;
 import org.gooru.insights.models.ResponseParamDTO;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -470,33 +461,26 @@ public class ItemServiceImpl implements ItemService {
 	}
 	
 	@Override
-	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken, Map<String, Object> userMap) {
+	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken) {
 
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
 		int totalRows = 0;
 		String fileName = UUID.randomUUID().toString();
 		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
-		ResponseParamDTO<Map<String, Object>> responseDTO = null;
+		ResponseParamDTO<Map<String, Object>> responseDTO = new ResponseParamDTO<Map<String,Object>>();
 		
 		try {
-			
 			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
-			
-			if (userMap == null) {
-				userMap = getUserObjectData(traceId,sessionToken);
-			}
-
-			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
-			getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
-			
 			Map<String, Object> status = new HashMap<String, Object>();
-			final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
-			responseDTO = new ResponseParamDTO<Map<String,Object>>();
 			
 			if(totalRows > maxLimit) {
-				final Map<String, Object> user = userMap;
+				final Map<String, Object> user = getUserObjectData(traceId,sessionToken);;
+				getBaseAPIService().checkPoint(requestParamsDTO);
+				getUserService().validateUserRole(traceId,requestParamsDTO, user);
+				final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+
 				final Thread reportThread = new Thread(new Runnable() {
 					@Override
 					public void run() {
@@ -512,9 +496,8 @@ public class ItemServiceImpl implements ItemService {
 				reportThread.setDaemon(true);
 				reportThread.start();
 				status.put(APIConstants.STATUS_NAME.toLowerCase(), MessageHandler.getMessage(APIConstants.FILE_MAILED));
-				
 			} else {
-				generateReport(traceId, data, sessionToken, userMap, absoluteFilePath);
+				generateReport(traceId, data, sessionToken, null, absoluteFilePath);
 				status.put(APIConstants.FILE_PATH, absoluteFilePath);
 			}
 			responseDTO.setMessage(status);

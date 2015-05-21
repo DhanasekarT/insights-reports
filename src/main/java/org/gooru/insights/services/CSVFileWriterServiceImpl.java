@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.util.StringUtil;
+import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.builders.utils.DateTime;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Service
 public class CSVFileWriterServiceImpl implements CSVFileWriterService{
@@ -38,7 +37,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 	@Override
 	public void generateCSVReport(Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException {
 
-		if(!StringUtils.hasLength(delimiter)) {
+		if(StringUtils.isBlank(delimiter)) {
 			delimiter = APIConstants.PIPE;
 		}
 		PrintStream stream = null;
@@ -63,9 +62,9 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			
 			StringBuilder rowLine = new StringBuilder(); 
 			for (Map<String, Object> row : rowList) {
-				for(String header : headerKeys) {
-					String key = row.get(header) == null ? APIConstants.NOT_APPLICABLE: row.get(header).toString();
-					if(header.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
+				for(String headerKey : headerKeys) {
+					String key = StringUtils.isBlank(row.get(headerKey).toString()) ? APIConstants.NOT_APPLICABLE : row.get(headerKey).toString();
+					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equalsIgnoreCase(APIConstants.NOT_APPLICABLE)) {
 						key = DateTime.convertMillisecondsToDate(Long.valueOf(key));
 					}
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter.concat(key)));
