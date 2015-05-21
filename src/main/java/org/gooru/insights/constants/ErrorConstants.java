@@ -28,6 +28,8 @@ public class ErrorConstants {
 	public static final String E110 = "E110";
 	
 	public static final String E111 = "E111";
+	
+	public static final String E112 = "E112";
 
 	/**
 	 * Error fields
@@ -71,6 +73,10 @@ public class ErrorConstants {
 	 * Error Messages
 	 */
 	public static final  String AGGREGATION_BUCKET = " Aggregation bucket";
+	
+	public static final  String METRICS = " Metrics";
+	
+	public static final  String AGGREGATION = " Aggregation";
 	
 	public static final  String GRANULARITY_BUCKET = "Granularity bucket";
 	

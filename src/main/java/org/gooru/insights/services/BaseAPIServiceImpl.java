@@ -390,7 +390,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		}
 		
 		/**
-		 * Aggregation mandatory fields need to be present and it's field name should be in database acceptable field
+		 * Aggregation mandatory fields need to be present and it's field name should be in database acceptable field. 
+		 * Aggregation can be accepted even if group by is not present
 		 */
 		if(checkNull(requestParamsDTO.getAggregations())){
 			for(Map<String, String> aggregate : requestParamsDTO.getAggregations()){
@@ -464,7 +465,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		}
 		
 		/**
-		 * If the aggregation is given then groupBy should not be EMPTY and vice versa.
+		 * If groupBy is given aggregation should not be EMPTY and if granularity is given groupby should not be empty.
 		 */
 		if (checkNull(requestParamsDTO.getGroupBy())) {
 			if(!processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check())){
@@ -483,20 +484,23 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GROUP_BY,errorField.toString()}));
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_GROUPBY.check(), true);
-		}else if(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check()) || processedData.get(APIConstants.Hasdatas.HAS_GRANULARITY.check())){
+		} else if (processedData.get(APIConstants.Hasdatas.HAS_GRANULARITY.check())){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.GROUP_BY));
 		}
 		/**
 		 * Range filter validation.Here groupBy field shouldn't be empty
 		 */
 		if(checkNull(requestParamsDTO.getRanges())) {
+			if(!processedData.get(APIConstants.Hasdatas.HAS_GROUPBY.check())){
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E112, APIConstants.GROUP_BY, APIConstants.RANGE_ATTRIBUTE));
+			}
+			if(requestParamsDTO.getGroupBy().split(APIConstants.SEPARATOR).length > 1) {
+				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E109,APIConstants.MULTIPLE_GROUPBY));
+			}
 			for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
 				if(!checkNull(ranges.getFrom()) && !checkNull(ranges.getTo())) {
 					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.RANGE_ATTRIBUTE));				
 				} 
-			}
-			if(requestParamsDTO.getGroupBy().split(APIConstants.SEPARATOR).length > 1) {
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E109,APIConstants.MULTIPLE_GROUPBY));
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_RANGE.check(), true);
 		}

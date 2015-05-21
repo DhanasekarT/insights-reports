@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
@@ -460,7 +461,7 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
 				json = new JSONObject(json.get(APIConstants.FormulaFields.FILTERS.getField()).toString());
 			}
-
+			if(groupBy != null && groupBy.length > 0) {
 			while (counter < groupBy.length) {
 				if (json.length() > 0) {
 					JSONObject requestJSON = new JSONObject(json.get(groupBy[counter]).toString());
@@ -498,6 +499,9 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 				}
 				counter++;
 			}
+			} else {
+				fetchMetrics(json, dataList, metrics, null, counter, validatedData);
+			}
 		} catch (JSONException e) {
 			InsightsLogger.error(traceId,ErrorConstants.INVALID_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.DATA_TYPE), e);
 		}
@@ -515,7 +519,9 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 				} else {
 					resultMap.put(entry.getKey(), aggregatedObject.get(APIConstants.FormulaFields.VALUE.getField()));
 				}
-				resultMap.put(groupBy[counter], newJson.get(APIConstants.FormulaFields.KEY.getField()));
+				if(groupBy != null && groupBy.length > 0) {
+					resultMap.put(groupBy[counter], newJson.get(APIConstants.FormulaFields.KEY.getField()));
+				}
 				newJson.remove(entry.getValue());
 			}
 		}
