@@ -23,6 +23,7 @@ import org.elasticsearch.index.query.NotFilterBuilder;
 import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -836,24 +837,28 @@ public class BaseESServiceImpl implements BaseESService {
 				String requestJsonArray = gson.toJson(requestParamsDTO.getAggregations());
 				JSONArray jsonArray = new JSONArray(requestJsonArray);
 				MetricsAggregationBuilder<?> metricsAggregationBuilder = null;
+				AggregationBuilder<?> aggregationBuilder = null;
+				if(dateHistogramBuilder != null) {
+					aggregationBuilder = dateHistogramBuilder;
+				} else if(rangeAggregationBuilder != null) {
+					aggregationBuilder = rangeAggregationBuilder;
+				} else if(termBuilder != null) {
+					aggregationBuilder = termBuilder;
+				} else if (filterAggregationBuilder != null){ 
+					aggregationBuilder = filterAggregationBuilder;
+				}
 				
 				for (int i = 0; i < jsonArray.length(); i++) {
-
+					
 					JSONObject jsonObject;
 					jsonObject = new JSONObject(jsonArray.get(i).toString());
 					String requestValue = jsonObject.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
 					String fieldName = getBusinessLogicService().esFields(index, jsonObject.getString(requestValue));
 					metricsAggregationBuilder = buildMetrics(metricsAggregationBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), APIConstants.FormulaFields.FIELD.getField()+i, fieldName);
-					if(dateHistogramBuilder != null) {
-						dateHistogramBuilder.subAggregation(metricsAggregationBuilder);
-					} else if(rangeAggregationBuilder != null) {
-						rangeAggregationBuilder.subAggregation(metricsAggregationBuilder);
-					} else if(termBuilder != null) {
-						termBuilder.subAggregation(metricsAggregationBuilder);
-					} else if (filterAggregationBuilder != null){ 
-						filterAggregationBuilder.subAggregation(metricsAggregationBuilder);
+					if(aggregationBuilder != null) {
+						aggregationBuilder.subAggregation(metricsAggregationBuilder);
 					} else {
-						searchRequestBuilder = searchRequestBuilder.addAggregation(metricsAggregationBuilder);
+						searchRequestBuilder.addAggregation(metricsAggregationBuilder);
 					}
 					metricsName.put(jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) != null ? jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) : fieldName,
 							APIConstants.FormulaFields.FIELD.getField()+i);
