@@ -348,11 +348,7 @@ public class BaseESServiceImpl implements BaseESService {
 				limit = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 				}
 			}
-			String groupBy[] = null;
-			if (!requestParamsDTO.getGroupBy().isEmpty() && StringUtils.isNotBlank(requestParamsDTO.getGroupBy())) {
-				groupBy = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
-			}			
-			List<Map<String,Object>> queryResult = getBusinessLogicService().customizeJSON(traceId,groupBy, result, metricsName, validatedData,responseParamDTO,limit);
+			List<Map<String,Object>> queryResult = getBusinessLogicService().customizeJSON(traceId,requestParamsDTO.getGroupBy(), result, metricsName, validatedData,responseParamDTO,limit);
 			
 			if(!validatedData.get(Hasdatas.HAS_GRANULARITY.check())){
 				queryResult = getBusinessLogicService().customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);

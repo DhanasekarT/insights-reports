@@ -449,7 +449,7 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 		return requestParamsDTO;
 	}
 
-	public List<Map<String, Object>> customizeJSON(String traceId,String[] groupBy, String resultData, Map<String, String> metrics, Map<String,Boolean> validatedData, ResponseParamDTO<Map<String, Object>> responseParamDTO,
+	public List<Map<String, Object>> customizeJSON(String traceId,String groupByNames, String resultData, Map<String, String> metrics, Map<String,Boolean> validatedData, ResponseParamDTO<Map<String, Object>> responseParamDTO,
 			int limit) {
 
 		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
@@ -461,44 +461,46 @@ public class ESDataProcessorServiceImpl implements ESDataProcessor {
 			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
 				json = new JSONObject(json.get(APIConstants.FormulaFields.FILTERS.getField()).toString());
 			}
-			if(groupBy != null && groupBy.length > 0) {
-			while (counter < groupBy.length) {
-				if (json.length() > 0) {
-					JSONObject requestJSON = new JSONObject(json.get(groupBy[counter]).toString());
-					JSONArray jsonArray = new JSONArray(requestJSON.get(APIConstants.FormulaFields.BUCKETS.getField()).toString());
-					if (counter == 0) {
-						totalRows = jsonArray.length();
-						Map<String, Object> dataMap = new HashMap<String, Object>();
-						dataMap.put(APIConstants.FormulaFields.TOTAL_ROWS.getField(), totalRows);
-						responseParamDTO.setPaginate(dataMap);
-					}
-					JSONArray subJsonArray = new JSONArray();
-					Set<Object> keys = new HashSet<Object>();
-					boolean hasSubAggregate = false;
-
-					for (int i = 0; i < jsonArray.length(); i++) {
-						JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
-						Object key = newJson.get(APIConstants.FormulaFields.KEY.getField());
-						keys.add(key);
-						if (counter == 0 && limit == i) {
-							break;
+			
+			if (getBaseAPIService().checkNull(groupByNames)) {
+				String[] groupBy = groupByNames.split(APIConstants.COMMA);
+				while (counter < groupBy.length) {
+					if (json.length() > 0) {
+						JSONObject requestJSON = new JSONObject(json.get(groupBy[counter]).toString());
+						JSONArray jsonArray = new JSONArray(requestJSON.get(APIConstants.FormulaFields.BUCKETS.getField()).toString());
+						if (counter == 0) {
+							totalRows = jsonArray.length();
+							Map<String, Object> dataMap = new HashMap<String, Object>();
+							dataMap.put(APIConstants.FormulaFields.TOTAL_ROWS.getField(), totalRows);
+							responseParamDTO.setPaginate(dataMap);
 						}
-						if (counter + 1 == (groupBy.length)) {
-							fetchMetrics(newJson, dataList, metrics, groupBy, counter, validatedData);
-						} else {
-							hasSubAggregate = true;
-							iterateInternalObject(newJson, subJsonArray, groupBy, counter, key,validatedData);
-						}
-					}
-					if (hasSubAggregate) {
-						json = new JSONObject();
-						requestJSON.put(APIConstants.FormulaFields.BUCKETS.getField(), subJsonArray);
-						json.put(groupBy[counter + 1], requestJSON);
-					}
+						JSONArray subJsonArray = new JSONArray();
+						Set<Object> keys = new HashSet<Object>();
+						boolean hasSubAggregate = false;
 
+						for (int i = 0; i < jsonArray.length(); i++) {
+							JSONObject newJson = new JSONObject(jsonArray.get(i).toString());
+							Object key = newJson.get(APIConstants.FormulaFields.KEY.getField());
+							keys.add(key);
+							if (counter == 0 && limit == i) {
+								break;
+							}
+							if (counter + 1 == (groupBy.length)) {
+								fetchMetrics(newJson, dataList, metrics, groupBy, counter, validatedData);
+							} else {
+								hasSubAggregate = true;
+								iterateInternalObject(newJson, subJsonArray, groupBy, counter, key, validatedData);
+							}
+						}
+						if (hasSubAggregate) {
+							json = new JSONObject();
+							requestJSON.put(APIConstants.FormulaFields.BUCKETS.getField(), subJsonArray);
+							json.put(groupBy[counter + 1], requestJSON);
+						}
+
+					}
+					counter++;
 				}
-				counter++;
-			}
 			} else {
 				fetchMetrics(json, dataList, metrics, null, counter, validatedData);
 			}
