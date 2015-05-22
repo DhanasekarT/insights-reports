@@ -55,11 +55,9 @@ public class BaseController extends APIConstants{
 	
 	public String getRequestData(HttpServletRequest request,String requestBody){
 		
-		String data = request.getParameter(DATA);
-		if(data != null) {
-			requestBody = data;
-		}
-		if(data == null && (requestBody == null || requestBody.isEmpty())){
+		if(request.getParameter(DATA) != null) {
+			requestBody = request.getParameter(DATA);
+		}else if(requestBody == null || requestBody.isEmpty()){
 			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, DATA));
 		}
 			return requestBody;
