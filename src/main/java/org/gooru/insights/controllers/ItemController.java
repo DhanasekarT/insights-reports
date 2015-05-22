@@ -53,10 +53,10 @@ public class ItemController extends BaseController{
 	 */
 	@RequestMapping(value = "/query", method = { RequestMethod.GET, RequestMethod.POST })
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
-	public ModelAndView generateQuery(HttpServletRequest request, @RequestParam(value = "data", required = false) String data,
+	public ModelAndView generateQuery(HttpServletRequest request, @RequestBody String data,
 			HttpServletResponse response) throws Exception {
 
-		return getModel(itemService.generateQuery(getTraceId(request),data, getSessionToken(request), null));
+		return getModel(itemService.generateQuery(getTraceId(request),getRequestData(request,data), getSessionToken(request), null));
 	}
 	
 	/**
