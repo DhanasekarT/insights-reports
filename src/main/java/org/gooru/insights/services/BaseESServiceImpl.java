@@ -824,9 +824,8 @@ public class BaseESServiceImpl implements BaseESService {
 
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
 			try {
-				Gson gson = new Gson();
-				String requestJsonArray = gson.toJson(requestParamsDTO.getAggregations());
-				JSONArray jsonArray = new JSONArray(requestJsonArray);
+				List<Map<String, String>> aggregationMapAsList = requestParamsDTO.getAggregations();
+				int fieldIndex = 0;
 				MetricsAggregationBuilder<?> metricsAggregationBuilder = null;
 				AggregationBuilder<?> aggregationBuilder = null;
 				if(dateHistogramBuilder != null) {
@@ -839,21 +838,20 @@ public class BaseESServiceImpl implements BaseESService {
 					aggregationBuilder = filterAggregationBuilder;
 				}
 				
-				for (int i = 0; i < jsonArray.length(); i++) {
-					
-					JSONObject jsonObject;
-					jsonObject = new JSONObject(jsonArray.get(i).toString());
-					String requestValue = jsonObject.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
-					String fieldName = getBusinessLogicService().esFields(index, jsonObject.getString(requestValue));
-					metricsAggregationBuilder = buildMetrics(metricsAggregationBuilder, jsonObject, jsonObject.getString(APIConstants.FormulaFields.FORMULA.getField()), APIConstants.FormulaFields.FIELD.getField()+i, fieldName);
+				for(Map<String, String> aggregationMap : aggregationMapAsList) {
+					String requestValue = aggregationMap.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
+					String fieldName = getBusinessLogicService().esFields(index, aggregationMap.get(requestValue));
+					metricsAggregationBuilder = buildMetrics(metricsAggregationBuilder, aggregationMap, aggregationMap.get(APIConstants.FormulaFields.FORMULA.getField()).toString(), APIConstants.FormulaFields.FIELD.getField() + fieldIndex, fieldName);
 					if(aggregationBuilder != null) {
 						aggregationBuilder.subAggregation(metricsAggregationBuilder);
 					} else {
 						searchRequestBuilder.addAggregation(metricsAggregationBuilder);
 					}
-					metricsName.put(jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) != null ? jsonObject.getString(APIConstants.FormulaFields.NAME.getField()) : fieldName,
-							APIConstants.FormulaFields.FIELD.getField()+i);
+					metricsName.put(aggregationMap.get(APIConstants.FormulaFields.NAME.getField()) != null ? aggregationMap.get(APIConstants.FormulaFields.NAME.getField()) : fieldName,
+							APIConstants.FormulaFields.FIELD.getField() + fieldIndex);
+					fieldIndex++;
 				}
+				
 			} catch (Exception e) {
 				throw new ReportGenerationException(ErrorConstants.AGGREGATION_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
 			}
@@ -900,17 +898,17 @@ public class BaseESServiceImpl implements BaseESService {
 			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
 		} 
 	}
-
+	
 	/**
 	 * This method gives the metricsAggregationbuilder of the given aggregateType
 	 * @param metricsAggregationbuilder
-	 * @param jsonObject
+	 * @param aggregationMap
 	 * @param aggregateType
 	 * @param aggregateName
 	 * @param fieldName
 	 * @return
 	 */
-	private MetricsAggregationBuilder<?> buildMetrics(MetricsAggregationBuilder<?> metricsAggregationbuilder, JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
+	private MetricsAggregationBuilder<?> buildMetrics(MetricsAggregationBuilder<?> metricsAggregationbuilder, Map<String, String> aggregationMap,String aggregateType,String aggregateName,String fieldName){
 		try {
 			if (APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)) {
 				metricsAggregationbuilder = AggregationBuilders.sum(aggregateName).field(fieldName);
@@ -926,8 +924,8 @@ public class BaseESServiceImpl implements BaseESService {
 				metricsAggregationbuilder = AggregationBuilders.cardinality(aggregateName).field(fieldName);
 			} else if (APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)) {
 				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
-				if (jsonObject.has(APIConstants.AggregateFields.PERCENTS.getField()) && !jsonObject.isNull(APIConstants.AggregateFields.PERCENTS.getField())) {
-					String[] percentsArray = jsonObject.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
+				if (aggregationMap.containsKey(APIConstants.AggregateFields.PERCENTS.getField()) && StringUtils.isNotBlank(aggregationMap.get(APIConstants.AggregateFields.PERCENTS.getField()))) {
+					String[] percentsArray = aggregationMap.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
 					double[] percents = new double[percentsArray.length];
 					for (int index = 0; index < percentsArray.length; index++) {
 						percents[index] = Double.parseDouble(percentsArray[index]);
