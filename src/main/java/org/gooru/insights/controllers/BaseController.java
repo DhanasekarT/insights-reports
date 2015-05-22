@@ -22,11 +22,7 @@ import flexjson.JSONSerializer;
 @Controller
 public class BaseController extends APIConstants{
 
-	private static final String JSON_BODY = "JSON Body";
-	
 	private static final String DATA = "data";
-	
-	private static final String GET = "GET";
 	
 	public <M> ModelAndView getModel(ResponseParamDTO<M> data) {
 
@@ -58,13 +54,13 @@ public class BaseController extends APIConstants{
 	}
 	
 	public String getRequestData(HttpServletRequest request,String requestBody){
-		if(request.getMethod().equalsIgnoreCase(GET)){
-			if(request.getParameter(DATA) == null){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, DATA));
-			}
-			requestBody =  request.getParameter(DATA).toString();
-		}else if(requestBody == null){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, JSON_BODY));
+		
+		String data = request.getParameter(DATA);
+		if(data != null) {
+			requestBody = data;
+		}
+		if(data == null && (requestBody == null || requestBody.isEmpty())){
+			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, DATA));
 		}
 			return requestBody;
 	}

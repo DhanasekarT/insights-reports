@@ -434,6 +434,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		formulaOperations = new HashSet<String>();
 		formulaOperations.add("SUM");
 		formulaOperations.add("MIN");
+		formulaOperations.add("AVG");
 		formulaOperations.add("MAX");
 		formulaOperations.add("COUNT");
 		formulaOperations.add("DISTINCT");
