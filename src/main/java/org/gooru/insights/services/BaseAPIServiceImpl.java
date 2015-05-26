@@ -21,6 +21,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.gooru.insights.builders.utils.MessageHandler;
+import org.gooru.insights.builders.utils.ValidationUtils;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.APIConstants.Hasdatas;
 import org.gooru.insights.constants.ErrorConstants;
@@ -42,7 +43,7 @@ import flexjson.JSONDeserializer;
 import flexjson.JSONException;
 
 @Service
-public class BaseAPIServiceImpl implements BaseAPIService {
+public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIService {
 	
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -356,6 +357,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 * DataSource should not be null and it should have valid dataSource.
 		 */
 		boolean validGroupByDataSource = false;
+		rejectIfNullOrEmpty(requestParamsDTO.getDataSource(), ErrorConstants.E100, APIConstants.DATA_SOURCE);
+
 		if (checkNull(requestParamsDTO.getDataSource())) {
 			for(String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)){
 			boolean validDataSource = false;
@@ -376,17 +379,12 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 			}
 			}
-				if(!validDataSource){
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.DATA_SOURCE,dataSource}));
-				}
+				rejectIfFalse(validDataSource, ErrorConstants.E103, APIConstants.DATA_SOURCE );
+
 			}
-			if(!validGroupByDataSource){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E107,new String[]{APIConstants.GROUP_BY_DATA_SOURCE}));
-				
-			}
+			rejectIfFalse(validGroupByDataSource, ErrorConstants.E107, APIConstants.GROUP_BY_DATA_SOURCE );
+
 			processedData.put(Hasdatas.HAS_DATASOURCE.check(), true);
-		}else{
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.DATA_SOURCE));
 		}
 		
 		/**
@@ -396,14 +394,14 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		if(checkNull(requestParamsDTO.getAggregations())){
 			for(Map<String, String> aggregate : requestParamsDTO.getAggregations()){
 				if(!aggregate.containsKey(APIConstants.FormulaFields.REQUEST_VALUES.getField()) || !aggregate.containsKey(APIConstants.FormulaFields.NAME.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.NAME.getField())) || !aggregate.containsKey(APIConstants.FormulaFields.FORMULA.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.FORMULA.getField())) || !aggregate.containsKey(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())) || !checkNull(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
+					rejectInvalidRequest(ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
 				}else{
-					if(!fieldData.contains(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))}));
-					}
-					if(!baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.AGGREGATE_ATTRIBUTE,aggregate.get(APIConstants.FormulaFields.FORMULA.getField())}));
-					}
+					rejectIfFalse(fieldData.contains(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))), ErrorConstants.E103, 
+							APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())));
+				
+					rejectIfFalse(baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase()), ErrorConstants.E103,
+							APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.FormulaFields.FORMULA.getField()));
+					
 					if (aggregate.containsKey(APIConstants.AggregateFields.PERCENTS.getField()) && aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()) != null) {
 						String percentValues = aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()).toString();
 						if (StringUtils.isNotBlank(percentValues)) {
@@ -413,8 +411,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 									try {
 										Double.parseDouble(percentsArray[index]);
 									} catch (NumberFormatException nfe) {
-										throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E111,
-												new String[] { APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()) }));
+										rejectInvalidRequest(ErrorConstants.E111, APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()));
 									}
 								}
 							}
@@ -429,6 +426,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		/**
 		 * fields should not be EMPTY and should be a valid field specified in data source
 		 */
+		rejectIfNullOrEmpty(requestParamsDTO.getFields(), ErrorConstants.E100, APIConstants.FIELDS);
+
 		if (checkNull(requestParamsDTO.getFields())) {
 			StringBuffer errorField = new StringBuffer();
 			for(String field : requestParamsDTO.getFields().split(APIConstants.COMMA)){
@@ -440,11 +439,9 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 			}
 			if(errorField.length() > 0){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.FIELDS,errorField.toString()}));
+				rejectInvalidRequest(ErrorConstants.E103, APIConstants.FIELDS, errorField.toString());
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_FEILDS.check(), true);
-		}else{
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FIELDS));
 		}
 		
 		/**
@@ -458,9 +455,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 					break;
 				}
 			}
-			if(!isValid){
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GRANULARITY_NAME,requestParamsDTO.getGranularity()}));
-			}
+			rejectIfFalse(isValid, ErrorConstants.E103, APIConstants.GRANULARITY_NAME, requestParamsDTO.getGranularity());
+
 			processedData.put(APIConstants.Hasdatas.HAS_GRANULARITY.check(), true);
 		}
 		
@@ -468,9 +464,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		 * If groupBy is given aggregation should not be EMPTY and if granularity is given groupby should not be empty.
 		 */
 		if (checkNull(requestParamsDTO.getGroupBy())) {
-			if(!processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check())){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.AGGREGATE_ATTRIBUTE));
-			}
+			rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check()), ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
+
 			StringBuffer errorField = new StringBuffer();
 			for(String field : requestParamsDTO.getGroupBy().split(APIConstants.COMMA)){
 				if(!fieldData.contains(field)){
@@ -481,25 +476,24 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 			}
 			if(errorField.length() > 0){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103, new String[]{APIConstants.GROUP_BY,errorField.toString()}));
+				rejectInvalidRequest(ErrorConstants.E103, APIConstants.GROUP_BY, errorField.toString());
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_GROUPBY.check(), true);
 		} else if (processedData.get(APIConstants.Hasdatas.HAS_GRANULARITY.check())){
-			throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100, APIConstants.GROUP_BY));
+			rejectInvalidRequest(ErrorConstants.E100, APIConstants.GROUP_BY);
 		}
 		/**
 		 * Range filter validation.Here groupBy field shouldn't be empty
 		 */
 		if(checkNull(requestParamsDTO.getRanges())) {
-			if(!processedData.get(APIConstants.Hasdatas.HAS_GROUPBY.check())){
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E112, APIConstants.GROUP_BY, APIConstants.RANGE_ATTRIBUTE));
-			}
+			rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_GROUPBY.check()), ErrorConstants.E112, APIConstants.GROUP_BY, APIConstants.RANGE_ATTRIBUTE);
+
 			if(requestParamsDTO.getGroupBy().split(APIConstants.SEPARATOR).length > 1) {
-				throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E109,APIConstants.MULTIPLE_GROUPBY));
+				rejectInvalidRequest(ErrorConstants.E109, APIConstants.MULTIPLE_GROUPBY );
 			}
 			for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
 				if(!checkNull(ranges.getFrom()) && !checkNull(ranges.getTo())) {
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.RANGE_ATTRIBUTE));				
+					rejectInvalidRequest(ErrorConstants.E100, APIConstants.RANGE_ATTRIBUTE );
 				} 
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_RANGE.check(), true);
@@ -511,22 +505,19 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0))) {
 			for(RequestParamsFilterDetailDTO logicalOperations : requestParamsDTO.getFilter()){
 				
-				if(!checkNull(logicalOperations.getLogicalOperatorPrefix())){
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.LOGICAL_OPERATOR));
-				}
-				if(!baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix().toUpperCase())){
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.LOGICAL_OPERATOR,logicalOperations.getLogicalOperatorPrefix()}));
-				}
-				if(!checkNull(logicalOperations.getFields())){
-					throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FILTER_FIELDS));
-				}
+				rejectIfNullOrEmpty(logicalOperations.getLogicalOperatorPrefix(), ErrorConstants.E100, APIConstants.LOGICAL_OPERATOR);
+
+				rejectIfFalse(baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix().toUpperCase()), ErrorConstants.E103, APIConstants.LOGICAL_OPERATOR, logicalOperations.getLogicalOperatorPrefix());
+
+				rejectIfNullOrEmpty(logicalOperations.getFields(), ErrorConstants.E100, APIConstants.FILTER_FIELDS);
+
 				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
 
 					if(!checkNull(filters.getFieldName()) || !checkNull(filters.getOperator()) || !checkNull(filters.getValueType()) || !checkNull(filters.getValue()) || !checkNull(filters.getType())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.FILTERS));
+						rejectInvalidRequest(ErrorConstants.E100, APIConstants.FILTERS);
 					}
 					if(!baseConnectionService.getDataTypes().contains(filters.getValueType().toUpperCase())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getValueType()}));
+						rejectInvalidRequest(ErrorConstants.E103, APIConstants.FILTERS, filters.getValueType());
 					}else{
 						/** future validation for date field for range 
 						 *
@@ -543,20 +534,16 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 									filters.setDataSource(baseConnectionService.getIndexMap().get(dataSource));	
 								}
 						}
-						if(invalidDataSource){
-							throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E107,APIConstants.FILTER_DATA_SOURCE));
-						}
+						rejectIfTrue(invalidDataSource, ErrorConstants.E107, APIConstants.FILTER_DATA_SOURCE);
+
 						processedData.put(Hasdatas.HAS_DATASOURCE_FILTER.check(), true);
 					}
-					if(!filters.getType().equalsIgnoreCase(APIConstants.SELECTOR)){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getType()}));
-					}
-					if(!fieldData.contains(filters.getFieldName())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getFieldName()}));
-					}
-					if(!baseConnectionService.getEsOperations().contains(filters.getOperator().toUpperCase())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.FILTERS,filters.getOperator()}));
-					}
+					rejectIfFalse(filters.getType().equalsIgnoreCase(APIConstants.SELECTOR), ErrorConstants.E103, APIConstants.FILTERS, filters.getType());
+
+					rejectIfFalse(fieldData.contains(filters.getFieldName()), ErrorConstants.E103, APIConstants.FILTERS, filters.getFieldName() );
+
+					rejectIfFalse(baseConnectionService.getEsOperations().contains(filters.getOperator().toUpperCase()), ErrorConstants.E103,
+							APIConstants.FILTERS, filters.getOperator());
 				}
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_FILTER.check(), true);
@@ -576,12 +563,10 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			if (checkNull(requestParamsDTO.getPagination().getOrder())) {
 				for(RequestParamsSortDTO orderData : requestParamsDTO.getPagination().getOrder()){
 					
-					if(!checkNull(orderData.getSortBy())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E100,APIConstants.SORT_BY));
-					}
-					if(!fieldData.contains(orderData.getSortBy())){
-						throw new BadRequestException(MessageHandler.getMessage(ErrorConstants.E103,new String[]{APIConstants.SORT_BY,orderData.getSortBy()}));
-					}
+					rejectIfNullOrEmpty(orderData.getSortBy(), ErrorConstants.E100, APIConstants.SORT_BY);
+
+					rejectIfFalse(fieldData.contains(orderData.getSortBy()), ErrorConstants.E103, APIConstants.SORT_BY, orderData.getSortBy());
+
 					if (checkNull(orderData.getSortOrder())) {
 						processedData.put(APIConstants.Hasdatas.HAS_SORTORDER.check(), true);
 					}

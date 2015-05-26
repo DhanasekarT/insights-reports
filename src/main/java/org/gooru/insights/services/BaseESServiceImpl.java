@@ -313,7 +313,7 @@ public class BaseESServiceImpl implements BaseESService {
 					filterFields = getBaseAPIService().convertStringtoSet(fields);
 				} else {
 					for (String field : getBaseConnectionService().getDefaultFields().get(indices).split(APIConstants.COMMA)) {
-						searchRequestBuilder.addField(field);
+						filterFields.add(field);
 					}
 				}
 				for (String field : filterFields) {
