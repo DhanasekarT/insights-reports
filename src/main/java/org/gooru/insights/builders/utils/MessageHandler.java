@@ -62,36 +62,4 @@ public class MessageHandler {
 		return DEFAULT_MESSAGE;
 	}
 	
-	public static String generateErrorMessage(String errorCode) {
-		return resourceBundle.getString(errorCode);
-	}
-
-	public static String generateErrorMessage(String errorCode, String... params) {
-		String errorMsg = resourceBundle.getString(errorCode);
-		if (params != null) {
-			for (int index = 0; index < params.length; index++) {
-				errorMsg = errorMsg.replace(APIConstants.OPEN_BRACE + index + APIConstants.CLOSE_BRACE, params[index]);
-			}
-		}
-		return errorMsg;
-	}
-
-	public static String generateMessage(String code, String... params) {
-		String msg = resourceBundle.getString(code);
-		if (params != null) {
-			for (int index = 0; index < params.length; index++) {
-				msg = msg.replace(APIConstants.OPEN_BRACE + index + APIConstants.CLOSE_BRACE, params[index] == null ? APIConstants.EMPTY : params[index]);
-			}
-		}
-		return msg;
-	}
-	
-	public static String generateMessage(String rawData, Map<String, Object> data) {
-		if (rawData != null && data != null) {
-			for (Map.Entry<String, Object> entry : data.entrySet()) {
-			    rawData = rawData.replace(APIConstants.OPEN_SQUARE_BRACKET + entry.getKey() + APIConstants.CLOSE_SQUARE_BRACKET, entry.getValue() == null ? APIConstants.EMPTY : (String)entry.getValue());
-			}
-		}
-		return rawData;
-	}
 }
