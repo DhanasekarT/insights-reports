@@ -58,16 +58,12 @@ public class ValidationUtils {
 		}
 	}
 	
-	public static void rejectIfNull(Object data, String code, int errorCode, String... message) {
+	public static void rejectIfNotFound(Object data, String code, String... message) {
 		if (data == null) {
-			if (errorCode == 404) {
-				throw new NotFoundException(MessageHandler.getMessage(code, message));
-			} else { 
-				throw new BadRequestException(MessageHandler.getMessage(code, message));
-			}
+			throw new NotFoundException(MessageHandler.getMessage(code, message));
 		}
 	}
-
+	
 	public static void rejectIfNull(Errors errors, Object data, String field, String errorMsg) {
 		if (data == null) {
 			errors.rejectValue(field, errorMsg);

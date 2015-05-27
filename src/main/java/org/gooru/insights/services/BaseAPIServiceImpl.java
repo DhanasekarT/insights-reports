@@ -379,7 +379,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 			}
 			}
-				ValidationUtils.rejectIfFalse(validDataSource, ErrorConstants.E103, APIConstants.DATA_SOURCE );
+				ValidationUtils.rejectIfFalse(validDataSource, ErrorConstants.E103, APIConstants.DATA_SOURCE, dataSource);
 
 			}
 			ValidationUtils.rejectIfFalse(validGroupByDataSource, ErrorConstants.E107, APIConstants.GROUP_BY_DATA_SOURCE );
@@ -441,6 +441,7 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 			if(errorField.length() > 0){
 				ValidationUtils.rejectInvalidRequest(ErrorConstants.E103, APIConstants.FIELDS, errorField.toString());
 			}
+
 			processedData.put(APIConstants.Hasdatas.HAS_FEILDS.check(), true);
 		}
 		
