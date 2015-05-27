@@ -43,7 +43,7 @@ import flexjson.JSONDeserializer;
 import flexjson.JSONException;
 
 @Service
-public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIService {
+public class BaseAPIServiceImpl implements BaseAPIService {
 	
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -357,7 +357,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 		 * DataSource should not be null and it should have valid dataSource.
 		 */
 		boolean validGroupByDataSource = false;
-		rejectIfNullOrEmpty(requestParamsDTO.getDataSource(), ErrorConstants.E100, APIConstants.DATA_SOURCE);
+		ValidationUtils.rejectIfNullOrEmpty(requestParamsDTO.getDataSource(), ErrorConstants.E100, APIConstants.DATA_SOURCE);
 
 		if (checkNull(requestParamsDTO.getDataSource())) {
 			for(String dataSource : requestParamsDTO.getDataSource().split(APIConstants.COMMA)){
@@ -379,10 +379,10 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 				}
 			}
 			}
-				rejectIfFalse(validDataSource, ErrorConstants.E103, APIConstants.DATA_SOURCE );
+				ValidationUtils.rejectIfFalse(validDataSource, ErrorConstants.E103, APIConstants.DATA_SOURCE );
 
 			}
-			rejectIfFalse(validGroupByDataSource, ErrorConstants.E107, APIConstants.GROUP_BY_DATA_SOURCE );
+			ValidationUtils.rejectIfFalse(validGroupByDataSource, ErrorConstants.E107, APIConstants.GROUP_BY_DATA_SOURCE );
 
 			processedData.put(Hasdatas.HAS_DATASOURCE.check(), true);
 		}
@@ -394,12 +394,12 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 		if(checkNull(requestParamsDTO.getAggregations())){
 			for(Map<String, String> aggregate : requestParamsDTO.getAggregations()){
 				if(!aggregate.containsKey(APIConstants.FormulaFields.REQUEST_VALUES.getField()) || !aggregate.containsKey(APIConstants.FormulaFields.NAME.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.NAME.getField())) || !aggregate.containsKey(APIConstants.FormulaFields.FORMULA.getField()) || !checkNull(aggregate.get(APIConstants.FormulaFields.FORMULA.getField())) || !aggregate.containsKey(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())) || !checkNull(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())))){
-					rejectInvalidRequest(ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
+					ValidationUtils.rejectInvalidRequest(ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
 				}else{
-					rejectIfFalse(fieldData.contains(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))), ErrorConstants.E103, 
+					ValidationUtils.rejectIfFalse(fieldData.contains(aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()))), ErrorConstants.E103, 
 							APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(aggregate.get(APIConstants.FormulaFields.REQUEST_VALUES.getField())));
 				
-					rejectIfFalse(baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase()), ErrorConstants.E103,
+					ValidationUtils.rejectIfFalse(baseConnectionService.getFormulaOperations().contains(aggregate.get(APIConstants.FormulaFields.FORMULA.getField()).toUpperCase()), ErrorConstants.E103,
 							APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.FormulaFields.FORMULA.getField()));
 					
 					if (aggregate.containsKey(APIConstants.AggregateFields.PERCENTS.getField()) && aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()) != null) {
@@ -411,7 +411,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 									try {
 										Double.parseDouble(percentsArray[index]);
 									} catch (NumberFormatException nfe) {
-										rejectInvalidRequest(ErrorConstants.E111, APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()));
+										ValidationUtils.rejectInvalidRequest(ErrorConstants.E111, APIConstants.AGGREGATE_ATTRIBUTE, aggregate.get(APIConstants.AggregateFields.PERCENTS.getField()));
 									}
 								}
 							}
@@ -426,7 +426,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 		/**
 		 * fields should not be EMPTY and should be a valid field specified in data source
 		 */
-		rejectIfNullOrEmpty(requestParamsDTO.getFields(), ErrorConstants.E100, APIConstants.FIELDS);
+		ValidationUtils.rejectIfNullOrEmpty(requestParamsDTO.getFields(), ErrorConstants.E100, APIConstants.FIELDS);
 
 		if (checkNull(requestParamsDTO.getFields())) {
 			StringBuffer errorField = new StringBuffer();
@@ -439,7 +439,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 				}
 			}
 			if(errorField.length() > 0){
-				rejectInvalidRequest(ErrorConstants.E103, APIConstants.FIELDS, errorField.toString());
+				ValidationUtils.rejectInvalidRequest(ErrorConstants.E103, APIConstants.FIELDS, errorField.toString());
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_FEILDS.check(), true);
 		}
@@ -455,7 +455,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 					break;
 				}
 			}
-			rejectIfFalse(isValid, ErrorConstants.E103, APIConstants.GRANULARITY_NAME, requestParamsDTO.getGranularity());
+			ValidationUtils.rejectIfFalse(isValid, ErrorConstants.E103, APIConstants.GRANULARITY_NAME, requestParamsDTO.getGranularity());
 
 			processedData.put(APIConstants.Hasdatas.HAS_GRANULARITY.check(), true);
 		}
@@ -464,7 +464,7 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 		 * If groupBy is given aggregation should not be EMPTY and if granularity is given groupby should not be empty.
 		 */
 		if (checkNull(requestParamsDTO.getGroupBy())) {
-			rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check()), ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
+			ValidationUtils.rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_AGGREGATE.check()), ErrorConstants.E100, APIConstants.AGGREGATE_ATTRIBUTE);
 
 			StringBuffer errorField = new StringBuffer();
 			for(String field : requestParamsDTO.getGroupBy().split(APIConstants.COMMA)){
@@ -476,24 +476,24 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 				}
 			}
 			if(errorField.length() > 0){
-				rejectInvalidRequest(ErrorConstants.E103, APIConstants.GROUP_BY, errorField.toString());
+				ValidationUtils.rejectInvalidRequest(ErrorConstants.E103, APIConstants.GROUP_BY, errorField.toString());
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_GROUPBY.check(), true);
 		} else if (processedData.get(APIConstants.Hasdatas.HAS_GRANULARITY.check())){
-			rejectInvalidRequest(ErrorConstants.E100, APIConstants.GROUP_BY);
+			ValidationUtils.rejectInvalidRequest(ErrorConstants.E100, APIConstants.GROUP_BY);
 		}
 		/**
 		 * Range filter validation.Here groupBy field shouldn't be empty
 		 */
 		if(checkNull(requestParamsDTO.getRanges())) {
-			rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_GROUPBY.check()), ErrorConstants.E112, APIConstants.GROUP_BY, APIConstants.RANGE_ATTRIBUTE);
+			ValidationUtils.rejectIfFalse(processedData.get(APIConstants.Hasdatas.HAS_GROUPBY.check()), ErrorConstants.E112, APIConstants.GROUP_BY, APIConstants.RANGE_ATTRIBUTE);
 
 			if(requestParamsDTO.getGroupBy().split(APIConstants.SEPARATOR).length > 1) {
-				rejectInvalidRequest(ErrorConstants.E109, APIConstants.MULTIPLE_GROUPBY );
+				ValidationUtils.rejectInvalidRequest(ErrorConstants.E109, APIConstants.MULTIPLE_GROUPBY );
 			}
 			for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
 				if(!checkNull(ranges.getFrom()) && !checkNull(ranges.getTo())) {
-					rejectInvalidRequest(ErrorConstants.E100, APIConstants.RANGE_ATTRIBUTE );
+					ValidationUtils.rejectInvalidRequest(ErrorConstants.E100, APIConstants.RANGE_ATTRIBUTE );
 				} 
 			}
 			processedData.put(APIConstants.Hasdatas.HAS_RANGE.check(), true);
@@ -505,19 +505,19 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 		if (checkNull(requestParamsDTO.getFilter()) && checkNull(requestParamsDTO.getFilter().get(0))) {
 			for(RequestParamsFilterDetailDTO logicalOperations : requestParamsDTO.getFilter()){
 				
-				rejectIfNullOrEmpty(logicalOperations.getLogicalOperatorPrefix(), ErrorConstants.E100, APIConstants.LOGICAL_OPERATOR);
+				ValidationUtils.rejectIfNullOrEmpty(logicalOperations.getLogicalOperatorPrefix(), ErrorConstants.E100, APIConstants.LOGICAL_OPERATOR);
 
-				rejectIfFalse(baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix().toUpperCase()), ErrorConstants.E103, APIConstants.LOGICAL_OPERATOR, logicalOperations.getLogicalOperatorPrefix());
+				ValidationUtils.rejectIfFalse(baseConnectionService.getLogicalOperations().contains(logicalOperations.getLogicalOperatorPrefix().toUpperCase()), ErrorConstants.E103, APIConstants.LOGICAL_OPERATOR, logicalOperations.getLogicalOperatorPrefix());
 
-				rejectIfNullOrEmpty(logicalOperations.getFields(), ErrorConstants.E100, APIConstants.FILTER_FIELDS);
-
+				ValidationUtils.rejectIfNullOrEmpty(logicalOperations.getFields(), ErrorConstants.E100, APIConstants.FILTER_FIELDS);
+				
 				for(RequestParamsFilterFieldsDTO filters : logicalOperations.getFields()){
 
 					if(!checkNull(filters.getFieldName()) || !checkNull(filters.getOperator()) || !checkNull(filters.getValueType()) || !checkNull(filters.getValue()) || !checkNull(filters.getType())){
-						rejectInvalidRequest(ErrorConstants.E100, APIConstants.FILTERS);
+						ValidationUtils.rejectInvalidRequest(ErrorConstants.E100, APIConstants.FILTERS);
 					}
 					if(!baseConnectionService.getDataTypes().contains(filters.getValueType().toUpperCase())){
-						rejectInvalidRequest(ErrorConstants.E103, APIConstants.FILTERS, filters.getValueType());
+						ValidationUtils.rejectInvalidRequest(ErrorConstants.E103, APIConstants.FILTERS, filters.getValueType());
 					}else{
 						/** future validation for date field for range 
 						 *
@@ -534,15 +534,15 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 									filters.setDataSource(baseConnectionService.getIndexMap().get(dataSource));	
 								}
 						}
-						rejectIfTrue(invalidDataSource, ErrorConstants.E107, APIConstants.FILTER_DATA_SOURCE);
+						ValidationUtils.rejectIfTrue(invalidDataSource, ErrorConstants.E107, APIConstants.FILTER_DATA_SOURCE);
 
 						processedData.put(Hasdatas.HAS_DATASOURCE_FILTER.check(), true);
 					}
-					rejectIfFalse(filters.getType().equalsIgnoreCase(APIConstants.SELECTOR), ErrorConstants.E103, APIConstants.FILTERS, filters.getType());
+					ValidationUtils.rejectIfFalse(filters.getType().equalsIgnoreCase(APIConstants.SELECTOR), ErrorConstants.E103, APIConstants.FILTERS, filters.getType());
 
-					rejectIfFalse(fieldData.contains(filters.getFieldName()), ErrorConstants.E103, APIConstants.FILTERS, filters.getFieldName() );
+					ValidationUtils.rejectIfFalse(fieldData.contains(filters.getFieldName()), ErrorConstants.E103, APIConstants.FILTERS, filters.getFieldName() );
 
-					rejectIfFalse(baseConnectionService.getEsOperations().contains(filters.getOperator().toUpperCase()), ErrorConstants.E103,
+					ValidationUtils.rejectIfFalse(baseConnectionService.getEsOperations().contains(filters.getOperator().toUpperCase()), ErrorConstants.E103,
 							APIConstants.FILTERS, filters.getOperator());
 				}
 			}
@@ -563,9 +563,9 @@ public class BaseAPIServiceImpl extends ValidationUtils implements BaseAPIServic
 			if (checkNull(requestParamsDTO.getPagination().getOrder())) {
 				for(RequestParamsSortDTO orderData : requestParamsDTO.getPagination().getOrder()){
 					
-					rejectIfNullOrEmpty(orderData.getSortBy(), ErrorConstants.E100, APIConstants.SORT_BY);
+					ValidationUtils.rejectIfNullOrEmpty(orderData.getSortBy(), ErrorConstants.E100, APIConstants.SORT_BY);
 
-					rejectIfFalse(fieldData.contains(orderData.getSortBy()), ErrorConstants.E103, APIConstants.SORT_BY, orderData.getSortBy());
+					ValidationUtils.rejectIfFalse(fieldData.contains(orderData.getSortBy()), ErrorConstants.E103, APIConstants.SORT_BY, orderData.getSortBy());
 
 					if (checkNull(orderData.getSortOrder())) {
 						processedData.put(APIConstants.Hasdatas.HAS_SORTORDER.check(), true);

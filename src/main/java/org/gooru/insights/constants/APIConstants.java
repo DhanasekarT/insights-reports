@@ -25,6 +25,10 @@ public class APIConstants {
 	
 	public static final String CLOSE_BRACE = "}";
 	
+	public static final String OPEN_SQUARE_BRACKET = "[";
+	
+	public static final String CLOSE_SQUARE_BRACKET = "]";
+	
 	public static final String F = "f";
 	
 	public static final String P = "p";
