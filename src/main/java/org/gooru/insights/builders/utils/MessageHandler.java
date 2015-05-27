@@ -1,7 +1,6 @@
 package org.gooru.insights.builders.utils;
 
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.annotation.PostConstruct;
