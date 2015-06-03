@@ -413,10 +413,7 @@ public class ItemServiceImpl implements ItemService {
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, APIConstants.PIPE);
 		int defaultLimit = reportConfig.getIntegerValue(APIConstants.DEFAULT_LIMIT, APIConstants.DEFAULT_ROW_LIMIT);
-		int rowLimit = 0;
-		int limit = 0;
-		int offSet = 0;
-		int totalRows = 0;
+		int rowLimit = 0, limit = 0, offSet = 0, totalRows = 0;
 		boolean isNewFile = true;
 		try {
 			
@@ -445,7 +442,11 @@ public class ItemServiceImpl implements ItemService {
 			
 			do {
 				responseDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
-				getCSVFileWriterService().generateCSVReport(new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				int totalRowFromResult = Integer.valueOf(responseDTO.getPaginate().get("totalRows").toString());
+				if(totalRowFromResult < totalRows) {
+					totalRows = totalRowFromResult;
+				}
+				getCSVFileWriterService().generateCSVReport(traceId, new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
 				/*Incrementing offset values */
 				offSet += limit;
 				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
@@ -465,17 +466,17 @@ public class ItemServiceImpl implements ItemService {
 
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
-		int totalRows = 0;
-		String fileName = UUID.randomUUID().toString();
-		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+		int requestedRowLimit = 0;
+		String fileName = UUID.randomUUID().toString().substring(0, 8).concat(APIConstants.FORWARD_SLASH).concat(APIConstants.EXPORT_FILE_NAME).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName);
 		ResponseParamDTO<Map<String, Object>> responseDTO = new ResponseParamDTO<Map<String,Object>>();
 		
 		try {
 			RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
-			totalRows = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
+			requestedRowLimit = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 			Map<String, Object> status = new HashMap<String, Object>();
 			
-			if(totalRows > maxLimit) {
+			if(requestedRowLimit > maxLimit) {
 				final Map<String, Object> user = getUserObjectData(traceId,sessionToken);;
 				getBaseAPIService().checkPoint(requestParamsDTO);
 				getUserService().validateUserRole(traceId,requestParamsDTO, user);
@@ -485,8 +486,9 @@ public class ItemServiceImpl implements ItemService {
 					@Override
 					public void run() {
 						try {
+							boolean isHtmlMessage = true;
 							generateReport(traceId, data, sessionToken, user, absoluteFilePath);
-							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", "Please download the attachement ", resultLink);
+							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", MessageHandler.getMessage(APIConstants.EXPORT_MAIL_CONTENT, resultLink), isHtmlMessage);
 						}
 						catch(Exception e) {
 							logger.error("Exception in export report[Thread Loop]: {}", e);
