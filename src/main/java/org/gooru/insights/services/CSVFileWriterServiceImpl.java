@@ -68,7 +68,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 				for(String headerKey : headerKeys) {
 					String key = row.get(headerKey) == null || StringUtils.isBlank(row.get(headerKey).toString()) ? APIConstants.NOT_APPLICABLE : row.get(headerKey).toString();
 					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equalsIgnoreCase(APIConstants.NOT_APPLICABLE)) {
-						key = DateTime.convertMillisecondsToDate(Long.valueOf(key));
+						key = DateTime.convertMillisecondsToTime(Long.valueOf(key));
 					}
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter.concat(key)));
 				}
