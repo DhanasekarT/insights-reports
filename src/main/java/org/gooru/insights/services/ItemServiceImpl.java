@@ -2,6 +2,7 @@ package org.gooru.insights.services;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -446,7 +447,7 @@ public class ItemServiceImpl implements ItemService {
 				if(totalRowFromResult < totalRows) {
 					totalRows = totalRowFromResult;
 				}
-				getCSVFileWriterService().generateCSVReport(traceId, new HashSet<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				getCSVFileWriterService().generateCSVReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
 				/*Incrementing offset values */
 				offSet += limit;
 				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
@@ -467,7 +468,7 @@ public class ItemServiceImpl implements ItemService {
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
 		int requestedRowLimit = 0;
-		String fileName = UUID.randomUUID().toString().substring(0, 8).concat(APIConstants.FORWARD_SLASH).concat(APIConstants.EXPORT_FILE_NAME).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+		String fileName = APIConstants.EXPORT_FILE_NAME.concat(APIConstants.HYPEN).concat(String.valueOf(new Date().getTime())).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
 		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName);
 		ResponseParamDTO<Map<String, Object>> responseDTO = new ResponseParamDTO<Map<String,Object>>();
 		
@@ -488,7 +489,7 @@ public class ItemServiceImpl implements ItemService {
 						try {
 							boolean isHtmlMessage = true;
 							generateReport(traceId, data, sessionToken, user, absoluteFilePath);
-							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_SUBJECT), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_CONTENT, resultLink), isHtmlMessage);
+							getMailService().sendMail(String.valueOf(user.get(APIConstants.EXTERNAL_ID)), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_SUBJECT), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_CONTENT, resultLink), isHtmlMessage);
 						}
 						catch(Exception exception) {
 							InsightsLogger.error(traceId, ErrorConstants.EXPORT_EXCEPTION_ERROR, exception);

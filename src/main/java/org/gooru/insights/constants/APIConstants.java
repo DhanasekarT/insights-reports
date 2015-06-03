@@ -31,6 +31,8 @@ public class APIConstants {
 	
 	public static final String FORWARD_SLASH = "/";
 	
+	public static final String HYPEN = "-";
+	
 	/**
 	 * view Attributes
 	 */
@@ -316,7 +318,7 @@ public class APIConstants {
 	
 	public static final String ALL = "all";
 	
-	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent";
+	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent|avgTimespent";
 	
 	public static final String EXPORT_MAIL_CONTENT = "EXPORT_MAIL_CONTENT";
 	

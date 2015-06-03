@@ -34,17 +34,13 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 		return baseConnectionService;
 	}
 	
-	public void generateCSVReport(String traceId, Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException {
+	public void generateCSVReport(String traceId, List<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException {
 
 		if(StringUtils.isBlank(delimiter)) {
 			delimiter = APIConstants.PIPE;
 		}
 		PrintStream stream = null;
 		try {
-			File file = new File(fileAbsolutePath);
-			if(!file.getParentFile().exists()) {
-				file.getParentFile().mkdir();
-			}
 			stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(new File(fileAbsolutePath), true)));
 			
 			if (isNewFile) {
@@ -66,11 +62,11 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			StringBuilder rowLine = new StringBuilder(); 
 			for (Map<String, Object> row : rowList) {
 				for(String headerKey : headerKeys) {
-					String key = row.get(headerKey) == null || StringUtils.isBlank(row.get(headerKey).toString()) ? APIConstants.NOT_APPLICABLE : row.get(headerKey).toString();
-					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equalsIgnoreCase(APIConstants.NOT_APPLICABLE)) {
-						key = DateTime.convertMillisecondsToTime(Long.valueOf(key));
+					Object key = row.get(headerKey) == null || row.get(headerKey).equals("") || row.get(headerKey).equals(" ") ? APIConstants.NOT_APPLICABLE : row.get(headerKey);
+					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equals(APIConstants.NOT_APPLICABLE)) {
+						key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
 					}
-					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter.concat(key)));
+					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter).append(key));
 				}
 				stream.print(rowLine);
 				rowLine.setLength(APIConstants.ZERO);
@@ -90,17 +86,13 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 		File parentDir = new File(getBaseConnectionService().getRealRepoPath());
 		Date date = new Date();
 		
-		for(File dir : parentDir.listFiles()) {
+		for(File file : parentDir.listFiles()) {
 			try {
-				if(dir.isDirectory()) {
-					long diffInMilliSec = date.getTime() - dir.lastModified();
+				if(file.isFile()) {
+					long diffInMilliSec = date.getTime() - file.lastModified();
 					long diffInHours = (diffInMilliSec / (60 * 60 * 1000));
 					if(diffInHours > 24){
-						for(File file : dir.listFiles()) {
-							file.delete();
-						}
-						dir.delete();
-						logger.info(ErrorConstants.REMOVING_EXPIRED_FILE_INFO, dir.getName(), dir.lastModified());
+						file.delete();
 					}
 				}
 			}

@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface CSVFileWriterService {
 
-	void generateCSVReport(String traceId, Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException;
+	void generateCSVReport(String traceId, List<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException;
 
 	void removeExpiredFile();
 
