@@ -57,14 +57,14 @@ public class MailServiceImpl implements MailService {
 	/**
 	 * This method will send compose and send the message
 	 * */
-	public void sendMail(String to, String subject, String body) {
+	public void sendMail(String to, String subject, String body, boolean isHtmlMessage) {
 		
 		MimeMessage message = getJavaMailSender().createMimeMessage();
 		try{
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 			helper.setTo(to);
 			helper.setSubject(subject);
-			helper.setText("Hi,"+body);
+			helper.setText(body, isHtmlMessage);
 			helper.setReplyTo(getBaseConnectionService().getDefaultReplyToEmail());
 			getJavaMailSender().send(message);
 		}catch (MessagingException e) {
@@ -96,5 +96,4 @@ public class MailServiceImpl implements MailService {
 	public void sendDefaultMail(String subject,String body,String fileLink){
 		sendMail(getBaseConnectionService().getDefaultToEmail(), subject, body, fileLink);
 	}
-
 }
