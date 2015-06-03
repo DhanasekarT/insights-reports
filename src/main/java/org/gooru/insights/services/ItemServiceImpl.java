@@ -480,7 +480,7 @@ public class ItemServiceImpl implements ItemService {
 				final Map<String, Object> user = getUserObjectData(traceId,sessionToken);;
 				getBaseAPIService().checkPoint(requestParamsDTO);
 				getUserService().validateUserRole(traceId,requestParamsDTO, user);
-				final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+				final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName);
 
 				final Thread reportThread = new Thread(new Runnable() {
 					@Override
@@ -488,10 +488,10 @@ public class ItemServiceImpl implements ItemService {
 						try {
 							boolean isHtmlMessage = true;
 							generateReport(traceId, data, sessionToken, user, absoluteFilePath);
-							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), "Query Report", MessageHandler.getMessage(APIConstants.EXPORT_MAIL_CONTENT, resultLink), isHtmlMessage);
+							getMailService().sendMail(user.get(APIConstants.EXTERNAL_ID).toString(), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_SUBJECT), MessageHandler.getMessage(APIConstants.EXPORT_MAIL_CONTENT, resultLink), isHtmlMessage);
 						}
-						catch(Exception e) {
-							logger.error("Exception in export report[Thread Loop]: {}", e);
+						catch(Exception exception) {
+							InsightsLogger.error(traceId, ErrorConstants.EXPORT_EXCEPTION_ERROR, exception);
 						}
 					}
 				});
@@ -509,7 +509,7 @@ public class ItemServiceImpl implements ItemService {
 		} catch (AccessDeniedException accessDeniedException) {
 			throw accessDeniedException;
 		} catch (Exception exception) {
-			logger.error("Error while writting file. {}", exception);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),exception);
 		}
 
 		return responseDTO;

@@ -100,12 +100,12 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 							file.delete();
 						}
 						dir.delete();
-						logger.info("Directory  : {} is deleted.==>> Modified time: ", dir.getName(), dir.lastModified());
+						logger.info(ErrorConstants.REMOVING_EXPIRED_FILE_INFO, dir.getName(), dir.lastModified());
 					}
 				}
 			}
 			catch(Exception e) {
-				logger.error("Error on removing expired file. {}", e);
+				logger.error(ErrorConstants.REMOVING_EXPIRED_FILE, e);
 			}
 		}
 	}

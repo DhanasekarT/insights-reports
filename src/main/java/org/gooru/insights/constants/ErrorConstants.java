@@ -1,4 +1,5 @@
 package org.gooru.insights.constants;
+import org.gooru.insights.builders.utils.InsightsLogger;
 
 public class ErrorConstants {
 
@@ -95,5 +96,11 @@ public class ErrorConstants {
 	public static final  String EXCEPTION_IN = "Exception In {0}!";
 	
 	public static final String CSV_WRITER_EXCEPTION = "CSV file writer";
+	
+	public static final String EXPORT_EXCEPTION_ERROR = "Exception in export report[Thread Loop]:";
+	
+	public static final String REMOVING_EXPIRED_FILE = "Exception in removing expired file: {}";
+	
+	public static final String REMOVING_EXPIRED_FILE_INFO = "Directory  : {} is deleted. Modified time: {}";
 	
 }
