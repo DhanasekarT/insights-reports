@@ -94,4 +94,6 @@ public class ErrorConstants {
 	
 	public static final  String EXCEPTION_IN = "Exception In {0}!";
 	
+	public static final String CSV_WRITER_EXCEPTION = "CSV file writer";
+	
 }

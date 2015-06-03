@@ -29,6 +29,8 @@ public class APIConstants {
 	
 	public static final String P = "p";
 	
+	public static final String FORWARD_SLASH = "/";
+	
 	/**
 	 * view Attributes
 	 */
@@ -233,6 +235,8 @@ public class APIConstants {
 	
 	public static final String DEFAULT_TO_MAIL = "default.to.email";
 	
+	public static final String EXPORT_FILE_NAME = "data-export";
+	
 	/**
 	 * Serializer Excludes
 	 */
@@ -313,6 +317,8 @@ public class APIConstants {
 	public static final String ALL = "all";
 	
 	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent";
+	
+	public static final String EXPORT_MAIL_CONTENT = "EXPORT_MAIL_CONTENT";
 
 	/**
 	 * Numbers

@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.Iterator;
@@ -14,9 +13,10 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.gooru.insights.builders.utils.DateTime;
+import org.gooru.insights.builders.utils.InsightsLogger;
 import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
-import org.gooru.insights.exception.handlers.NotFoundException;
+import org.gooru.insights.constants.ErrorConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +34,17 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 		return baseConnectionService;
 	}
 	
-	@Override
-	public void generateCSVReport(Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException {
+	public void generateCSVReport(String traceId, Set<String> headerKeys, List<Map<String, Object>> rowList, String fileAbsolutePath, String delimiter, Boolean isNewFile) throws FileNotFoundException {
 
 		if(StringUtils.isBlank(delimiter)) {
 			delimiter = APIConstants.PIPE;
 		}
 		PrintStream stream = null;
 		try {
+			File file = new File(fileAbsolutePath);
+			if(!file.getParentFile().exists()) {
+				file.getParentFile().mkdir();
+			}
 			stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(new File(fileAbsolutePath), true)));
 			
 			if (isNewFile) {
@@ -63,7 +66,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			StringBuilder rowLine = new StringBuilder(); 
 			for (Map<String, Object> row : rowList) {
 				for(String headerKey : headerKeys) {
-					String key = StringUtils.isBlank(row.get(headerKey).toString()) ? APIConstants.NOT_APPLICABLE : row.get(headerKey).toString();
+					String key = row.get(headerKey) == null || StringUtils.isBlank(row.get(headerKey).toString()) ? APIConstants.NOT_APPLICABLE : row.get(headerKey).toString();
 					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equalsIgnoreCase(APIConstants.NOT_APPLICABLE)) {
 						key = DateTime.convertMillisecondsToDate(Long.valueOf(key));
 					}
@@ -76,27 +79,33 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 				stream.println(APIConstants.EMPTY);
 				stream.flush();
 			}
-			logger.debug("Added {} rows in file. Filepath : {}", rowList.size(), fileAbsolutePath );
 		} catch(Exception e) {
-			logger.error("Error while writing data into csv file", e);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),e);
 		} finally {
 			stream.close();
 		}
 	}
 	
-	@Override
 	public void removeExpiredFile() {
-		File dir = new File(getBaseConnectionService().getRealRepoPath());
+		File parentDir = new File(getBaseConnectionService().getRealRepoPath());
 		Date date = new Date();
 		
-		for(File file : dir.listFiles()) {
-			if(file.isFile()) {
-				long diffInMilliSec = date.getTime() - file.lastModified();
-				long diffInHours = (diffInMilliSec / (60 * 60 * 1000));
-				if(diffInHours > 24){
-					file.delete();
-					logger.error("==>>FileName : {} is deleted.==>> Modified time: ", file.getName(), file.lastModified());
+		for(File dir : parentDir.listFiles()) {
+			try {
+				if(dir.isDirectory()) {
+					long diffInMilliSec = date.getTime() - dir.lastModified();
+					long diffInHours = (diffInMilliSec / (60 * 60 * 1000));
+					if(diffInHours > 24){
+						for(File file : dir.listFiles()) {
+							file.delete();
+						}
+						dir.delete();
+						logger.info("Directory  : {} is deleted.==>> Modified time: ", dir.getName(), dir.lastModified());
+					}
 				}
+			}
+			catch(Exception e) {
+				logger.error("Error on removing expired file. {}", e);
 			}
 		}
 	}
