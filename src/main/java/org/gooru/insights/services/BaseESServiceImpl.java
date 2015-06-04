@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
@@ -22,6 +23,7 @@ import org.elasticsearch.index.query.NotFilterBuilder;
 import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -30,6 +32,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuild
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Order;
 import org.elasticsearch.search.aggregations.bucket.range.RangeBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.aggregations.metrics.MetricsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.percentiles.PercentilesBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.gooru.insights.builders.utils.InsightsLogger;
@@ -296,22 +299,27 @@ public class BaseESServiceImpl implements BaseESService {
 			buildBuckets(traceId,indices,requestParamsDTO, searchRequestBuilder,metricsName,validatedData,filterData, userFilter);
 			hasAggregate = true;
 		
+		}	else if (validatedData.get(Hasdatas.HAS_AGGREGATE.check())) {
+			searchRequestBuilder.setNoFields();
+			buildAggregation(traceId,indices,requestParamsDTO, searchRequestBuilder,metricsName,validatedData,filterData, userFilter);
+			hasAggregate = true;
+		
 		}  else {
 			Set<String> filterFields = new HashSet<String>();
-			if(validatedData.get(Hasdatas.HAS_FEILDS.check())){
-				if(!requestParamsDTO.getFields().equalsIgnoreCase(APIConstants.WILD_CARD)){
-			dataKey = EsSources.FIELDS.esSource();
-			String fields = getBusinessLogicService().esFields(indices,requestParamsDTO.getFields());
-			filterFields = getBaseAPIService().convertStringtoSet(fields);
-			}else{
-					for(String field : getBaseConnectionService().getDefaultFields().get(indices).split(APIConstants.COMMA)){
-						searchRequestBuilder.addField(field);	
+			if (validatedData.get(Hasdatas.HAS_FEILDS.check())) {
+				if (!requestParamsDTO.getFields().equalsIgnoreCase(APIConstants.WILD_CARD)) {
+					dataKey = EsSources.FIELDS.esSource();
+					String fields = getBusinessLogicService().esFields(indices, requestParamsDTO.getFields());
+					filterFields = getBaseAPIService().convertStringtoSet(fields);
+				} else {
+					for (String field : getBaseConnectionService().getDefaultFields().get(indices).split(APIConstants.COMMA)) {
+						filterFields.add(field);
 					}
+				}
+				for (String field : filterFields) {
+					searchRequestBuilder.addField(field);
+				}
 			}
-			for (String field : filterFields) {
-				searchRequestBuilder.addField(field);
-			}
-		}
 		}
 		
 		if(!hasAggregate){
@@ -340,8 +348,7 @@ public class BaseESServiceImpl implements BaseESService {
 				limit = requestParamsDTO.getPagination().getOffset() + requestParamsDTO.getPagination().getLimit();
 				}
 			}
-			String groupBy[] = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
-			List<Map<String,Object>> queryResult = getBusinessLogicService().customizeJSON(traceId,groupBy, result, metricsName, validatedData,responseParamDTO,limit);
+			List<Map<String,Object>> queryResult = getBusinessLogicService().customizeJSON(traceId,requestParamsDTO.getGroupBy(), result, metricsName, validatedData,responseParamDTO,limit);
 			
 			if(!validatedData.get(Hasdatas.HAS_GRANULARITY.check())){
 				queryResult = getBusinessLogicService().customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
@@ -402,7 +409,12 @@ public class BaseESServiceImpl implements BaseESService {
 		try {
 			TermsBuilder termBuilder = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
-
+			FilterAggregationBuilder filterAggregationBuilder = null;
+			
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+				filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(), validatedData, filterData, userFilter);
+			}
+			
 			for (int i = groupBy.length - 1; i >= 0; i--) {
 				String fieldName = getBusinessLogicService().esFields(index, groupBy[i]);
 				TermsBuilder tempBuilder = null;
@@ -414,21 +426,16 @@ public class BaseESServiceImpl implements BaseESService {
 					termBuilder = AggregationBuilders.terms(groupBy[i]).field(fieldName);
 				}
 				if (i == groupBy.length - 1) {
-					bucketAggregation(index, requestParamsDTO, termBuilder, metricsName);
+					includeMetricsAggregation(index, requestParamsDTO, filterAggregationBuilder, searchRequestBuilder, termBuilder, null, null, metricsName);
 					includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder, null, metricsName);
 					termBuilder.size(0);
 				}
 			}
-			if (getBaseAPIService().checkNull(requestParamsDTO.getFilter())) {
-				FilterAggregationBuilder filterBuilder = null;
-				if (filterBuilder == null) {
-					filterBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(),validatedData, filterData, userFilter);
-				}
-				if (termBuilder != null) {
-					termBuilder.size(0);
-					filterBuilder.subAggregation(termBuilder);
-				}
-				searchRequestBuilder.addAggregation(filterBuilder);
+				
+			if (filterAggregationBuilder != null) {
+				termBuilder.size(0);
+				filterAggregationBuilder.subAggregation(termBuilder);
+				searchRequestBuilder.addAggregation(filterAggregationBuilder);
 			} else {
 				termBuilder.size(0);
 				searchRequestBuilder.addAggregation(termBuilder);
@@ -442,24 +449,26 @@ public class BaseESServiceImpl implements BaseESService {
 		try {
 			
 			String fieldName = getBusinessLogicService().esFields(index, requestParamsDTO.getGroupBy());
-			RangeBuilder rangeAggregation = new RangeBuilder(requestParamsDTO.getGroupBy()).field(fieldName);
+			FilterAggregationBuilder filterAggregationBuilder = null;
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+				filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(),validatedData, filterData, userFilter);
+			}
+			RangeBuilder rangeAggregationBuilder = new RangeBuilder(requestParamsDTO.getGroupBy()).field(fieldName);
 				for(RequestParamsRangeDTO ranges : requestParamsDTO.getRanges()) {
 					if(getBaseAPIService().checkNull(ranges.getFrom()) && getBaseAPIService().checkNull(ranges.getTo())) {
-						rangeAggregation.addRange(ranges.getFrom(), ranges.getTo()+1);
+						rangeAggregationBuilder.addRange(ranges.getFrom(), ranges.getTo()+1);
 					} else if(getBaseAPIService().checkNull(ranges.getFrom())) {
-						rangeAggregation.addUnboundedFrom(ranges.getFrom());
+						rangeAggregationBuilder.addUnboundedFrom(ranges.getFrom());
 					} else if(getBaseAPIService().checkNull(ranges.getTo())) {
-						rangeAggregation.addUnboundedTo(ranges.getTo()+1);
+						rangeAggregationBuilder.addUnboundedTo(ranges.getTo()+1);
 					}
 				}
-				rangeBucketAggregation(index, requestParamsDTO, rangeAggregation, metricsName);
-				FilterAggregationBuilder filterBuilder = null;
-				if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
-					filterBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(),validatedData, filterData, userFilter);
-					filterBuilder.subAggregation(rangeAggregation);
-					searchRequestBuilder.addAggregation(filterBuilder);
+				includeMetricsAggregation(index, requestParamsDTO, filterAggregationBuilder, searchRequestBuilder, null, rangeAggregationBuilder, null, metricsName);
+				if (filterAggregationBuilder != null) {
+					filterAggregationBuilder.subAggregation(rangeAggregationBuilder);
+					searchRequestBuilder.addAggregation(filterAggregationBuilder);
 				} else {
-				    searchRequestBuilder.addAggregation(rangeAggregation);
+				    searchRequestBuilder.addAggregation(rangeAggregationBuilder);
 				}
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.RANGE_BUCKET )+e);
@@ -483,6 +492,11 @@ public class BaseESServiceImpl implements BaseESService {
 			DateHistogramBuilder dateHistogram = null;
 			String[] groupBy = requestParamsDTO.getGroupBy().split(APIConstants.COMMA);
 			boolean isFirstDateHistogram = false;
+			FilterAggregationBuilder filterAggregationBuilder = null;
+
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+				filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(), validatedData, filterData, userFilter);
+			}
 
 			/**
 			 * building the bucket
@@ -521,14 +535,14 @@ public class BaseESServiceImpl implements BaseESService {
 				}
 				if (i == groupBy.length - 1 && !isFirstDateHistogram) {
 					if (termBuilder != null) {
-						bucketAggregation(index, requestParamsDTO, termBuilder, metricsName);
+						includeMetricsAggregation(index, requestParamsDTO, filterAggregationBuilder, searchRequestBuilder, termBuilder, null, null, metricsName);
 						includeOrder(requestParamsDTO, validatedData, groupBy[i], termBuilder, null, metricsName);
 						termBuilder.size(0);
 					}
 				}
 				if (i == groupBy.length - 1 && isFirstDateHistogram) {
 					if (dateHistogram != null) {
-						granularityBucketAggregation(index, requestParamsDTO, dateHistogram, metricsName);
+						includeMetricsAggregation(index, requestParamsDTO, filterAggregationBuilder, searchRequestBuilder, null, null, dateHistogram, metricsName);
 						includeOrder(requestParamsDTO, validatedData, groupBy[i], null, dateHistogram, metricsName);
 					}
 				}
@@ -537,25 +551,37 @@ public class BaseESServiceImpl implements BaseESService {
 			/**
 			 * include the bucket in filter if it has filter
 			 */
-			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
-				FilterAggregationBuilder filterBuilder = null;
-				if (filterBuilder == null) {
-					filterBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(),validatedData, filterData, userFilter);
-					
-				}
+			if (filterAggregationBuilder != null) {
 				if (isFirstDateHistogram) {
-					filterBuilder.subAggregation(dateHistogram);
+					filterAggregationBuilder.subAggregation(dateHistogram);
 				} else {
 					termBuilder.size(0);
-					filterBuilder.subAggregation(termBuilder);
+					filterAggregationBuilder.subAggregation(termBuilder);
 				}
-				searchRequestBuilder.addAggregation(filterBuilder);
+				searchRequestBuilder.addAggregation(filterAggregationBuilder);
 			} else {
 				termBuilder.size(0);
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 		} catch (Exception e) {
 			throw new ReportGenerationException(ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER,ErrorConstants.GRANULARITY_BUCKET )+e);
+		}
+	}
+
+	private void buildAggregation(String traceId, String index, RequestParamsDTO requestParamsDTO, SearchRequestBuilder searchRequestBuilder, Map<String, String> metricsName,
+			Map<String, Boolean> validatedData, Map<String, Object> filterData, Set<String> userFilter) {
+
+		try {
+			FilterAggregationBuilder filterAggregationBuilder = null;
+			if (validatedData.get(Hasdatas.HAS_FILTER.check())) {
+				filterAggregationBuilder = includeFilterAggregate(index, requestParamsDTO.getFilter(), validatedData, filterData, userFilter);
+			}
+			includeMetricsAggregation(index, requestParamsDTO, filterAggregationBuilder, searchRequestBuilder, null, null, null, metricsName);
+			if (filterAggregationBuilder != null) {
+				searchRequestBuilder.addAggregation(filterAggregationBuilder);
+			}
+		} catch (Exception e) {
+			InsightsLogger.error(traceId, ErrorConstants.BUCKET_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION), e);
 		}
 	}
 
@@ -686,6 +712,14 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 	
+	/**
+	 * 
+	 * @param index
+	 * @param requestParamsDTO
+	 * @param termBuilder
+	 * @param metricsName
+	 * @deprecated Reason : This method is handled in the method includeMetricsAggregation()
+	 */
 	private void bucketAggregation(String index, RequestParamsDTO requestParamsDTO, TermsBuilder termBuilder, Map<String, String> metricsName) {
 
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
@@ -710,6 +744,14 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 
+	/**
+	 * 
+	 * @param index
+	 * @param requestParamsDTO
+	 * @param rangebuilder
+	 * @param metricsName
+	 * @deprecated Reason : This method is handled in the method includeMetricsAggregation()
+	 */
 	private void rangeBucketAggregation(String index, RequestParamsDTO requestParamsDTO, RangeBuilder rangebuilder, Map<String, String> metricsName) {
 
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
@@ -734,6 +776,15 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 	
+	/**
+	 * 
+	 * @param index
+	 * @param requestParamsDTO
+	 * @param dateHistogramBuilder
+	 * @param metricsName
+	 * @deprecated Reason : This method is handled in the method includeMetricsAggregation() 
+	 *
+	 */
 	private void granularityBucketAggregation(String index, RequestParamsDTO requestParamsDTO, DateHistogramBuilder dateHistogramBuilder, Map<String, String> metricsName) {
 
 		if (!requestParamsDTO.getAggregations().isEmpty()) {
@@ -758,6 +809,64 @@ public class BaseESServiceImpl implements BaseESService {
 		}
 	}
 	
+	/**
+	 * Here Metrics aggregation can be added to dateHistogramBuilder, termBuilder,rangeAggregationBuilder,filterAggregationBuilder and searchRequestBuilder 
+	 * @param index
+	 * @param requestParamsDTO
+	 * @param filterAggregationBuilder
+	 * @param searchRequestBuilder
+	 * @param termBuilder
+	 * @param rangeAggregationBuilder
+	 * @param dateHistogramBuilder
+	 * @param metricsName
+	 */
+	private void includeMetricsAggregation(String index, RequestParamsDTO requestParamsDTO, FilterAggregationBuilder filterAggregationBuilder,SearchRequestBuilder searchRequestBuilder, TermsBuilder termBuilder, RangeBuilder rangeAggregationBuilder, DateHistogramBuilder dateHistogramBuilder, Map<String, String> metricsName) {
+
+		if (!requestParamsDTO.getAggregations().isEmpty()) {
+			try {
+				List<Map<String, String>> aggregationMapAsList = requestParamsDTO.getAggregations();
+				int fieldIndex = 0;
+				MetricsAggregationBuilder<?> metricsAggregationBuilder = null;
+				AggregationBuilder<?> aggregationBuilder = null;
+				if(dateHistogramBuilder != null) {
+					aggregationBuilder = dateHistogramBuilder;
+				} else if(rangeAggregationBuilder != null) {
+					aggregationBuilder = rangeAggregationBuilder;
+				} else if(termBuilder != null) {
+					aggregationBuilder = termBuilder;
+				} else if (filterAggregationBuilder != null){ 
+					aggregationBuilder = filterAggregationBuilder;
+				}
+				
+				for(Map<String, String> aggregationMap : aggregationMapAsList) {
+					String requestValue = aggregationMap.get(APIConstants.FormulaFields.REQUEST_VALUES.getField()).toString();
+					String fieldName = getBusinessLogicService().esFields(index, aggregationMap.get(requestValue));
+					metricsAggregationBuilder = buildMetrics(metricsAggregationBuilder, aggregationMap, aggregationMap.get(APIConstants.FormulaFields.FORMULA.getField()).toString(), APIConstants.FormulaFields.FIELD.getField() + fieldIndex, fieldName);
+					if(aggregationBuilder != null) {
+						aggregationBuilder.subAggregation(metricsAggregationBuilder);
+					} else {
+						searchRequestBuilder.addAggregation(metricsAggregationBuilder);
+					}
+					metricsName.put(aggregationMap.get(APIConstants.FormulaFields.NAME.getField()) != null ? aggregationMap.get(APIConstants.FormulaFields.NAME.getField()) : fieldName,
+							APIConstants.FormulaFields.FIELD.getField() + fieldIndex);
+					fieldIndex++;
+				}
+				
+			} catch (Exception e) {
+				throw new ReportGenerationException(ErrorConstants.AGGREGATION_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param mainFilter
+	 * @param jsonObject
+	 * @param aggregateType
+	 * @param aggregateName
+	 * @param fieldName
+	 * @deprecated Reason : This method is handled in the method buildMetrics
+	 */
 	private void includeBucketAggregation(TermsBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 
 		try {
@@ -789,7 +898,58 @@ public class BaseESServiceImpl implements BaseESService {
 			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.AGGREGATION_BUCKET), e);
 		} 
 	}
+	
+	/**
+	 * This method gives the metricsAggregationbuilder of the given aggregateType
+	 * @param metricsAggregationbuilder
+	 * @param aggregationMap
+	 * @param aggregateType
+	 * @param aggregateName
+	 * @param fieldName
+	 * @return
+	 */
+	private MetricsAggregationBuilder<?> buildMetrics(MetricsAggregationBuilder<?> metricsAggregationbuilder, Map<String, String> aggregationMap,String aggregateType,String aggregateName,String fieldName){
+		try {
+			if (APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.sum(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.AVG.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.avg(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.MAX.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.max(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.MIN.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.min(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.COUNT.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.count(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.DISTINCT.getField().equalsIgnoreCase(aggregateType)) {
+				metricsAggregationbuilder = AggregationBuilders.cardinality(aggregateName).field(fieldName);
+			} else if (APIConstants.AggregateFields.PERCENTILES.getField().equalsIgnoreCase(aggregateType)) {
+				PercentilesBuilder percentilesBuilder = AggregationBuilders.percentiles(aggregateName).field(fieldName);
+				if (aggregationMap.containsKey(APIConstants.AggregateFields.PERCENTS.getField()) && StringUtils.isNotBlank(aggregationMap.get(APIConstants.AggregateFields.PERCENTS.getField()))) {
+					String[] percentsArray = aggregationMap.get(APIConstants.AggregateFields.PERCENTS.getField()).toString().split(APIConstants.COMMA);
+					double[] percents = new double[percentsArray.length];
+					for (int index = 0; index < percentsArray.length; index++) {
+						percents[index] = Double.parseDouble(percentsArray[index]);
+					}
+					percentilesBuilder.percentiles(percents);
+				}
+				metricsAggregationbuilder = percentilesBuilder;
 
+			}
+			return metricsAggregationbuilder;
+		} catch (Exception e) {
+			throw new ReportGenerationException(ErrorConstants.AGGREGATOR_ERROR.replace(ErrorConstants.REPLACER, ErrorConstants.METRICS), e);
+		} 
+	}
+	
+	/**
+	 * 
+	 * @param mainFilter
+	 * @param jsonObject
+	 * @param aggregateType
+	 * @param aggregateName
+	 * @param fieldName
+	 * @deprecated Reason : This method is handled in the method buildMetrics
+	 */
 	private void includeRangeBucketAggregation(RangeBuilder mainFilter,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 
 		try {
@@ -822,6 +982,15 @@ public class BaseESServiceImpl implements BaseESService {
 		} 
 	}
 	
+	/**
+	 * 
+	 * @param dateHistogramBuilder
+	 * @param jsonObject
+	 * @param aggregateType
+	 * @param aggregateName
+	 * @param fieldName
+	 * @deprecated Reason : This method is handled in the method buildMetrics
+	 */
 	private void includeGranularityAggregation(DateHistogramBuilder dateHistogramBuilder,JSONObject jsonObject,String aggregateType,String aggregateName,String fieldName){
 		try {
 			if(APIConstants.AggregateFields.SUM.getField().equalsIgnoreCase(aggregateType)){

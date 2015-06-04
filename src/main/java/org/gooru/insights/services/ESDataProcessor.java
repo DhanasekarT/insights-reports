@@ -9,7 +9,7 @@ import org.gooru.insights.models.ResponseParamDTO;
 
 public interface ESDataProcessor {
 
-	List<Map<String,Object>> customizeJSON(String traceId,String[] groupBy,String resultData,Map<String,String> metrics, Map<String,Boolean> validatedData,ResponseParamDTO<Map<String,Object>> responseParamDTO,int limit);
+	List<Map<String,Object>> customizeJSON(String traceId,String groupBy,String resultData,Map<String,String> metrics, Map<String,Boolean> validatedData,ResponseParamDTO<Map<String,Object>> responseParamDTO,int limit);
 
 	Map<String,Object> fetchFilters(String index,List<Map<String,Object>> dataList);
 	
