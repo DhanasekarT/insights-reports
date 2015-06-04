@@ -4,7 +4,7 @@ public interface MailService {
 
 	public void sendMail(String to, String subject, String body, String file);
 	
-	public void sendMail(String to, String subject, String body);
+	public void sendMail(String to, String subject, String body, boolean isHtmlMessage);
     
 	public void sendPreConfiguredMail(String message); 
     
