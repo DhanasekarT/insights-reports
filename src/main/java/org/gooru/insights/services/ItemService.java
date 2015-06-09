@@ -34,5 +34,5 @@ public interface ItemService {
 
 	ResponseParamDTO<Map<String, Object>> getLiveDashboardData(String traceId, String gooruOId, String gooruUId, String fields);
 
-	ResponseParamDTO<Map<String, Object>> exportReport(String traceId, String data, String sessionToken);
+	ResponseParamDTO<Map<String, Object>> exportReport(String traceId, String data, String sessionToken, String fileFormat);
 }

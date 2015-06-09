@@ -323,6 +323,10 @@ public class APIConstants {
 	public static final String EXPORT_MAIL_CONTENT = "EXPORT_MAIL_CONTENT";
 	
 	public static final String EXPORT_MAIL_SUBJECT = "EXPORT_MAIL_SUBJECT";
+	
+	public static final String XLSX_EXTENSION = "xlsx";
+	
+	public static final String XLSX_CONTENT_TYPE = "application/xlsx";
 
 	/**
 	 * Numbers
