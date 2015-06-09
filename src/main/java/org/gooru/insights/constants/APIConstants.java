@@ -33,6 +33,8 @@ public class APIConstants {
 	
 	public static final String HYPEN = "-";
 	
+	public static final String SPACE = " ";
+	
 	/**
 	 * view Attributes
 	 */
@@ -239,6 +241,8 @@ public class APIConstants {
 	
 	public static final String EXPORT_FILE_NAME = "report";
 	
+	public static final String EXPORT_SHEET_NAME = "Reports";
+	
 	/**
 	 * Serializer Excludes
 	 */
@@ -327,6 +331,8 @@ public class APIConstants {
 	public static final String XLSX_EXTENSION = "xlsx";
 	
 	public static final String XLSX_CONTENT_TYPE = "application/xlsx";
+	
+	public static final String DEFAULT_FONT_STYLE = "Arial";
 
 	/**
 	 * Numbers
@@ -335,6 +341,8 @@ public class APIConstants {
 	public static final int ZERO = 0;
 	
 	public static final int DEFAULT_ROW_LIMIT = 100;
+	
+	public static final int DEFAULT_CELL_WIDTH = 5000;
 	
 	/**
 	 * Logical Enumaration 
