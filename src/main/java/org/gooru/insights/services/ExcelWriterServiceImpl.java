@@ -6,7 +6,11 @@ import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.gooru.insights.builders.utils.DateTime;
@@ -16,10 +20,8 @@ import org.gooru.insights.constants.CassandraConstants.CassandraRowKeys;
 import org.gooru.insights.constants.ErrorConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
 public class ExcelWriterServiceImpl implements ExcelWriterService {
 
 	@Autowired
@@ -41,7 +43,8 @@ public class ExcelWriterServiceImpl implements ExcelWriterService {
 		    	int cellNumber = 0;
 		    	for(String headerKey : headerKeys) {
 		    		String header = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_FIELDS.CassandraRowKey()).getStringValue(headerKey, headerKey);
-		    		headerRow.createCell(cellNumber++).setCellValue(header);
+		    		headerRow.createCell(cellNumber).setCellStyle(getXSSFCellStyle(workbook));
+		    		headerRow.getCell(cellNumber++).setCellValue(header);
 		    	}
 		    } else {
 		    	FileInputStream in = new FileInputStream(new File(fileAbsolutePath));
@@ -71,5 +74,25 @@ public class ExcelWriterServiceImpl implements ExcelWriterService {
 				header.createCell(cellNumber++).setCellValue(key.toString());
 	    	}
 	    }
+	}
+	
+	private XSSFCellStyle getXSSFCellStyle(XSSFWorkbook workbook) {
+		XSSFCellStyle cellStyle = workbook.createCellStyle();
+		cellStyle.setFillBackgroundColor(IndexedColors.BLUE.getIndex());
+		cellStyle.setFillPattern(CellStyle.ALIGN_FILL);
+		cellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+		cellStyle.setFont(getXSSFFont(workbook));
+		cellStyle.setWrapText(true);
+		return cellStyle;
+	}
+	
+	private XSSFFont getXSSFFont(XSSFWorkbook workbook) {
+		XSSFFont font= workbook.createFont();
+	    font.setFontHeightInPoints((short)10);
+	    font.setFontName("Arial");
+	    font.setColor(IndexedColors.WHITE.getIndex());
+	    font.setBold(true);
+	    font.setItalic(false);
+	    return font;
 	}
 }
