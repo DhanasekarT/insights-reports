@@ -175,8 +175,8 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 				}
 				if (!validated) {
 					occured = true;
-					appended.putAll(childEntry);
 					appended.putAll(parentEntry);
+					appended.putAll(childEntry);
 					break;
 				}
 			}
