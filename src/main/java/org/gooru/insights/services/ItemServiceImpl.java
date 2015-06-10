@@ -73,6 +73,9 @@ public class ItemServiceImpl implements ItemService {
 	@Autowired
 	private UserService userService;
 	
+	@Autowired
+	private ExcelWriterService excelWriterService;
+	
 	private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
 
 	/**
@@ -447,7 +450,11 @@ public class ItemServiceImpl implements ItemService {
 				if(totalRowFromResult < totalRows) {
 					totalRows = totalRowFromResult;
 				}
-				getCSVFileWriterService().generateCSVReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				if(absoluteFilePath.endsWith(APIConstants.DOT.concat(APIConstants.CSV_EXTENSION))) {
+					getCSVFileWriterService().generateCSVReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+				} else {
+					getExcelWriterService().generateExcelReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, isNewFile);
+				}
 				/*Incrementing offset values */
 				offSet += limit;
 				checkPoint.put(Hasdatas.HAS_MULTIGET.check(), false);
@@ -463,12 +470,15 @@ public class ItemServiceImpl implements ItemService {
 	}
 	
 	@Override
-	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken) {
+	public ResponseParamDTO<Map<String, Object>> exportReport(final String traceId, final String data, final String sessionToken, String fileFormat) {
 
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
 		int maxLimit = reportConfig.getIntegerValue(APIConstants.MAXIMUM_ROW_LIMIT, 0);
 		int requestedRowLimit = 0;
-		String fileName = APIConstants.EXPORT_FILE_NAME.concat(APIConstants.HYPEN).concat(String.valueOf(new Date().getTime())).concat(APIConstants.DOT).concat(APIConstants.CSV_EXTENSION);
+		//Preparing fileName
+		String fileName = APIConstants.EXPORT_FILE_NAME.concat(APIConstants.HYPEN).concat(String.valueOf(new Date().getTime())).concat(APIConstants.DOT);
+		fileName = fileFormat.equalsIgnoreCase(APIConstants.CSV_EXTENSION) ? fileName.concat(APIConstants.CSV_EXTENSION) : fileName.concat(APIConstants.XLSX_EXTENSION);
+		
 		final String absoluteFilePath = getBaseConnectionService().getRealRepoPath().concat(fileName);
 		ResponseParamDTO<Map<String, Object>> responseDTO = new ResponseParamDTO<Map<String,Object>>();
 		
@@ -580,5 +590,9 @@ public class ItemServiceImpl implements ItemService {
 			throw new ReportGenerationException(traceId, e);
 		}
 		return responseDTO;
+	}
+	
+	public ExcelWriterService getExcelWriterService() {
+		return excelWriterService;
 	}
 }

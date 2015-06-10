@@ -10,12 +10,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.poi.util.IOUtils;
-import org.gooru.insights.constants.APIConstants;
 import org.gooru.insights.constants.InsightsOperationConstants;
 import org.gooru.insights.models.ResponseParamDTO;
 import org.gooru.insights.security.AuthorizeOperations;
 import org.gooru.insights.services.ItemService;
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -198,20 +196,20 @@ public class ItemController extends BaseController{
 	
 	@RequestMapping(value="/export/report", method = RequestMethod.GET)
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
-	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data,
+	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data, @RequestParam(value = "fileFormat", required = false, defaultValue = "xlsx") String fileFormat, 
 			HttpServletResponse response) throws Exception {
-		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(getTraceId(request),data, getSessionToken(request));
-		if(responseDTO.getMessage().containsKey(APIConstants.FILE_PATH)) {
-			generateCSVOutput(response, new File(responseDTO.getMessage().get(APIConstants.FILE_PATH).toString()));
+		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(getTraceId(request),data, getSessionToken(request), fileFormat);
+		if(responseDTO.getMessage().containsKey(FILE_PATH)) {
+			generateFileOutput(response, new File(responseDTO.getMessage().get(FILE_PATH).toString()), XLSX_CONTENT_TYPE);
 			return null;
 		}
 		return getModel(responseDTO);
 	}
 	
-	public void generateCSVOutput(HttpServletResponse response, File excelFile) throws IOException {
+	public void generateFileOutput(HttpServletResponse response, File excelFile, String contentType) throws IOException {
 		InputStream sheet = new FileInputStream(excelFile);
 		response.setHeader("Content-Disposition", "inline; filename=" + excelFile.getName());
-		response.setContentType("application/csv");
+		response.setContentType(contentType);
 		IOUtils.copy(sheet, response.getOutputStream());
 		response.getOutputStream().flush();
 		excelFile.delete();
