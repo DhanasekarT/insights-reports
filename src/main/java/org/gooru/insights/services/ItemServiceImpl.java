@@ -415,7 +415,7 @@ public class ItemServiceImpl implements ItemService {
 	public void generateReport(String traceId, String data, String sessionToken, Map<String, Object> userMap, String absoluteFilePath) {
 
 		ColumnList<String> reportConfig = getBaseConnectionService().getColumnListFromCache(CassandraRowKeys.EXPORT_REPORT_CONFIG.CassandraRowKey());
-		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, APIConstants.PIPE);
+		String delimiter = reportConfig.getStringValue(APIConstants.DELIMITER, APIConstants.COMMA);
 		int defaultLimit = reportConfig.getIntegerValue(APIConstants.DEFAULT_LIMIT, APIConstants.DEFAULT_ROW_LIMIT);
 		int rowLimit = 0, limit = 0, offSet = 0, totalRows = 0;
 		boolean isNewFile = true;
