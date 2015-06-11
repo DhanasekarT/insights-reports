@@ -84,7 +84,10 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 	}
 
 	private String appendDQ(Object key) {
-		key = (APIConstants.EMPTY + key).replace("/", " /").replace("\"", " \"");
+		/*
+		 * It will be enable after Michael's confirmation		  
+		 * key = (APIConstants.EMPTY + key).replace("/", " /").replace("\"", " \"");
+		 */
 		return "\"" + key + "\"";
 	}
 	
