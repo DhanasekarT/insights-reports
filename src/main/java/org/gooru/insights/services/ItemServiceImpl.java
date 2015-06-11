@@ -520,7 +520,7 @@ public class ItemServiceImpl implements ItemService {
 		} catch (AccessDeniedException accessDeniedException) {
 			throw accessDeniedException;
 		} catch (Exception exception) {
-			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),exception);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.FILE_WRITER_EXCEPTION),exception);
 		}
 
 		return responseDTO;

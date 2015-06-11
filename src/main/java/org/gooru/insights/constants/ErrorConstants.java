@@ -101,7 +101,7 @@ public class ErrorConstants {
 	
 	public static final  String EXCEPTION_IN = "Exception In {0}!";
 	
-	public static final String CSV_WRITER_EXCEPTION = "CSV file writer";
+	public static final String FILE_WRITER_EXCEPTION = "File Writer";
 	
 	public static final String EXPORT_EXCEPTION_ERROR = "Exception in export report[Thread Loop]:";
 	

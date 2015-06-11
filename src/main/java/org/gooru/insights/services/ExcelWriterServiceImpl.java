@@ -53,12 +53,14 @@ public class ExcelWriterServiceImpl implements ExcelWriterService {
 		    	sheet = workbook.getSheetAt(0);
 		    	rowNumber = sheet.getLastRowNum() + 1;
 		    }
-		    createSheet(headerKeys, rowList, sheet, rowNumber);
+		    if(rowList != null & rowList.size() > 0) {
+		    	createSheet(headerKeys, rowList, sheet, rowNumber);
+		    }
 		    FileOutputStream out =  new FileOutputStream(new File(fileAbsolutePath));
 		    workbook.write(out);
 		    out.close();
 	    } catch (Exception e) {
-	    	InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),e);
+	    	InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.FILE_WRITER_EXCEPTION),e);
 	    }
 	}
 	
