@@ -144,6 +144,18 @@ public class BaseAPIServiceImpl implements BaseAPIService {
 		return outDatas;
 	}
 
+	public String convertSettoString(Set<String> inputDatas) {
+
+		StringBuffer stringBuffer = new StringBuffer();
+		for(String inputData : inputDatas){
+			if(stringBuffer.length() > 0){
+				stringBuffer.append(APIConstants.COMMA);
+			}
+			stringBuffer.append(inputData);
+		}
+		return stringBuffer.toString();
+	}
+	
 	public Object[] convertSettoArray(Set<?> data) {
 		return data.toArray(new Object[data.size()]);
 	}

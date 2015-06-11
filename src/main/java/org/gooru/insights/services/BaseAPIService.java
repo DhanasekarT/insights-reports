@@ -56,4 +56,6 @@ public interface BaseAPIService {
 	Map<String, Boolean> checkPoint(RequestParamsDTO requestParamsDTO);
 	
 	<T> T deserialize(String json, Class<T> clazz);
+	
+	String convertSettoString(Set<String> inputDatas);
 }
