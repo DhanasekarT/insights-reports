@@ -443,6 +443,7 @@ public class ItemServiceImpl implements ItemService {
 			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
 			requestParamsDTO = getUserService().validateUserRole(traceId,requestParamsDTO, userMap);
 			String[] indices = getBaseAPIService().getIndices(requestParamsDTO.getDataSource().toLowerCase());
+			List<String> headers = new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA)));
 			
 			do {
 				responseDTO = getEsService().generateQuery(traceId,requestParamsDTO, indices, checkPoint);
@@ -451,9 +452,9 @@ public class ItemServiceImpl implements ItemService {
 					totalRows = totalRowFromResult;
 				}
 				if(absoluteFilePath.endsWith(APIConstants.DOT.concat(APIConstants.CSV_EXTENSION))) {
-					getCSVFileWriterService().generateCSVReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
+					getCSVFileWriterService().generateCSVReport(traceId, headers, responseDTO.getContent(), absoluteFilePath, delimiter, isNewFile);
 				} else {
-					getExcelWriterService().generateExcelReport(traceId, new ArrayList<String>(Arrays.asList(requestParamsDTO.getFields().split(APIConstants.COMMA))), responseDTO.getContent(), absoluteFilePath, isNewFile);
+					getExcelWriterService().generateExcelReport(traceId, headers, responseDTO.getContent(), absoluteFilePath, isNewFile);
 				}
 				/*Incrementing offset values */
 				offSet += limit;
@@ -520,7 +521,7 @@ public class ItemServiceImpl implements ItemService {
 		} catch (AccessDeniedException accessDeniedException) {
 			throw accessDeniedException;
 		} catch (Exception exception) {
-			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),exception);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.FILE_WRITER_EXCEPTION),exception);
 		}
 
 		return responseDTO;
