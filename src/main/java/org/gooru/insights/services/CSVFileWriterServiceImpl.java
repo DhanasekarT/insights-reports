@@ -83,8 +83,9 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 		}
 	}
 
-	private Object appendDQ(Object key) {
-	    return "\"" + key + "\"";
+	private String appendDQ(Object key) {
+		key = (APIConstants.EMPTY + key).replace("/", " /").replace("\"", " \"");
+		return "\"" + key + "\"";
 	}
 	
 	public void removeExpiredFile() {
