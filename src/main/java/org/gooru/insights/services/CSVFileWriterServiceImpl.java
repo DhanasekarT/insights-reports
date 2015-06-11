@@ -77,7 +77,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 				stream.flush();
 			}
 		} catch(Exception e) {
-			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),e);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.FILE_WRITER_EXCEPTION),e);
 		} finally {
 			stream.close();
 		}
