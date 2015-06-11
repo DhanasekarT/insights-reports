@@ -350,6 +350,11 @@ public class BaseESServiceImpl implements BaseESService {
 			}
 			List<Map<String,Object>> queryResult = getBusinessLogicService().customizeJSON(traceId,requestParamsDTO.getGroupBy(), result, metricsName, validatedData,responseParamDTO,limit);
 			
+			/**
+			 * Added Fix to avoid metrics fields in multiget records
+			 */
+			removeMetricsFromFields(requestParamsDTO,metricsName);
+			
 			if(!validatedData.get(Hasdatas.HAS_GRANULARITY.check())){
 				queryResult = getBusinessLogicService().customPagination(requestParamsDTO.getPagination(), queryResult, validatedData);
 			}else{
@@ -360,6 +365,13 @@ public class BaseESServiceImpl implements BaseESService {
 		}else{
 			return getBusinessLogicService().getRecords(traceId,indices,responseParamDTO,result,dataKey);
 		}
+	}
+	
+	private void removeMetricsFromFields(RequestParamsDTO requestParamsDTO,Map<String,String> metricsName){
+
+		Set<String> fields = getBaseAPIService().convertStringtoSet(requestParamsDTO.getFields());
+		fields.removeAll(metricsName.keySet());
+		requestParamsDTO.setFields(getBaseAPIService().convertSettoString(fields));
 	}
 	
 	public Client getClient(String indexSource) {
