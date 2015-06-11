@@ -334,7 +334,7 @@ public class BaseESServiceImpl implements BaseESService {
 				performPagination(searchRequestBuilder, requestParamsDTO.getPagination(), validatedData);
 		}
 		try{
-			InsightsLogger.info(traceId, BaseAPIServiceImpl.buildString(new Object[]{APIConstants.QUERY, searchRequestBuilder}));
+			//InsightsLogger.info(traceId, BaseAPIServiceImpl.buildString(new Object[]{APIConstants.QUERY, searchRequestBuilder}));
 		result =  searchRequestBuilder.execute().actionGet().toString();
 		}catch(Exception e){
 			throw new ReportGenerationException(APIConstants.QUERY, e);

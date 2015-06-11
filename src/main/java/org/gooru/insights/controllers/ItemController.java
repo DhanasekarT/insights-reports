@@ -196,7 +196,7 @@ public class ItemController extends BaseController{
 	
 	@RequestMapping(value="/export/report", method = RequestMethod.GET)
 	@AuthorizeOperations(operations = InsightsOperationConstants.OPERATION_INSIGHTS_REPORTS_VIEW)
-	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data, @RequestParam(value = "fileFormat", required = false, defaultValue = "xlsx") String fileFormat, 
+	public ModelAndView generateQueryReport(HttpServletRequest request, @RequestParam(value = "data", required = true) String data, @RequestParam(value = "fileFormat", required = false, defaultValue = "csv") String fileFormat, 
 			HttpServletResponse response) throws Exception {
 		ResponseParamDTO<Map<String, Object>> responseDTO = itemService.exportReport(getTraceId(request),data, getSessionToken(request), fileFormat);
 		if(responseDTO.getMessage().containsKey(FILE_PATH)) {
