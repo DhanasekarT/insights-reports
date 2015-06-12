@@ -335,6 +335,8 @@ public class APIConstants {
 	public static final String DEFAULT_FONT_STYLE = "Arial";
 	
 	public static final String FIELDS_TO_FORMAT_DATE = "createdOn";
+	
+	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count";
 
 	/**
 	 * Numbers

@@ -76,6 +76,9 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 							key = dateFormatterForExport.format(dateFormatter.parse(key.toString()));
 						}
 					}
+					if(headerKey.matches(APIConstants.FIELDS_TO_REPLACE_ZERO) && key.equals(APIConstants.NOT_APPLICABLE)) {
+						key = APIConstants.ZERO;
+					}
 					key = appendDQ(key);
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter).append(key));
 				}
