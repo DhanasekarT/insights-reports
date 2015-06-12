@@ -322,7 +322,7 @@ public class APIConstants {
 	
 	public static final String ALL = "all";
 	
-	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent|avgTimespent";
+	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent|avgTimespent|timespent|totalTimeSpentInMs";
 	
 	public static final String EXPORT_MAIL_CONTENT = "EXPORT_MAIL_CONTENT";
 	
@@ -333,6 +333,8 @@ public class APIConstants {
 	public static final String XLSX_CONTENT_TYPE = "application/xlsx";
 	
 	public static final String DEFAULT_FONT_STYLE = "Arial";
+	
+	public static final String FIELDS_TO_FORMAT_DATE = "createdOn";
 
 	/**
 	 * Numbers
