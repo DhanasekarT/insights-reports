@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +29,10 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 	private BaseConnectionService baseConnectionService;
 	
 	private static final Logger logger = LoggerFactory.getLogger(CSVFileWriterServiceImpl.class);
+	
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss:SSS'Z'");
+	
+	private static final SimpleDateFormat dateFormatterForExport = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss:SSS'Z'");
 	
 	public BaseConnectionService getBaseConnectionService() {
 		return baseConnectionService;
@@ -63,8 +68,13 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			for (Map<String, Object> row : rowList) {
 				for(String headerKey : headerKeys) {
 					Object key = row.get(headerKey) == null || row.get(headerKey).equals("") || row.get(headerKey).equals(" ") ? APIConstants.NOT_APPLICABLE : row.get(headerKey);
-					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equals(APIConstants.NOT_APPLICABLE)) {
-						key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
+					if(!key.equals(APIConstants.NOT_APPLICABLE)) {
+						if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
+							key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
+						}
+						if(headerKey.matches(APIConstants.FIELDS_TO_FORMAT_DATE)) {
+							key = dateFormatterForExport.format(dateFormatter.parse(key.toString()));
+						}
 					}
 					key = appendDQ(key);
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter).append(key));
@@ -84,10 +94,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 	}
 
 	private String appendDQ(Object key) {
-		/*
-		 * It will be enable after Michael's confirmation		  
-		 * key = (APIConstants.EMPTY + key).replace("/", " /").replace("\"", " \"");
-		 */
+		key = (APIConstants.EMPTY + key).replace("\"", "\'");
 		return "\"" + key + "\"";
 	}
 	
