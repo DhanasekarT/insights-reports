@@ -30,9 +30,9 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 	
 	private static final Logger logger = LoggerFactory.getLogger(CSVFileWriterServiceImpl.class);
 	
-	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss:SSS'Z'");
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss.SSS'Z'");
 	
-	private static final SimpleDateFormat dateFormatterForExport = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss:SSS'Z'");
+	private static final SimpleDateFormat dateFormatterForExport = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss a");
 	
 	public BaseConnectionService getBaseConnectionService() {
 		return baseConnectionService;
