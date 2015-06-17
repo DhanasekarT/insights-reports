@@ -336,7 +336,7 @@ public class APIConstants {
 	
 	public static final String FIELDS_TO_FORMAT_DATE = "createdOn";
 	
-	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count";
+	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count|.*spent.*";
 
 	/**
 	 * Numbers
@@ -347,6 +347,8 @@ public class APIConstants {
 	public static final int DEFAULT_ROW_LIMIT = 100;
 	
 	public static final int DEFAULT_CELL_WIDTH = 5000;
+	
+	public static final Long DEFAULT_CLASS_ID = 1L;
 	
 	/**
 	 * Logical Enumaration 
