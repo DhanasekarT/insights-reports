@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CSVFileWriterServiceImpl implements CSVFileWriterService{
+public class CSVFileWriterServiceImpl implements CSVFileWriterService {
 	
 	@Autowired
 	private BaseConnectionService baseConnectionService;
@@ -73,7 +73,7 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 							key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
 						}
 						if(headerKey.matches(APIConstants.FIELDS_TO_FORMAT_DATE)) {
-							key = dateFormatterForExport.format(dateFormatter.parse(key.toString()));
+							key = APIConstants.SPACE.concat(dateFormatterForExport.format(dateFormatter.parse(key.toString())));
 						}
 					}
 					if(headerKey.matches(APIConstants.FIELDS_TO_REPLACE_ZERO) && key.equals(APIConstants.NOT_APPLICABLE)) {
