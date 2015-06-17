@@ -336,7 +336,7 @@ public class APIConstants {
 	
 	public static final String FIELDS_TO_FORMAT_DATE = "createdOn";
 	
-	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count|.*spent.*";
+	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count|.*spent.*|noOfResources";
 
 	/**
 	 * Numbers
