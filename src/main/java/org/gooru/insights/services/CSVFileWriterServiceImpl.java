@@ -68,16 +68,14 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService {
 			for (Map<String, Object> row : rowList) {
 				for(String headerKey : headerKeys) {
 					Object key = row.get(headerKey) == null || row.get(headerKey).equals("") || row.get(headerKey).equals(" ") ? APIConstants.NOT_APPLICABLE : row.get(headerKey);
-					if(!key.equals(APIConstants.NOT_APPLICABLE)) {
-						if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
-							key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
-						}
-						if(headerKey.matches(APIConstants.FIELDS_TO_FORMAT_DATE)) {
-							key = APIConstants.SPACE.concat(dateFormatterForExport.format(dateFormatter.parse(key.toString())));
-						}
+					if(!key.equals(APIConstants.NOT_APPLICABLE) && headerKey.matches(APIConstants.FIELDS_TO_FORMAT_DATE)) {
+						key = APIConstants.SPACE.concat(dateFormatterForExport.format(dateFormatter.parse(key.toString())));
 					}
 					if(headerKey.matches(APIConstants.FIELDS_TO_REPLACE_ZERO) && key.equals(APIConstants.NOT_APPLICABLE)) {
 						key = APIConstants.ZERO;
+					}
+					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
+						key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
 					}
 					key = appendDQ(key);
 					rowLine = (rowLine.length() == 0 ? rowLine.append(key) : rowLine.append(delimiter).append(key));
