@@ -97,5 +97,14 @@
           </list>
        </property>
    </bean>
-       
+      <!-- Config file location --> 
+       	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>file:${reportConfigSettings}</value>
+			</list>
+		</property>
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+	</bean>
 </beans>
