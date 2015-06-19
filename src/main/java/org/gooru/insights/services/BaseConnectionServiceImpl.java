@@ -356,10 +356,7 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 		initProdESConnection();
 	}
 	
-	/**
-	 * Depricated
-	 */
-	public Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap){
+	private Map<String,Object> getAPIUserObject(String sessionToken){
 		ColumnList<String> endPoint = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
 		Map<String,Object> userMap = new LinkedHashMap<String, Object>();		
 		String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
@@ -376,17 +373,28 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				userMap.put("gooruUId",jsonObj.getString("gooruUId"));
 				userMap.put("userRoleSetString",jsonObj.getString("userRoleSetString"));
 			}catch(Exception e){
-				errorMap.put(500, e.toString());
+				throw new ReportGenerationException(MessageHandler.getMessage(ErrorConstants.E102, new String[]{APIConstants.SESSION_TOKEN}));
 			}
 		}else{
-			errorMap.put(500, "We're unable to get User information");
-		}
+			throw new ReportGenerationException(MessageHandler.getMessage(ErrorConstants.E102, new String[]{APIConstants.SESSION_TOKEN}));
+			}
 		
 		return userMap;
 		
 	}
 	
-	public Map<String, Object> getUserObjectData(String traceId,String sessionToken) {
+	public Map<String, Object> getUserData(String traceId,String sessionToken){
+	
+		Map<String, Object> userMap = new LinkedHashMap<String, Object>();
+		try{
+			userMap= getRedisObjectData(traceId,sessionToken);
+		}catch(Exception e){
+			userMap =  getAPIUserObject(sessionToken);
+		}
+		return userMap;
+	}
+	
+	private Map<String, Object> getRedisObjectData(String traceId,String sessionToken) {
 
 		String result = redisService.getDirectValue(APIConstants.GOORU_PREFIX + sessionToken);
 		Map<String, Object> userMap = new LinkedHashMap<String, Object>();

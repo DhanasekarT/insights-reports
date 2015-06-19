@@ -33,10 +33,6 @@ public interface BaseConnectionService {
 	
 	void clearConnectionCache();
 	
-	Map<String,Object> getUserObject(String sessionToken ,Map<Integer,String> errorMap);
-	
-	Map<String,Object> getUserObjectData(String traceId,String sessionToken);
-	
 	Map<String, String> getFieldArrayHandler();
 	
 	String getArrayHandler();
@@ -64,4 +60,6 @@ public interface BaseConnectionService {
 	String getDefaultToEmail();
 
 	ColumnList<String> getColumnListFromCache(String rowKey);
+	
+	Map<String, Object> getUserData(String traceId,String sessionToken);
 }
