@@ -357,9 +357,9 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	}
 	
 	private Map<String,Object> getAPIUserObject(String sessionToken){
-		ColumnList<String> endPoint = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),"gooru.api.rest.endpoint", new ArrayList<String>()).getResult();
+		ColumnList<String> endPoint = baseCassandraService.readColumns(CassandraConstants.Keyspaces.INSIGHTS.keyspace(), CassandraConstants.ColumnFamilies.JOB_CONFIG_SETTINGS.columnFamily(),APIConstants.GOORU_AUTHENTICATE_API_ENDPOINT, new ArrayList<String>()).getResult();
 		Map<String,Object> userMap = new LinkedHashMap<String, Object>();		
-		String address = endPoint.getColumnByName("constant_value").getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
+		String address = endPoint.getColumnByName(APIConstants.CONSTANT_VALUE).getStringValue()+"/v2/user/token/"+ sessionToken + "?sessionToken=" + sessionToken;
 		ClientResource client = new ClientResource(address);
 		if (client.getStatus().isSuccess()) {
 			try{
@@ -367,12 +367,13 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 				JsonRepresentation jsonRepresentation = new JsonRepresentation(
 						representation);
 				JSONObject jsonObj = jsonRepresentation.getJsonObject();
-				userMap.put("firstName",jsonObj.getString("firstName"));
-				userMap.put("lastName",jsonObj.getString("lastName"));
-				userMap.put("externalId",jsonObj.getString("externalId"));
-				userMap.put("gooruUId",jsonObj.getString("gooruUId"));
-				userMap.put("userRoleSetString",jsonObj.getString("userRoleSetString"));
+				userMap.put(APIConstants.FIRST_NAME,jsonObj.getString(APIConstants.FIRST_NAME));
+				userMap.put(APIConstants.LAST_NAME,jsonObj.getString(APIConstants.LAST_NAME));
+				userMap.put(APIConstants.EXTERNAL_ID,jsonObj.getString(APIConstants.EMAIL_ID));
+				userMap.put(APIConstants.GOORUUID,jsonObj.getString(APIConstants.GOORUUID));
+				userMap.put(APIConstants.USER_ROLE_SETSTRING,jsonObj.getString(APIConstants.USER_ROLE_SETSTRING));
 			}catch(Exception e){
+				e.printStackTrace();
 				throw new ReportGenerationException(MessageHandler.getMessage(ErrorConstants.E102, new String[]{APIConstants.SESSION_TOKEN}));
 			}
 		}else{

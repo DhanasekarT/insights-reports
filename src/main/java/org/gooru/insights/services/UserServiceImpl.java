@@ -220,6 +220,9 @@ public class UserServiceImpl implements UserService {
 		String gooruUId = userMap.containsKey(APIConstants.GOORUUID) ? userMap.get(APIConstants.GOORUUID).toString() : null;
 
 		Map<Integer,String> errorMap = new HashMap<Integer, String>();
+		if(userMap.get(APIConstants.PERMISSIONS) == null){
+			throw new AccessDeniedException(MessageHandler.getMessage(ErrorConstants.E108));
+		}
 		Map<String, Set<String>> partyPermissions = (Map<String, Set<String>>) userMap.get(APIConstants.PERMISSIONS);
 		InsightsLogger.info(traceId,APIConstants.GOORUUID+APIConstants.SEPARATOR+gooruUId);
 		InsightsLogger.info(traceId,APIConstants.PERMISSIONS+APIConstants.SEPARATOR+partyPermissions);
