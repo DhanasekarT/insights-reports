@@ -45,7 +45,7 @@
 
 	<bean id="redisConnectionFactory"
 		class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
-		<property name="port" value="6379" />
+		<property name="port" value="${redis.server.port}" />
 		<property name="hostName" value="${redis.server.host}" />
 	</bean>
 	
