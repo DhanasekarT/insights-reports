@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -22,12 +23,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CSVFileWriterServiceImpl implements CSVFileWriterService{
+public class CSVFileWriterServiceImpl implements CSVFileWriterService {
 	
 	@Autowired
 	private BaseConnectionService baseConnectionService;
 	
 	private static final Logger logger = LoggerFactory.getLogger(CSVFileWriterServiceImpl.class);
+	
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss.SSS'Z'");
+	
+	private static final SimpleDateFormat dateFormatterForExport = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss a");
 	
 	public BaseConnectionService getBaseConnectionService() {
 		return baseConnectionService;
@@ -63,7 +68,13 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 			for (Map<String, Object> row : rowList) {
 				for(String headerKey : headerKeys) {
 					Object key = row.get(headerKey) == null || row.get(headerKey).equals("") || row.get(headerKey).equals(" ") ? APIConstants.NOT_APPLICABLE : row.get(headerKey);
-					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT) && !key.equals(APIConstants.NOT_APPLICABLE)) {
+					if(!key.equals(APIConstants.NOT_APPLICABLE) && headerKey.matches(APIConstants.FIELDS_TO_FORMAT_DATE)) {
+						key = APIConstants.SPACE.concat(dateFormatterForExport.format(dateFormatter.parse(key.toString())));
+					}
+					if(headerKey.matches(APIConstants.FIELDS_TO_REPLACE_ZERO) && key.equals(APIConstants.NOT_APPLICABLE)) {
+						key = APIConstants.ZERO;
+					}
+					if(headerKey.matches(APIConstants.FIELDS_TO_TIME_FORMAT)) {
 						key = DateTime.convertMillisecondsToTime(((Number)key).longValue());
 					}
 					key = appendDQ(key);
@@ -77,14 +88,15 @@ public class CSVFileWriterServiceImpl implements CSVFileWriterService{
 				stream.flush();
 			}
 		} catch(Exception e) {
-			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.CSV_WRITER_EXCEPTION),e);
+			InsightsLogger.error(traceId, ErrorConstants.EXCEPTION_IN.replace(ErrorConstants.REPLACER,ErrorConstants.FILE_WRITER_EXCEPTION),e);
 		} finally {
 			stream.close();
 		}
 	}
 
-	private Object appendDQ(Object key) {
-	    return "\"" + key + "\"";
+	private String appendDQ(Object key) {
+		key = (APIConstants.EMPTY + key).replace("\"", "\'");
+		return "\"" + key + "\"";
 	}
 	
 	public void removeExpiredFile() {

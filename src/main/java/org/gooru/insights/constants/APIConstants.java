@@ -325,7 +325,7 @@ public class APIConstants {
 	
 	public static final String ALL = "all";
 	
-	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent|avgTimespent";
+	public static final String FIELDS_TO_TIME_FORMAT = "totalTimespent|avgTimespent|timespent|totalTimeSpentInMs";
 	
 	public static final String EXPORT_MAIL_CONTENT = "EXPORT_MAIL_CONTENT";
 	
@@ -336,6 +336,10 @@ public class APIConstants {
 	public static final String XLSX_CONTENT_TYPE = "application/xlsx";
 	
 	public static final String DEFAULT_FONT_STYLE = "Arial";
+	
+	public static final String FIELDS_TO_FORMAT_DATE = "createdOn";
+	
+	public static final String FIELDS_TO_REPLACE_ZERO = "Rating.*|rating.*|.*count|.*Count|.*spent.*|noOfResources";
 
 	/**
 	 * Numbers
@@ -346,6 +350,8 @@ public class APIConstants {
 	public static final int DEFAULT_ROW_LIMIT = 100;
 	
 	public static final int DEFAULT_CELL_WIDTH = 5000;
+	
+	public static final Long DEFAULT_CLASS_ID = 1L;
 	
 	/**
 	 * Logical Enumaration 
