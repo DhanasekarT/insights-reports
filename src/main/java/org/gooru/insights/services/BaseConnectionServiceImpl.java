@@ -1,5 +1,7 @@
 package org.gooru.insights.services;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,7 +17,6 @@ import javax.annotation.Resource;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.NodeBuilder;
@@ -31,6 +32,8 @@ import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ClientResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +53,8 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
 @Component
 public class BaseConnectionServiceImpl implements BaseConnectionService {
+
+	private static final Logger logger = LoggerFactory.getLogger(BaseConnectionServiceImpl.class);
 
 	private static Client devClient;
 	
@@ -200,15 +205,20 @@ public class BaseConnectionServiceImpl implements BaseConnectionService {
 	
 	
 	private Client initNodeClient(String clusterName){
-		 Settings settings = ImmutableSettings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
+		 Settings settings = Settings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
 		 return new NodeBuilder().settings(settings).node().client();   	
 	}
 	
 	private Client initTransportClient(String hostName,String portNo,String clusterName){
-		 Settings settings = ImmutableSettings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
-         TransportClient transportClient = new TransportClient(settings);
-         transportClient.addTransportAddress(new InetSocketTransportAddress(hostName, Integer.valueOf(portNo)));
-         return transportClient;
+		 Settings settings = Settings.settingsBuilder().put(ESConstants.EsConfigs.ES_CLUSTER.esConfig(), clusterName != null ? clusterName : APIConstants.EMPTY).put("client.transport.sniff", true).build();
+		 Client transportClient = null;
+		try {
+			transportClient = TransportClient.builder().settings(settings).build()
+					 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostName), Integer.valueOf(portNo)));
+		} catch (IOException e) {
+            logger.info("Unable to initialize elasticsearch client", e);
+        }
+        return transportClient;
 	}
 	
 	private void fieldDataType(){
