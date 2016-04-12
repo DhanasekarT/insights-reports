@@ -97,7 +97,7 @@ public class ItemServiceImpl implements ItemService {
 	 */
 	public ResponseParamDTO<Map<String,Object>> processApi(String traceId,String data, String sessionToken) throws Exception {
 
-		Map<String,Object> userMap = getUserObjectData(traceId,sessionToken); 
+		Map<String,Object> userMap = getUserObject(traceId,sessionToken); 
 		List<Map<String, Object>> resultData = new ArrayList<Map<String, Object>>();
 		RequestParamsCoreDTO requestParamsCoreDTO = getBaseAPIService().buildRequestParamsCoreDTO(data);
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
@@ -130,7 +130,7 @@ public class ItemServiceImpl implements ItemService {
 		boolean isMerged = false;
 		JSONSerializer serializer = new JSONSerializer();
 
-		Map<String, Object> userMap = getUserObjectData(traceId,sessionToken);
+		Map<String, Object> userMap = getUserObject(traceId,sessionToken);
 		
 		Map<String,Object> filtersMap = getBaseAPIService().getRequestFieldNameValueInMap(request, APIConstants.F);
 		Map<String,Object> paginationMap = getBaseAPIService().getRequestFieldNameValueInMap(request, APIConstants.P);
@@ -203,7 +203,7 @@ public class ItemServiceImpl implements ItemService {
 		 * errorMap);
 		 */
 		if (userMap == null) {
-			userMap = getUserObjectData(traceId,sessionToken);
+			userMap = getUserObject(traceId,sessionToken);
 		}
 
 		RequestParamsDTO requestParamsDTO = getBaseAPIService().buildRequestParameters(data);
@@ -249,7 +249,7 @@ public class ItemServiceImpl implements ItemService {
 	@SuppressWarnings("unchecked")
 	public ResponseParamDTO<Map<String,Object>> getQuery(String traceId,String id, String sessionToken) {
 
-		Map<String,Object> dataMap = getUserObjectData(traceId,sessionToken); 
+		Map<String,Object> dataMap = getUserObject(traceId,sessionToken); 
 		String prefix = APIConstants.EMPTY;
 		ResponseParamDTO<Map<String,Object>> responseParamDTO = new ResponseParamDTO<Map<String,Object>>();
 		 if(dataMap.containsKey(APIConstants.GOORUUID) && dataMap.get(APIConstants.GOORUUID) != null){
@@ -267,7 +267,7 @@ public class ItemServiceImpl implements ItemService {
 	
 	public ResponseParamDTO<Map<String,Object>> getCacheData(String traceId,String id,String sessionToken) {
 
-		Map<String,Object> userMap = getUserObjectData(traceId,sessionToken);
+		Map<String,Object> userMap = getUserObject(traceId,sessionToken);
 		
 		 String prefix = APIConstants.EMPTY;
 		 if(userMap.containsKey(APIConstants.GOORUUID) && userMap.get(APIConstants.GOORUUID) != null){
@@ -352,18 +352,9 @@ public class ItemServiceImpl implements ItemService {
 		return responseParamDTO;	
 	}
 
-	/**
-	 * Depricated:used to fetch data from session token
-	 * @param sessionToken
-	 * @param errorMap
-	 * @return
-	 */
-	private Map<String, Object> getUserObject(String sessionToken, Map<Integer, String> errorMap) {
-		return getBaseConnectionService().getUserObject(sessionToken, errorMap);
-	}
 
-	private Map<String, Object> getUserObjectData(String traceId,String sessionToken) {
-		return getBaseConnectionService().getUserObjectData(traceId,sessionToken);
+	private Map<String, Object> getUserObject(String traceId, String sessionToken) {
+		return getBaseConnectionService().getUserData(traceId,sessionToken);
 	}
 
 	public ResponseParamDTO<Map<String,String>> insertKey(String traceId,String data){
@@ -437,7 +428,7 @@ public class ItemServiceImpl implements ItemService {
 			}
 			
 			if (userMap == null) {
-				userMap = getUserObjectData(traceId,sessionToken);
+				userMap = getUserObject(traceId,sessionToken);
 			}
 
 			Map<String, Boolean> checkPoint = getBaseAPIService().checkPoint(requestParamsDTO);
@@ -489,7 +480,7 @@ public class ItemServiceImpl implements ItemService {
 			Map<String, Object> status = new HashMap<String, Object>();
 			
 			if(requestedRowLimit > maxLimit) {
-				final Map<String, Object> user = getUserObjectData(traceId,sessionToken);;
+				final Map<String, Object> user = getUserObject(traceId,sessionToken);
 				getBaseAPIService().checkPoint(requestParamsDTO);
 				getUserService().validateUserRole(traceId,requestParamsDTO, user);
 				final String resultLink = getBaseConnectionService().getAppRepoPath().concat(fileName);

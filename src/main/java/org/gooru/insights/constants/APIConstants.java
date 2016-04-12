@@ -99,6 +99,9 @@ public class APIConstants {
 	/**
 	 * parameter constants
 	 */
+	
+	public static final String GOORU_AUTHENTICATE_API_ENDPOINT ="gooru.api.rest.endpoint";
+	
 	public static final String ORG_FILTERS = "orgFilters";
 	
 	public static final String USER_FILTERS = "userFilters";

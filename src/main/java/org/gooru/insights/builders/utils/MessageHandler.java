@@ -27,8 +27,11 @@ public class MessageHandler {
 	
 	@PostConstruct
 	private void init(){
+		if(resourceBundle == null){
 		resourceBundle = ResourceBundle.getBundle(baseConnectionService.getFileProperties().containsKey(LOCALIZER) ? 
 				baseConnectionService.getFileProperties().get(LOCALIZER).toString() : DEFAULT_LOCALIZER_LOCATION);
+	
+		}
 	}
 
 	/**
